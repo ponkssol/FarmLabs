@@ -35,12 +35,20 @@ export function SignInOut({ hasSession, image, name }: Props) {
 
   if (!hasSession) {
     return (
-      <Link
-        href="/login"
-        className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-zinc-200"
-      >
-        Login
-      </Link>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <Link
+          href="/login#telegram-login"
+          className="rounded-lg border border-sky-500/35 bg-sky-500/10 px-3 py-2 text-xs font-medium text-sky-200/95 transition hover:border-sky-400/50 hover:bg-sky-500/20 sm:text-sm"
+        >
+          Telegram
+        </Link>
+        <Link
+          href="/login"
+          className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-zinc-200"
+        >
+          Log in
+        </Link>
+      </div>
     );
   }
 

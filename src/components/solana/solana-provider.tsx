@@ -2,9 +2,9 @@
 
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
 import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
-import { clusterApiUrl } from "@solana/web3.js";
 import { Buffer } from "buffer";
 import { useEffect, useMemo, type ReactNode } from "react";
+import { DEFAULT_MAINNET_HTTP_RPC } from "@/lib/solana-rpc-defaults";
 
 export function SolanaProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
@@ -13,7 +13,7 @@ export function SolanaProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const endpoint = useMemo(
-    () => process.env.NEXT_PUBLIC_SOLANA_RPC ?? clusterApiUrl("mainnet-beta"),
+    () => process.env.NEXT_PUBLIC_SOLANA_RPC?.trim() || DEFAULT_MAINNET_HTTP_RPC,
     [],
   );
 

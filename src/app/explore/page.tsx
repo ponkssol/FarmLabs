@@ -136,6 +136,10 @@ export default async function ExplorePage({ searchParams }: Props) {
             },
           },
         },
+        priceOptions: {
+          orderBy: { sortOrder: "asc" },
+          select: { priceAmount: true, id: true, label: true, telegramUrl: true, discordUrl: true },
+        },
       },
     }),
     prisma.project.count({ where }),
@@ -148,7 +152,7 @@ export default async function ExplorePage({ searchParams }: Props) {
     rawItems.map((p) => p.id),
   );
   const items = rawItems.map((p) => {
-    const state = resolveVipViewForProject(p, viewerId, unlocked);
+    const state = resolveVipViewForProject(p, viewerId, unlocked, p.priceOptions);
     return applyVipMaskToProject(p, {
       redactVipText: state.redactVipText,
       maskVipLinks: state.maskVipLinks,
@@ -341,7 +345,7 @@ export default async function ExplorePage({ searchParams }: Props) {
                       </div>
                     </div>
                     <span className="shrink-0 tabular-nums text-[10px] font-medium leading-none text-zinc-200">
-                      {formatListingPrice(p)}
+                      {formatListingPrice(p, p.priceOptions)}
                     </span>
                   </div>
 

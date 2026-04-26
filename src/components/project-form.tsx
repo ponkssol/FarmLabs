@@ -5,7 +5,13 @@ import { useState } from "react";
 import type { Project } from "@prisma/client";
 import { projectFormSchema, type ProjectForm, normalizeProjectForm } from "@/lib/project-schema";
 import { parseDetailImagesJson } from "@/lib/project-detail-images";
+import { DecimalPriceInput } from "@/components/decimal-price-input";
+import { PriceOptionsField } from "@/components/price-options-field";
 import { ProjectDetailImagesField } from "@/components/project-detail-images-field";
+import {
+  ProjectTelegramGroupSetup,
+  type TelegramVipSyncPayload,
+} from "@/components/project-telegram-group-setup";
 import { uploadCommunityLogoFile } from "@/lib/upload-community-client";
 import Image from "next/image";
 
@@ -24,12 +30,28 @@ const empty: ProjectForm = {
   detailImages: [] as string[],
   telegram: "",
   discord: "",
+  telegramGroupChatId: "",
   published: false,
+  priceOptions: [] as NonNullable<import("@/lib/project-schema").ProjectForm["priceOptions"]>,
+};
+
+type EditableProject = Project & {
+  telegramGroupTitle?: string | null;
+  priceOptions?: {
+    id: string;
+    label: string;
+    priceAmount: number;
+    sortOrder: number;
+    telegramUrl: string | null;
+    discordUrl: string | null;
+    accessDurationDays: number | null;
+    discordRoleId: string | null;
+  }[];
 };
 
 type Props = {
   mode: "create" | "edit";
-  project?: Project;
+  project?: EditableProject;
 };
 
 export function ProjectForm({ mode, project }: Props) {
@@ -52,7 +74,19 @@ export function ProjectForm({ mode, project }: Props) {
           detailImages: parseDetailImagesJson(project.detailImages),
           telegram: project.telegram ?? "",
           discord: project.discord ?? "",
+          telegramGroupChatId: (project as { telegramGroupChatId?: string | null }).telegramGroupChatId ?? "",
           published: project.published,
+          priceOptions:
+            project.priceOptions?.map((o) => ({
+              id: o.id,
+              label: o.label,
+              priceAmount: o.priceAmount,
+              sortOrder: o.sortOrder,
+              telegramUrl: o.telegramUrl ?? undefined,
+              discordUrl: o.discordUrl ?? undefined,
+              accessDurationDays: o.accessDurationDays ?? undefined,
+              discordRoleId: o.discordRoleId ?? undefined,
+            })) ?? [],
         }
       : {}),
   }));
@@ -75,6 +109,7 @@ export function ProjectForm({ mode, project }: Props) {
     detailImages: "Detail images",
     telegram: "Telegram link",
     discord: "Discord link",
+    telegramGroupChatId: "Telegram group chat id",
   };
 
   const set = <K extends keyof ProjectForm>(k: K, v: ProjectForm[K]) => {
@@ -88,6 +123,7 @@ export function ProjectForm({ mode, project }: Props) {
   };
 
   const showPrice = values.groupType === "PRIVATE" && values.accessType === "PAID";
+  const hasAccessTiers = showPrice && (values.priceOptions?.length ?? 0) > 0;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -123,11 +159,17 @@ export function ProjectForm({ mode, project }: Props) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
+        const created = (await r.json().catch(() => ({}))) as { id?: string; error?: unknown };
         if (!r.ok) {
-          const j = (await r.json().catch(() => ({}))) as { error?: unknown };
-          throw new Error(typeof j.error === "string" ? j.error : "Failed to create project");
+          throw new Error(
+            typeof created.error === "string" ? created.error : "Failed to create project",
+          );
         }
-        await router.push("/dashboard");
+        if (created.id) {
+          await router.push(`/dashboard/edit/${created.id}`);
+        } else {
+          await router.push("/dashboard");
+        }
         router.refresh();
         return;
       }
@@ -139,7 +181,6 @@ export function ProjectForm({ mode, project }: Props) {
         body: JSON.stringify(body),
       });
       if (!r.ok) throw new Error("Failed to update project");
-      await router.push("/dashboard");
       router.refresh();
     } catch (x) {
       setError(x instanceof Error ? x.message : "Error");
@@ -259,27 +300,37 @@ export function ProjectForm({ mode, project }: Props) {
         </div>
       </section>
 
-      <section className="rounded-xl border border-white/10 bg-zinc-950 p-3 sm:p-3.5">
-        <h2 className="text-xs font-semibold text-white">Community links</h2>
-        <p className="mt-0.5 text-[9px] leading-snug text-zinc-500 sm:text-[10px]">Use at least one valid link: Telegram or Discord.</p>
+      {!hasAccessTiers && (
+        <section className="rounded-xl border border-white/10 bg-zinc-950 p-3 sm:p-3.5">
+          <h2 className="text-xs font-semibold text-white">Community links</h2>
+          <p className="mt-0.5 text-[9px] leading-snug text-zinc-500 sm:text-[10px]">
+            {showPrice
+              ? "Use Discord here. For Telegram, use the “Access and delivery” section (VIP invite + bot verification)."
+              : "Use at least one valid link: Telegram or Discord."}
+          </p>
 
-        <div className="mt-3 grid gap-2.5 sm:grid-cols-1">
-          {([
-            ["telegram", "Telegram"] as const,
-            ["discord", "Discord"] as const,
-          ] as const).map(([key, plabel]) => (
-            <div key={key}>
-              <label className="text-[9px] font-medium uppercase tracking-widest text-zinc-500">{plabel}</label>
-              <input
-                className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
-                value={String(values[key] ?? "")}
-                onChange={(e) => set(key, e.target.value)}
-                placeholder="https://..."
-              />
-            </div>
-          ))}
-        </div>
-      </section>
+          <div className="mt-3 grid gap-2.5 sm:grid-cols-1">
+            {(
+              showPrice
+                ? (["discord"] as const)
+                : (["telegram", "discord"] as const)
+            ).map((key) => {
+              const plabel = key === "telegram" ? "Telegram" : "Discord";
+              return (
+                <div key={key}>
+                  <label className="text-[9px] font-medium uppercase tracking-widest text-zinc-500">{plabel}</label>
+                  <input
+                    className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
+                    value={String(values[key] ?? "")}
+                    onChange={(e) => set(key, e.target.value)}
+                    placeholder="https://..."
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="rounded-xl border border-white/10 bg-zinc-950 p-3 sm:p-3.5">
         <h2 className="text-xs font-semibold text-white">Access and delivery</h2>
@@ -318,18 +369,15 @@ export function ProjectForm({ mode, project }: Props) {
               Public calls are free. Price and currency apply only to private paid listings.
             </p>
           )}
-          {showPrice && (
+          {showPrice && (values.priceOptions?.length ?? 0) === 0 && (
             <div className="grid gap-2.5 sm:grid-cols-2">
               <div>
                 <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">Price</label>
-                <input
-                  type="number"
-                  min={0}
-                  step="any"
+                <DecimalPriceInput
                   className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
-                  value={values.priceAmount ?? ""}
-                  onChange={(e) => set("priceAmount", e.target.value === "" ? undefined : Number(e.target.value))}
-                  placeholder="e.g. 10"
+                  value={values.priceAmount}
+                  onValueChange={(n) => set("priceAmount", n)}
+                  placeholder="e.g. 0.002, 1.5"
                 />
               </div>
               <div>
@@ -343,6 +391,107 @@ export function ProjectForm({ mode, project }: Props) {
                   <option value="SOL">SOL</option>
                 </select>
               </div>
+            </div>
+          )}
+          {showPrice && (values.priceOptions?.length ?? 0) > 0 && (
+            <div>
+              <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">
+                Currency (all tiers)
+              </label>
+              <select
+                className="mt-1.5 w-full max-w-sm rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 focus:border-white/30 focus:outline-none"
+                value={values.priceCurrency}
+                onChange={(e) => set("priceCurrency", e.target.value as ProjectForm["priceCurrency"])}
+              >
+                <option value="USDC">USDC</option>
+                <option value="SOL">SOL</option>
+              </select>
+            </div>
+          )}
+          {showPrice && (
+            <div>
+              <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">
+                Access tiers (optional)
+              </label>
+              <PriceOptionsField
+                className="mt-1.5"
+                value={values.priceOptions ?? []}
+                onChange={(rows) => set("priceOptions", rows)}
+                priceCurrency={values.priceCurrency}
+                onCurrencyChange={(c) => set("priceCurrency", c)}
+                showCurrency={false}
+              />
+            </div>
+          )}
+          {showPrice && hasAccessTiers ? (
+            <div className="rounded-md border border-white/8 bg-zinc-900/30 px-2.5 py-2">
+              <p className="text-[9px] leading-snug text-zinc-500 sm:text-[10px]">
+                <strong className="text-zinc-400">Per tier</strong>: set <em>Telegram (tier)</em> on each row (override
+                for buyers of that tier). <strong className="text-zinc-400">Listing default</strong> is filled
+                automatically after <strong>bot verification</strong> (below) when a tier has no own link.
+              </p>
+              {values.telegram ? (
+                <p className="mt-1.5 break-all font-mono text-[8px] text-zinc-400">
+                  Listing default (from bot / save): {values.telegram}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          {showPrice && !hasAccessTiers ? (
+            <div>
+              <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">
+                1 — Telegram invite (optional)
+              </label>
+              <p className="mt-0.5 text-[9px] leading-snug text-zinc-500 sm:text-[10px]">
+                t.me invite. After <strong>bot verification</strong> (bot is admin) this usually fills in; you can still
+                edit.
+              </p>
+              <input
+                className="mt-1.5 w-full max-w-md rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
+                value={values.telegram ?? ""}
+                onChange={(e) => set("telegram", e.target.value)}
+                placeholder="https://t.me/+... (auto after verification)"
+              />
+            </div>
+          ) : null}
+          {showPrice && mode === "edit" && project?.id ? (
+            <div className="mt-0.5">
+              <ProjectTelegramGroupSetup
+                projectId={project.id}
+                onSynced={(d: TelegramVipSyncPayload) => {
+                  if (d.telegram) set("telegram", d.telegram);
+                  if (d.telegramGroupChatId) set("telegramGroupChatId", d.telegramGroupChatId);
+                  router.refresh();
+                }}
+              />
+            </div>
+          ) : null}
+          {showPrice && !project?.id && (
+            <p className="text-[8px] text-zinc-500">
+              Click <strong className="text-zinc-400">Create listing</strong> — you are taken to the edit page where
+              verification appears.
+            </p>
+          )}
+          {showPrice && (
+            <div>
+              <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">
+                3 — Telegram group id (optional)
+              </label>
+              <p className="mt-0.5 text-[9px] leading-snug text-zinc-500 sm:text-[10px]">
+                Filled from the bot after verification. Set manually only if needed (e.g. RawData bot).
+              </p>
+              {mode === "edit" && project?.telegramGroupTitle ? (
+                <p className="mt-1.5 text-[9px] text-zinc-400">
+                  Group (from Telegram): <span className="text-zinc-200">{project.telegramGroupTitle}</span>
+                </p>
+              ) : null}
+              <input
+                className="mt-1.5 w-full max-w-md rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 font-mono text-[10px] sm:text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
+                value={values.telegramGroupChatId ?? ""}
+                onChange={(e) => set("telegramGroupChatId", e.target.value)}
+                placeholder="-1001234567890"
+                inputMode="numeric"
+              />
             </div>
           )}
           <div>

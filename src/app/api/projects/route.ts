@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { normalizeProjectForm, projectFormSchema } from "@/lib/project-schema";
+import { replaceProjectPriceOptionsTx } from "@/lib/project-price-options-db";
 import { uniqueProjectSlug } from "@/lib/slug";
 import { redactVipSocialLinks } from "@/lib/redact-vip-text";
 import { isPaidVipListing, shouldMaskVipLinks } from "@/lib/vip-link-access";
@@ -55,6 +56,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
+        priceOptions: { select: { telegramUrl: true, discordUrl: true } },
       },
     }),
     prisma.project.count({ where }),
@@ -85,10 +87,16 @@ export async function GET(request: NextRequest) {
         ? redactVipSocialLinks(p.deliveryPolicy)
         : p.deliveryPolicy,
     };
-    if (!shouldMaskVipLinks(p)) {
+    if (!shouldMaskVipLinks(p, p.priceOptions)) {
       return { ...p, ...textMasked };
     }
-    return { ...p, ...textMasked, telegram: null, discord: null };
+    return {
+      ...p,
+      ...textMasked,
+      telegram: null,
+      discord: null,
+      priceOptions: p.priceOptions?.map((o) => ({ ...o, telegramUrl: null, discordUrl: null })) ?? [],
+    };
   });
 
   return NextResponse.json({ items, total });
@@ -115,26 +123,38 @@ export async function POST(request: Request) {
   const slug = await uniqueProjectSlug(data.title);
 
   const paid = data.groupType === "PRIVATE" && data.accessType === "PAID";
-  const project = await prisma.project.create({
-    data: {
-      title: data.title,
-      shortPitch: data.shortPitch,
-      description: data.description,
-      groupType: data.groupType,
-      accessType: data.accessType,
-      priceAmount: paid ? data.priceAmount ?? null : null,
-      priceCurrency: paid ? data.priceCurrency ?? null : null,
-      category: data.category ?? null,
-      rules: data.rules,
-      deliveryPolicy: data.deliveryPolicy,
-      communityImage: data.communityImage ?? null,
-      detailImages: data.detailImages.length > 0 ? JSON.stringify(data.detailImages) : null,
-      telegram: data.telegram ?? null,
-      discord: data.discord,
-      published: data.published ?? false,
-      slug,
-      userId: session.user.id,
-    },
+  const priceOptsForTx = (data.priceOptions ?? []).map((o, i) => ({
+    ...o,
+    sortOrder: o.sortOrder ?? i,
+  }));
+
+  const project = await prisma.$transaction(async (tx) => {
+    const p = await tx.project.create({
+      data: {
+        title: data.title,
+        shortPitch: data.shortPitch,
+        description: data.description,
+        groupType: data.groupType,
+        accessType: data.accessType,
+        priceAmount: paid ? data.priceAmount ?? null : null,
+        priceCurrency: paid ? data.priceCurrency ?? null : null,
+        category: data.category ?? null,
+        rules: data.rules,
+        deliveryPolicy: data.deliveryPolicy,
+        communityImage: data.communityImage ?? null,
+        detailImages: data.detailImages.length > 0 ? JSON.stringify(data.detailImages) : null,
+        telegram: data.telegram ?? null,
+        discord: data.discord,
+        telegramGroupChatId: data.telegramGroupChatId ?? null,
+        published: data.published ?? false,
+        slug,
+        userId: session.user.id,
+      },
+    });
+    if (priceOptsForTx.length > 0) {
+      await replaceProjectPriceOptionsTx(tx, p.id, priceOptsForTx);
+    }
+    return p;
   });
 
   return NextResponse.json(project);

@@ -41,9 +41,9 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-black text-zinc-100 antialiased">
         <AppProviders>
-          <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.07),transparent_35%)]">
+          <div className="relative flex min-h-screen flex-col bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.07),transparent_35%)]">
             <SiteHeader />
-            <main>{children}</main>
+            <main className="flex-1">{children}</main>
             <SiteFooter />
           </div>
         </AppProviders>

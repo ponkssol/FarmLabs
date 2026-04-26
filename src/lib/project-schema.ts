@@ -60,6 +60,28 @@ const optUrl = z.preprocess(
     ),
 );
 
+const priceOptionRowSchema = z.object({
+  id: z.string().max(40).optional(),
+  label: z.string().min(1).max(100).trim(),
+  priceAmount: z.coerce.number().min(0.000_001).max(1_000_000_000),
+  sortOrder: z.coerce.number().int().min(0).max(10_000).optional().default(0),
+  telegramUrl: optUrl,
+  discordUrl: optUrl,
+  accessDurationDays: z.preprocess(
+    (v) => (v === "" || v === undefined || v === null ? undefined : v),
+    z.coerce.number().int().min(0).max(3650).optional(),
+  ),
+  discordRoleId: z.preprocess(
+    (v) => (v === "" || v === undefined || v === null ? undefined : v),
+    z.string().max(32).optional(),
+  ),
+});
+
+const priceOptionsSchema = z
+  .array(priceOptionRowSchema)
+  .max(20)
+  .default([]);
+
 export const projectFormSchema = z.object({
   title: z.string().min(2).max(120),
   shortPitch: z.string().min(10).max(280),
@@ -82,22 +104,53 @@ export const projectFormSchema = z.object({
   ),
   telegram: optUrl,
   discord: optUrl,
+  /// Supergroup id for the FarmLabs Telegram kick bot (e.g. -1001234567890)
+  telegramGroupChatId: z.preprocess(
+    (v) => (v === "" || v === undefined || v === null ? undefined : v),
+    z
+      .string()
+      .max(20)
+      .regex(/^-?\d{5,20}$/, "Invalid Telegram group id (e.g. -1001234567890 from your group info)")
+      .optional(),
+  ),
   published: z.boolean().optional(),
+  /** Access tiers (optional). If empty, use single `priceAmount` on the project. */
+  priceOptions: z.preprocess(
+    (v) => (v === undefined || v === null || !Array.isArray(v) ? [] : v),
+    priceOptionsSchema,
+  ),
 }).superRefine((value, ctx) => {
   if (value.groupType === "PRIVATE" && value.accessType === "PAID") {
-    if (value.priceAmount == null || Number.isNaN(value.priceAmount)) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["priceAmount"],
-        message: "Price is required for paid private calls",
-      });
+    const opts = (value.priceOptions ?? []).filter((o) => o.label.trim().length > 0);
+    if (opts.length === 0) {
+      if (value.priceAmount == null || Number.isNaN(value.priceAmount)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["priceAmount"],
+          message: "Set a price, or add at least one access tier (label + amount).",
+        });
+      }
+    } else {
+      for (let i = 0; i < opts.length; i++) {
+        if (!Number.isFinite(opts[i].priceAmount) || opts[i].priceAmount <= 0) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["priceOptions", i, "priceAmount"],
+            message: "Each tier needs a price greater than 0",
+          });
+        }
+      }
     }
   }
-  if (!value.telegram && !value.discord) {
+  const hasProjectLink = Boolean((value.telegram && String(value.telegram).trim()) || (value.discord && String(value.discord).trim()));
+  const hasTierLink = (value.priceOptions ?? []).some(
+    (o) => (o.telegramUrl && o.telegramUrl.trim()) || (o.discordUrl && o.discordUrl.trim()),
+  );
+  if (!hasProjectLink && !hasTierLink) {
     ctx.addIssue({
       code: "custom",
       path: ["telegram"],
-      message: "Add at least one link: Telegram or Discord",
+      message: "Add at least one link: set Telegram/Discord on the listing, or add tier-specific links on each access tier.",
     });
   }
 });
@@ -115,17 +168,45 @@ export function normalizeProjectForm(input: ProjectForm) {
   const isPaid = access === "PAID" && !isPublic;
   const currency: "USDC" | "SOL" = input.priceCurrency === "SOL" ? "SOL" : "USDC";
   const detailImages = (input.detailImages ?? []).filter(Boolean).slice(0, 3);
+  const rawOpts = (input.priceOptions ?? []).filter((o) => o.label?.trim().length > 0);
+  const priceOptions = rawOpts.map((o, i) => ({
+    label: o.label.trim(),
+    priceAmount: o.priceAmount,
+    sortOrder: o.sortOrder ?? i,
+    telegramUrl: emptyToNull(o.telegramUrl) ?? null,
+    discordUrl: emptyToNull(o.discordUrl) ?? null,
+    accessDurationDays:
+      o.accessDurationDays != null && o.accessDurationDays > 0 ? o.accessDurationDays : null,
+    discordRoleId: o.discordRoleId?.trim() || null,
+  }));
+  let priceAmount: number | undefined;
+  if (isPaid) {
+    if (priceOptions.length > 0) {
+      priceAmount = Math.min(...priceOptions.map((o) => o.priceAmount));
+    } else {
+      priceAmount = input.priceAmount;
+    }
+  } else {
+    priceAmount = undefined;
+  }
   return {
     ...input,
     accessType: access,
     groupType: input.groupType,
-    priceAmount: isPaid ? input.priceAmount : undefined,
+    priceAmount,
     priceCurrency: isPaid ? currency : undefined,
+    priceOptions,
     category: emptyToNull(input.category),
     communityImage: emptyToNull(input.communityImage),
     detailImages,
     telegram: emptyToNull(input.telegram),
     discord: emptyToNull(input.discord),
     description: (input.description ?? "").trim(),
+    telegramGroupChatId: isPaid
+      ? (() => {
+          const t = input.telegramGroupChatId?.trim();
+          return t && /^-?\d{5,20}$/.test(t) ? t : null;
+        })()
+      : null,
   };
 }

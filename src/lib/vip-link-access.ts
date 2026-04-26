@@ -14,9 +14,21 @@ export function hasCommunityLinks(p: Pick<Project, "telegram" | "discord">): boo
   );
 }
 
-/** True when the public UI should not expose Telegram / Discord link fields. */
+/** Tier-level invite URLs (used when the project has no top-level Telegram/Discord). */
+export type PriceOptionLinkSlice = { telegramUrl?: string | null; discordUrl?: string | null };
+
+export function hasTierCommunityLinks(priceOptions: PriceOptionLinkSlice[] | null | undefined): boolean {
+  if (!priceOptions?.length) return false;
+  return priceOptions.some(
+    (o) => Boolean((o.telegramUrl && o.telegramUrl.trim()) || (o.discordUrl && o.discordUrl.trim())),
+  );
+}
+
+/** True when the public UI should not expose Telegram / Discord (project or tier invites). */
 export function shouldMaskVipLinks(
   p: Pick<Project, "accessType" | "telegram" | "discord">,
+  priceOptions?: PriceOptionLinkSlice[] | null,
 ): boolean {
-  return isPaidVipListing(p) && hasCommunityLinks(p);
+  if (!isPaidVipListing(p)) return false;
+  return hasCommunityLinks(p) || hasTierCommunityLinks(priceOptions);
 }

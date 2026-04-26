@@ -17,7 +17,10 @@ export default async function EditProjectPage({ params }: Props) {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const project = await prisma.project.findUnique({ where: { id } });
+  const project = await prisma.project.findUnique({
+    where: { id },
+    include: { priceOptions: { orderBy: { sortOrder: "asc" } } },
+  });
   if (!project || project.userId !== session.user.id) notFound();
 
   return (

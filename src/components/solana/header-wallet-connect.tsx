@@ -3,13 +3,47 @@
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { resultToPanelMessage, runPhantomConnectFlow } from "@/lib/solana-phantom-connect";
 
+/**
+ * Buy / listing APIs require `User.wallet` in the database (session), not only a browser connection.
+ * When the user has connected Phantom but never opened Dashboard "Save", sync their address here.
+ */
 export function HeaderWalletConnect() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const { connect, wallet, select, connected, connecting, publicKey } = useWallet();
   const [hint, setHint] = useState<string | null>(null);
+  const [savingProfileWallet, setSavingProfileWallet] = useState(false);
+
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user?.id) return;
+    if (!connected || !publicKey) return;
+    if (session.user.wallet) return;
+
+    let cancelled = false;
+    setSavingProfileWallet(true);
+    const addr = publicKey.toBase58();
+    void (async () => {
+      try {
+        const r = await fetch("/api/me/wallet", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: addr }),
+        });
+        if (!r.ok || cancelled) return;
+        await update();
+      } catch {
+        /* allow manual Save on dashboard */
+      } finally {
+        if (!cancelled) setSavingProfileWallet(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status, session?.user?.id, session?.user?.wallet, connected, publicKey, update]);
 
   const onConnect = useCallback(async () => {
     setHint(null);
@@ -37,12 +71,29 @@ export function HeaderWalletConnect() {
         >
           {short}
         </span>
-        <Link
-          href="/dashboard"
-          className="shrink-0 text-[10px] text-zinc-500 transition hover:text-zinc-300 sm:text-xs"
-        >
-          Save
-        </Link>
+        {savingProfileWallet ? (
+          <span
+            className="shrink-0 text-[9px] text-amber-200/80 sm:text-[10px]"
+            title="Saving address to your profile (required for escrow checkout)"
+          >
+            Saving…
+          </span>
+        ) : !session.user.wallet ? (
+          <Link
+            href="/dashboard"
+            className="shrink-0 text-[9px] text-amber-200/80 underline decoration-white/20 sm:text-[10px]"
+            title="Auto-save failed: open dashboard and save to profile"
+          >
+            Save to profile
+          </Link>
+        ) : (
+          <Link
+            href="/dashboard"
+            className="shrink-0 text-[10px] text-zinc-500 transition hover:text-zinc-300 sm:text-xs"
+          >
+            Dashboard
+          </Link>
+        )}
       </div>
     );
   }

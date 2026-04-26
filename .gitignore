@@ -39,6 +39,8 @@ yarn-error.log*
 # user-uploaded community logos (not committed; folder kept via .gitkeep)
 public/uploads/communities/*
 !public/uploads/communities/.gitkeep
+public/uploads/reviews/*
+!public/uploads/reviews/.gitkeep
 
 # sqlite lokal
 *.db

@@ -1,5 +1,7 @@
 "use client";
 
+import { DecimalPriceInput } from "@/components/decimal-price-input";
+import { PriceOptionsField } from "@/components/price-options-field";
 import { ProjectDetailImagesField } from "@/components/project-detail-images-field";
 import { normalizeProjectForm, projectFormSchema, type ProjectForm } from "@/lib/project-schema";
 import { uploadCommunityLogoFile } from "@/lib/upload-community-client";
@@ -22,7 +24,9 @@ const initialValues: ProjectForm = {
   detailImages: [] as string[],
   telegram: "",
   discord: "",
+  telegramGroupChatId: "",
   published: false,
+  priceOptions: [] as NonNullable<import("@/lib/project-schema").ProjectForm["priceOptions"]>,
 };
 
 const field =
@@ -38,12 +42,23 @@ type Props = {
 function formatPreviewPrice(v: ProjectForm) {
   if (v.groupType === "PUBLIC") return null;
   if (v.accessType !== "PAID") return "Free";
-  const a = v.priceAmount ?? 0;
-  if (v.priceCurrency === "SOL") {
-    const s = a % 1 === 0 ? String(a) : a.toFixed(4).replace(/\.?0+$/, "");
-    return `${s} SOL`;
+  const cur = v.priceCurrency === "SOL" ? "SOL" : "USDC";
+  const line = (amount: number) => {
+    if (cur === "SOL") {
+      const s = amount % 1 === 0 ? String(amount) : amount.toFixed(4).replace(/\.?0+$/, "");
+      return `${s} SOL`;
+    }
+    return `${amount.toFixed(2)} USDC`;
+  };
+  const opts = (v.priceOptions ?? []).filter((o) => o.label.trim().length > 0 && o.priceAmount > 0);
+  if (opts.length > 1) {
+    const min = Math.min(...opts.map((o) => o.priceAmount));
+    return `from ${line(min)}`;
   }
-  return `${a.toFixed(2)} USDC`;
+  if (opts.length === 1) {
+    return line(opts[0].priceAmount);
+  }
+  return line(v.priceAmount ?? 0);
 }
 
 export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
@@ -73,6 +88,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
   };
 
   const showPrice = values.groupType === "PRIVATE" && values.accessType === "PAID";
+  const hasAccessTiers = showPrice && (values.priceOptions?.length ?? 0) > 0;
   const previewPrice = formatPreviewPrice(values);
   const titleInitial = useMemo(
     () => (values.title.trim().charAt(0) || "C").toUpperCase(),
@@ -106,12 +122,15 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
         body: JSON.stringify(payload),
       });
 
+      const body = (await res.json().catch(() => ({}))) as { id?: string; error?: unknown };
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: unknown };
         throw new Error(typeof body.error === "string" ? body.error : "Failed to create project");
       }
-
-      router.push("/dashboard");
+      if (body.id) {
+        router.push(`/dashboard/edit/${body.id}`);
+      } else {
+        router.push("/dashboard");
+      }
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");
@@ -248,18 +267,15 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
             {values.groupType === "PUBLIC" && (
               <p className="text-[9px] text-zinc-500 sm:col-span-2">Public listings are free. Price applies to private paid calls only.</p>
             )}
-            {showPrice && (
+            {showPrice && (values.priceOptions?.length ?? 0) === 0 && (
               <>
                 <div>
                   <label className={label}>Price</label>
-                  <input
-                    type="number"
-                    min={0}
-                    step="any"
-                    value={values.priceAmount ?? ""}
-                    onChange={(e) => set("priceAmount", e.target.value === "" ? undefined : Number(e.target.value))}
+                  <DecimalPriceInput
+                    value={values.priceAmount}
+                    onValueChange={(n) => set("priceAmount", n)}
                     className={field}
-                    placeholder="Amount"
+                    placeholder="e.g. 0.002, 1.5"
                   />
                 </div>
                 <div>
@@ -276,6 +292,69 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
                   </select>
                 </div>
               </>
+            )}
+            {showPrice && (values.priceOptions?.length ?? 0) > 0 && (
+              <div className="sm:col-span-2">
+                <label className={label}>Currency (all tiers)</label>
+                <select
+                  value={values.priceCurrency}
+                  onChange={(e) => set("priceCurrency", e.target.value as ProjectForm["priceCurrency"])}
+                  className={field}
+                >
+                  <option value="USDC">USDC</option>
+                  <option value="SOL">SOL</option>
+                </select>
+              </div>
+            )}
+            {showPrice && (
+              <div className="sm:col-span-2">
+                <label className={label}>Access tiers (optional)</label>
+                <PriceOptionsField
+                  value={values.priceOptions ?? []}
+                  onChange={(rows) => set("priceOptions", rows)}
+                  priceCurrency={values.priceCurrency}
+                  onCurrencyChange={(c) => set("priceCurrency", c)}
+                  showCurrency={false}
+                />
+              </div>
+            )}
+            {showPrice && !hasAccessTiers && (
+              <div className="sm:col-span-2">
+                <label className={label}>Telegram invite (optional)</label>
+                <p className="mb-1 text-[9px] text-zinc-600 sm:text-[10px]">
+                  Create the listing, then on Edit use “Open verification in Telegram” to auto-fill the invite and
+                  group id.
+                </p>
+                <input
+                  value={values.telegram ?? ""}
+                  onChange={(e) => set("telegram", e.target.value)}
+                  className={field}
+                  placeholder="https://t.me/+… (auto after verification in edit)"
+                />
+              </div>
+            )}
+            {showPrice && hasAccessTiers && (
+              <div className="sm:col-span-2">
+                <p className="text-[9px] text-zinc-500">
+                  <span className="text-zinc-400">With tiers:</span> set <strong>Telegram (tier)</strong> on each row. For
+                  the default link + group id, create the listing then on <strong>Edit</strong> run bot verification.
+                </p>
+              </div>
+            )}
+            {showPrice && (
+              <div className="sm:col-span-2">
+                <label className={label}>Telegram group id (optional)</label>
+                <p className="mb-1 text-[9px] text-zinc-600 sm:text-[10px]">
+                  Filled from bot verification, or set manually (e.g. -100…, @RawDataBot).
+                </p>
+                <input
+                  value={values.telegramGroupChatId ?? ""}
+                  onChange={(e) => set("telegramGroupChatId", e.target.value)}
+                  className={`${field} max-w-md font-mono`}
+                  placeholder="-1001234567890"
+                  inputMode="numeric"
+                />
+              </div>
             )}
             <div className="sm:col-span-2">
               <label className={label}>Category</label>
@@ -305,67 +384,109 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
               />
             </div>
           </div>
-        </div>
-
-        <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950/85">
-          <div className="border-b border-white/10 px-3 py-2 sm:px-3.5">
-            <h2 className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Links &amp; publish</h2>
-            <p className="mt-0.5 text-[9px] text-zinc-600">At least one: Telegram or Discord.</p>
-          </div>
-          <div className="space-y-2.5 p-3 sm:p-3.5">
-            <div>
-              <span className={label}>Telegram</span>
-              <input
-                value={values.telegram}
-                onChange={(e) => set("telegram", e.target.value)}
-                className={field}
-                placeholder="https://t.me/… (public t.me/yourgroup)"
-              />
-            </div>
-            <div>
-              <span className={label}>Discord</span>
-              <input
-                value={values.discord ?? ""}
-                onChange={(e) => set("discord", e.target.value)}
-                className={field}
-                placeholder="https://discord.gg/…"
-              />
-            </div>
-
-            <label className="mt-1 flex items-center gap-1.5 text-[10px] text-zinc-400">
-              <input
-                type="checkbox"
-                checked={!!values.published}
-                onChange={(e) => set("published", e.target.checked)}
-                className="h-3 w-3 rounded border-white/20"
-              />
-              Publish in directory
-            </label>
-
-            {error && (
-              <div className="rounded-md border border-rose-400/30 bg-rose-950/25 px-2.5 py-1.5 text-[10px] text-rose-200 sm:text-[11px]">
-                {error}
+          {hasAccessTiers && (
+            <div className="space-y-2.5 border-t border-white/10 p-3 sm:p-3.5">
+              <label className="mt-0.5 flex items-center gap-1.5 text-[10px] text-zinc-400">
+                <input
+                  type="checkbox"
+                  checked={!!values.published}
+                  onChange={(e) => set("published", e.target.checked)}
+                  className="h-3 w-3 rounded border-white/20"
+                />
+                Publish in directory
+              </label>
+              {error && (
+                <div className="rounded-md border border-rose-400/30 bg-rose-950/25 px-2.5 py-1.5 text-[10px] text-rose-200 sm:text-[11px]">
+                  {error}
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2 pt-0.5">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="rounded-md bg-white px-2.5 py-1 text-[10px] font-medium text-black disabled:opacity-60 sm:px-2.5"
+                >
+                  {submitting ? "Saving…" : "Create listing"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard")}
+                  className="rounded-md border border-white/15 px-2.5 py-1 text-[10px] text-zinc-400"
+                >
+                  Cancel
+                </button>
               </div>
-            )}
+            </div>
+          )}
+        </div>
 
-            <div className="flex flex-wrap gap-2 pt-0.5">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="rounded-md bg-white px-2.5 py-1 text-[10px] font-medium text-black disabled:opacity-60 sm:px-2.5"
-              >
-                {submitting ? "Saving…" : "Create listing"}
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard")}
-                className="rounded-md border border-white/15 px-2.5 py-1 text-[10px] text-zinc-400"
-              >
-                Cancel
-              </button>
+        {!hasAccessTiers && (
+          <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950/85">
+            <div className="border-b border-white/10 px-3 py-2 sm:px-3.5">
+              <h2 className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Links &amp; publish</h2>
+              <p className="mt-0.5 text-[9px] text-zinc-600">
+                {showPrice
+                  ? "Use Discord here. For Telegram, use the paid / VIP block above."
+                  : "At least one: Telegram or Discord."}
+              </p>
+            </div>
+            <div className="space-y-2.5 p-3 sm:p-3.5">
+              {showPrice ? null : (
+                <div>
+                  <span className={label}>Telegram</span>
+                  <input
+                    value={values.telegram}
+                    onChange={(e) => set("telegram", e.target.value)}
+                    className={field}
+                    placeholder="https://t.me/… (public t.me/yourgroup)"
+                  />
+                </div>
+              )}
+              <div>
+                <span className={label}>Discord</span>
+                <input
+                  value={values.discord ?? ""}
+                  onChange={(e) => set("discord", e.target.value)}
+                  className={field}
+                  placeholder="https://discord.gg/…"
+                />
+              </div>
+
+              <label className="mt-1 flex items-center gap-1.5 text-[10px] text-zinc-400">
+                <input
+                  type="checkbox"
+                  checked={!!values.published}
+                  onChange={(e) => set("published", e.target.checked)}
+                  className="h-3 w-3 rounded border-white/20"
+                />
+                Publish in directory
+              </label>
+
+              {error && (
+                <div className="rounded-md border border-rose-400/30 bg-rose-950/25 px-2.5 py-1.5 text-[10px] text-rose-200 sm:text-[11px]">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2 pt-0.5">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="rounded-md bg-white px-2.5 py-1 text-[10px] font-medium text-black disabled:opacity-60 sm:px-2.5"
+                >
+                  {submitting ? "Saving…" : "Create listing"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard")}
+                  className="rounded-md border border-white/15 px-2.5 py-1 text-[10px] text-zinc-400"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </form>
 
       <aside className="lg:col-span-3">

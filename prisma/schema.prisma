@@ -21,7 +21,11 @@ model User {
 
   /// Public Solana wallet address (Pump.fun) after connecting
   wallet        String?
-  projects      Project[]
+  /// Numeric Telegram user id (from @FarmLabs bot /start) — used to remove from groups when access expires
+  telegramUserId   String?   @unique
+  projects         Project[]
+  telegramLinkTokens TelegramLinkToken[]
+  telegramSetGroupTokens TelegramSetGroupToken[]
   escrowBuys    EscrowOrder[] @relation("BuyerOrders")
   escrowSales   EscrowOrder[] @relation("SellerOrders")
   reportsFiled  ProjectReport[] @relation("ReportsFiled")
@@ -88,10 +92,41 @@ model Project {
   userId         String
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   published      Boolean  @default(false)
+  /// Public /p/[slug] page views (increments once per request; owner visits excluded in app)
+  viewCount      Int      @default(0)
+  /// Supergroup id (e.g. -1001234567890) for the VIP Telegram group — set by listing owner for auto-kick bot
+  telegramGroupChatId  String?
+  /// Group display name (from Telegram) when @FarmLabs bot sets chat id — for dashboard display; not edited in form
+  telegramGroupTitle   String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   escrowOrders   EscrowOrder[]
   reports        ProjectReport[]
+  /// Multiple access tiers (e.g. 1 week vs 1 month). Currency is shared on Project (priceCurrency).
+  priceOptions   ProjectPriceOption[]
+  telegramSetGroupTokens TelegramSetGroupToken[]
+}
+
+/// One purchasable tier: label + amount; uses parent project `priceCurrency` (USDC or SOL).
+model ProjectPriceOption {
+  id            String  @id @default(cuid())
+  projectId     String
+  /// e.g. "1 week", "1 month", "Season pass"
+  label         String
+  priceAmount   Float
+  sortOrder     Int     @default(0)
+  /// Tier-specific invite (optional; falls back to project.telegram)
+  telegramUrl   String?
+  /// Tier-specific invite (optional; falls back to project.discord)
+  discordUrl    String?
+  /// Access length for this tier; null/0 = no auto-expiry (bots can treat as lifetime)
+  accessDurationDays Int?
+  /// Discord role ID (snowflake) for your bot to grant after payment
+  discordRoleId String?
+  project       Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  escrowOrders  EscrowOrder[]
+
+  @@index([projectId])
 }
 
 model EscrowOrder {
@@ -102,8 +137,26 @@ model EscrowOrder {
   amount      Float
   /// USDC | SOL
   currency    String
-  status      String   @default("FUNDED")
+  /// AWAITING_DEPOSIT | DEPOSIT_CONFIRMED | SETTLED | FAILED | RELEASED (legacy), optional USDC placeholder
+  status      String   @default("AWAITING_DEPOSIT")
+  /// Ephemeral order escrow: receive buyer funds here (SOL) before split to platform + seller
+  escrowPublicKey  String?
+  /// Base64 64-byte secret key — development only; encrypt at rest in production
+  escrowPrivateKey String?
+  /// Buyer payment tx signature (Solana) once confirmed on chain
+  buyerPaymentSignature  String?
+  /// Settlement (escrow -> platform fee + seller) tx signature
+  settlementSignature   String?
   note        String?
+  /// If buyer chose a price tier, references it (optional for legacy single-price orders).
+  priceOptionId     String?
+  priceOptionLabel  String?
+  /// When paid access ends (from tier `accessDurationDays` at settlement); null = no expiry
+  accessExpiresAt   DateTime?
+  /// Snapshot at SETTLED for links/role if the tier row is edited later
+  grantedTelegramUrl   String?
+  grantedDiscordUrl    String?
+  grantedDiscordRoleId String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   releasedAt  DateTime?
@@ -111,6 +164,7 @@ model EscrowOrder {
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   buyer       User     @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
   seller      User     @relation("SellerOrders", fields: [sellerId], references: [id], onDelete: Cascade)
+  priceOption ProjectPriceOption? @relation(fields: [priceOptionId], references: [id], onDelete: SetNull)
   review      EscrowReview?
 }
 
@@ -120,7 +174,12 @@ model EscrowReview {
   escrowOrderId String   @unique
   rating        Int
   comment       String   @default("")
+  /// Public URL: `/uploads/reviews/...` (optional photo with review)
+  imageUrl      String?
   createdAt     DateTime @default(now())
+  /// One public reply from the listing operator
+  sellerReply   String   @default("")
+  sellerRepliedAt DateTime?
   order         EscrowOrder @relation(fields: [escrowOrderId], references: [id], onDelete: Cascade)
 }
 
@@ -140,5 +199,48 @@ model ProjectReport {
   @@unique([projectId, reporterId])
   @@index([projectId])
   @@index([reporterId])
+}
+
+/// One-time deep-link payload for /start?start=link_… to bind Telegram ↔ FarmLabs user
+model TelegramLinkToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// One-time /setgroup <token> in a Telegram group to set Project.telegramGroupChatId
+model TelegramSetGroupToken {
+  id         String   @id @default(cuid())
+  token      String   @unique
+  userId     String
+  projectId  String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([token])
+}
+
+/// After user opens t.me/…?start=setgroup_<token> in the bot, they can run /setgroup in the group without pasting the token.
+model TelegramSetGroupSession {
+  id              String   @id @default(cuid())
+  /// Telegram user id of whoever opened the deep link (String for bigint ids)
+  telegramUserId  String   @unique
+  token           String
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+
+  @@index([token])
+  @@index([expiresAt])
 }
 

@@ -3,7 +3,12 @@ import { escrowEligible, formatEscrowAmountLabel, formatListingPrice, resolvePri
 import { prisma } from "@/lib/prisma";
 import { redactVipSocialLinks } from "@/lib/redact-vip-text";
 import { isPaidVipListing } from "@/lib/vip-link-access";
-import { fetchEscrowUnlockedProjectIds, resolveVipViewForProject } from "@/lib/viewer-listing-access";
+import {
+  fetchActiveEscrowAccessForProject,
+  fetchEscrowUnlockedProjectIds,
+  resolveVipViewForProject,
+} from "@/lib/viewer-listing-access";
+import { CommunityReviewsSection } from "@/components/community-reviews";
 import { ReportListingButton } from "@/components/dashboard/report-listing-button";
 import { EscrowBuyButton } from "@/components/escrow-buy-button";
 import type { Metadata } from "next";
@@ -13,6 +18,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ListingGallery } from "@/components/listing-gallery";
 import { parseDetailImagesJson } from "@/lib/project-detail-images";
+
+function strOrEmpty(s: string | null | undefined): string | null {
+  if (s == null) return null;
+  const t = s.trim();
+  return t.length > 0 ? t : null;
+}
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -48,36 +59,156 @@ export default async function ProjectPage({ params }: Props) {
           },
         },
       },
+      priceOptions: { orderBy: { sortOrder: "asc" } },
     },
   });
   if (!p || !p.published) notFound();
 
   const session = await auth();
   const viewerId = session?.user?.id;
+  /** One view per page load; skip operator so analytics stay buyer-focused. */
+  if (viewerId == null || viewerId !== p.userId) {
+    /** Raw SQL: works if Prisma Client is stale (e.g. `viewCount` not in DMMF) or generate failed (EPERM on Windows). */
+    void prisma
+      .$executeRawUnsafe(
+        `UPDATE "Project" SET "viewCount" = COALESCE("viewCount", 0) + 1 WHERE "id" = ?`,
+        p.id,
+      )
+      .catch(() => {});
+  }
+
   const unlocked = await fetchEscrowUnlockedProjectIds(viewerId, [p.id]);
   const { isOwner, maskVipLinks, redactVipText } = resolveVipViewForProject(
     p,
     viewerId,
     unlocked,
+    p.priceOptions,
   );
+  const accessRow =
+    viewerId && unlocked.has(p.id) ? await fetchActiveEscrowAccessForProject(viewerId, p.id) : null;
   const aboutText = redactVipText && p.description ? redactVipSocialLinks(p.description) : p.description;
   const shortPitchText = redactVipText && p.shortPitch ? redactVipSocialLinks(p.shortPitch) : p.shortPitch;
   const rulesText = redactVipText && p.rules ? redactVipSocialLinks(p.rules) : p.rules;
   const policyText = redactVipText && p.deliveryPolicy ? redactVipSocialLinks(p.deliveryPolicy) : p.deliveryPolicy;
 
+  const grantedSnapTg = strOrEmpty(accessRow?.grantedTelegramUrl);
+  const grantedSnapDc = strOrEmpty(accessRow?.grantedDiscordUrl);
+  /** Tier on this order (relation) or same id on the listing (if relation is missing / stale). */
+  const tierRowFromListing =
+    accessRow?.priceOptionId != null
+      ? p.priceOptions?.find((o) => o.id === accessRow.priceOptionId) ?? null
+      : null;
+  const tierTg =
+    strOrEmpty(accessRow?.priceOption?.telegramUrl) ?? strOrEmpty(tierRowFromListing?.telegramUrl);
+  const tierDc =
+    strOrEmpty(accessRow?.priceOption?.discordUrl) ?? strOrEmpty(tierRowFromListing?.discordUrl);
+  const fromProjectTg = strOrEmpty(p.telegram);
+  const fromProjectDc = strOrEmpty(p.discord);
+  /**
+   * Tier purchase: snapshot → that tier’s invites → then listing-wide defaults.
+   * No tier: snapshot → project links.
+   */
+  const effectiveTg = accessRow?.priceOptionId
+    ? (grantedSnapTg ?? tierTg ?? fromProjectTg)
+    : (grantedSnapTg ?? fromProjectTg);
+  const effectiveDc = accessRow?.priceOptionId
+    ? (grantedSnapDc ?? tierDc ?? fromProjectDc)
+    : (grantedSnapDc ?? fromProjectDc);
   const links = [
-    { label: "Telegram", href: p.telegram },
-    { label: "Discord", href: p.discord },
-  ].filter((x) => x.href);
+    { label: "Telegram" as const, href: effectiveTg },
+    { label: "Discord" as const, href: effectiveDc },
+  ].filter((x): x is { label: "Telegram" | "Discord"; href: string } => Boolean(x.href));
   const typeLabel = p.groupType === "PUBLIC" ? "Public" : "Private";
   const accessLabel = p.accessType === "PAID" ? "VIP" : "Open";
   const showPriceRow = p.groupType !== "PUBLIC";
-  const canEscrow = escrowEligible(p);
+  const priceOpts = p.priceOptions?.filter((o) => o.priceAmount > 0) ?? [];
+  const offersTelegram =
+    Boolean(p.telegram?.trim()) || priceOpts.some((o) => (o.telegramUrl?.trim() ?? "").length > 0);
+  const offersDiscord =
+    Boolean(p.discord?.trim()) || priceOpts.some((o) => (o.discordUrl?.trim() ?? "").length > 0);
+  const hasLinkOffers = offersTelegram || offersDiscord;
+  const canEscrow = escrowEligible(p, priceOpts);
+  const hasBoughtAccess = Boolean(viewerId && unlocked.has(p.id));
+  const minEscrowAmount =
+    priceOpts.length > 0 ? Math.min(...priceOpts.map((o) => o.priceAmount)) : p.priceAmount ?? 0;
   const escrowLabel =
-    canEscrow && p.priceAmount != null
-      ? formatEscrowAmountLabel(p.priceAmount, resolvePriceCurrency(p.priceCurrency))
+    canEscrow && minEscrowAmount > 0
+      ? formatEscrowAmountLabel(minEscrowAmount, resolvePriceCurrency(p.priceCurrency))
       : null;
+  const showSidebarInviteLinks = hasBoughtAccess && Boolean(effectiveTg || effectiveDc);
+  const showPaidNoLinksNote = hasBoughtAccess && !effectiveTg && !effectiveDc;
   const detailImages = parseDetailImagesJson(p.detailImages);
+
+  const [reviewAgg, reviewRows] = await Promise.all([
+    prisma.escrowReview.aggregate({
+      where: { order: { projectId: p.id } },
+      _avg: { rating: true },
+      _count: { _all: true },
+    }),
+    prisma.escrowReview.findMany({
+      where: { order: { projectId: p.id } },
+      orderBy: { createdAt: "desc" },
+      take: 30,
+      include: {
+        order: {
+          select: {
+            buyer: {
+              select: {
+                name: true,
+                image: true,
+                xHandle: true,
+                accounts: {
+                  where: { provider: "twitter" },
+                  take: 1,
+                  select: { providerAccountId: true },
+                },
+              },
+            },
+            seller: {
+              select: {
+                name: true,
+                image: true,
+                xHandle: true,
+                accounts: {
+                  where: { provider: "twitter" },
+                  take: 1,
+                  select: { providerAccountId: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    }),
+  ]);
+
+  const communityReviewItems = reviewRows.map((r) => {
+    const buyer = r.order.buyer;
+    const seller = r.order.seller;
+    return {
+      id: r.id,
+      rating: r.rating,
+      comment: r.comment,
+      imageUrl: r.imageUrl,
+      createdAt: r.createdAt.toISOString(),
+      sellerReply: r.sellerReply,
+      sellerRepliedAt: r.sellerRepliedAt?.toISOString() ?? null,
+      buyer: {
+        name: buyer.name,
+        image: buyer.image,
+        xHandle: buyer.xHandle,
+        xUserId: buyer.accounts[0]?.providerAccountId ?? null,
+      },
+      operator: {
+        name: seller.name,
+        image: seller.image,
+        xHandle: seller.xHandle,
+        xUserId: seller.accounts[0]?.providerAccountId ?? null,
+      },
+    };
+  });
+  const reviewAverage = reviewAgg._avg.rating ?? 0;
+  const reviewCount = reviewAgg._count._all;
 
   return (
     <article className="app-container isolate py-5 sm:py-6">
@@ -158,7 +289,7 @@ export default async function ProjectPage({ params }: Props) {
             </section>
           )}
 
-          {(p.description?.trim() || links.length > 0) && (
+          {(p.description?.trim() || links.length > 0 || (maskVipLinks && isPaidVipListing(p) && hasLinkOffers)) && (
             <section className="shrink-0 overflow-hidden rounded-xl border border-white/10 bg-zinc-950/90">
               {p.description?.trim() ? (
                 <>
@@ -176,22 +307,29 @@ export default async function ProjectPage({ params }: Props) {
                   </div>
                 </>
               ) : null}
-              {links.length > 0 && (
+              {(links.length > 0 || (maskVipLinks && isPaidVipListing(p) && hasLinkOffers)) && (
                 <div
                   className={`px-3.5 py-3 sm:px-4 sm:py-3.5 ${p.description?.trim() ? "border-t border-white/10" : ""}`}
                 >
                   {maskVipLinks ? (
                     <div className="space-y-2">
                       <p className="text-[10px] leading-relaxed text-amber-200/90 sm:text-[11px]">
-                        VIP: Telegram, X, and Discord links are hidden until you complete escrow checkout. After
-                        payment, they appear here.
+                        Community links on Telegram and Discord are hidden until you join. They appear here after
+                        that.
                       </p>
                       <div className="flex flex-wrap gap-1.5">
-                        {links.map((l) => (
+                        {[
+                          ...(offersTelegram
+                            ? [{ label: "Telegram" as const, href: null as string | null }]
+                            : []),
+                          ...(offersDiscord
+                            ? [{ label: "Discord" as const, href: null as string | null }]
+                            : []),
+                        ].map((l) => (
                           <span
                             key={l.label}
                             className="inline-flex items-center gap-1 rounded-md border border-amber-500/20 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200/80"
-                            title="Unlock with escrow"
+                            title="After you join"
                           >
                             {l.label}
                             <span className="text-amber-200/50">· locked</span>
@@ -200,18 +338,38 @@ export default async function ProjectPage({ params }: Props) {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-wrap gap-1.5">
-                      {links.map((l) => (
-                        <a
-                          key={l.label}
-                          href={l.href!}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="rounded-md border border-white/12 px-2 py-1 text-[10px] text-zinc-300 transition hover:border-white/25 hover:text-white"
-                        >
-                          {l.label}
-                        </a>
-                      ))}
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-1.5">
+                        {links.map((l) => (
+                          <a
+                            key={l.label}
+                            href={l.href!}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-md border border-white/12 px-2 py-1 text-[10px] text-zinc-300 transition hover:border-white/25 hover:text-white"
+                          >
+                            {l.label}
+                          </a>
+                        ))}
+                      </div>
+                      {accessRow?.accessExpiresAt ? (
+                        <p className="text-[9px] text-zinc-500" suppressHydrationWarning>
+                          Access active until{" "}
+                          {new Date(accessRow.accessExpiresAt).toLocaleString("en-US", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
+                          {accessRow.priceOptionLabel ? ` · ${accessRow.priceOptionLabel}` : ""}
+                        </p>
+                      ) : null}
+                      {accessRow?.grantedDiscordRoleId ? (
+                        <p className="text-[9px] leading-relaxed text-zinc-500">
+                          Discord role ID for this purchase (for the server bot):{" "}
+                          <code className="rounded border border-white/10 bg-zinc-900/80 px-1 py-0.5 text-[8px] text-zinc-400">
+                            {accessRow.grantedDiscordRoleId}
+                          </code>
+                        </p>
+                      ) : null}
                     </div>
                   )}
                 </div>
@@ -240,6 +398,12 @@ export default async function ProjectPage({ params }: Props) {
               </div>
             </section>
           ) : null}
+
+          <CommunityReviewsSection
+            items={communityReviewItems}
+            averageRating={reviewAverage}
+            count={reviewCount}
+          />
         </div>
 
         <aside className="min-w-0 lg:col-span-4">
@@ -260,7 +424,7 @@ export default async function ProjectPage({ params }: Props) {
                 {showPriceRow && (
                   <div className="flex items-center justify-between gap-2 py-2">
                     <dt className="text-zinc-500">Price</dt>
-                    <dd className="font-medium text-zinc-200">{formatListingPrice(p)}</dd>
+                    <dd className="font-medium text-zinc-200">{formatListingPrice(p, p.priceOptions)}</dd>
                   </div>
                 )}
                 {p.category && (
@@ -275,19 +439,79 @@ export default async function ProjectPage({ params }: Props) {
             {canEscrow ? (
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-950/20 px-3.5 py-3 sm:px-4 sm:py-3.5">
                 <h3 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-400/90">
-                  Escrow checkout
+                  Join communities
                 </h3>
-                <p className="mt-2 text-[10px] leading-relaxed text-zinc-400 sm:text-[11px]">
-                  {escrowLabel
-                    ? `Pay ${escrowLabel} via escrow (MVP: order recorded; on-chain transfer not enforced in this build).`
-                    : "Pay with escrow. Order is recorded for this demo; connect a wallet to complete the flow."}
-                </p>
-                <div className="mt-3">
-                  <EscrowBuyButton
-                    projectId={p.id}
-                    amountLabel={escrowLabel ?? undefined}
-                  />
-                </div>
+                {showSidebarInviteLinks ? (
+                  <div className="mt-2.5 space-y-2.5 text-[10px]">
+                    <p className="text-emerald-200/90">You’re in — use your invites below.</p>
+                    <p className="text-[9px] text-zinc-500">
+                      <Link
+                        href="/dashboard?activity=purchases"
+                        className="text-cyan-400/90 underline-offset-2 hover:underline"
+                      >
+                        View purchase &amp; saved links in dashboard
+                      </Link>{" "}
+                      — they stay here after refresh.
+                    </p>
+                    <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:gap-2">
+                      {effectiveTg ? (
+                        <a
+                          href={effectiveTg}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex w-full items-center justify-center rounded-md border border-white/15 bg-white/10 px-2.5 py-2 text-[10px] font-medium text-white transition hover:border-white/25 sm:w-auto"
+                        >
+                          Open Telegram
+                        </a>
+                      ) : null}
+                      {effectiveDc ? (
+                        <a
+                          href={effectiveDc}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex w-full items-center justify-center rounded-md border border-indigo-500/30 bg-indigo-950/40 px-2.5 py-2 text-[10px] font-medium text-indigo-100 transition hover:border-indigo-400/50 sm:w-auto"
+                        >
+                          Open Discord
+                        </a>
+                      ) : null}
+                    </div>
+                    {accessRow?.accessExpiresAt ? (
+                      <p className="text-[9px] text-zinc-500" suppressHydrationWarning>
+                        Access through{" "}
+                        {new Date(accessRow.accessExpiresAt).toLocaleString("en-US", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                        {accessRow.priceOptionLabel ? ` · ${accessRow.priceOptionLabel}` : ""}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : showPaidNoLinksNote ? (
+                  <p className="mt-2.5 text-[9px] text-zinc-500">
+                    No invite link stored for this purchase — ask the host to add one in the dashboard.
+                  </p>
+                ) : (
+                  <>
+                    {!escrowLabel && (
+                      <p className="mt-2 text-[10px] leading-relaxed text-zinc-400 sm:text-[11px]">
+                        Connect a wallet to continue.
+                      </p>
+                    )}
+                    <div className="mt-3">
+                      <EscrowBuyButton
+                        key={p.id}
+                        projectId={p.id}
+                        amountLabel={escrowLabel ?? undefined}
+                        priceCurrency={p.priceCurrency}
+                        priceOptions={priceOpts.map((o) => ({
+                          id: o.id,
+                          label: o.label,
+                          priceAmount: o.priceAmount,
+                        }))}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <div className="rounded-xl border border-white/10 bg-zinc-900/40 px-3.5 py-3 text-[10px] leading-relaxed text-zinc-500 sm:px-4 sm:py-3.5 sm:text-[11px]">

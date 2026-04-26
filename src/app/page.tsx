@@ -6,6 +6,7 @@ import {
   fetchEscrowUnlockedProjectIds,
   resolveVipViewForProject,
 } from "@/lib/viewer-listing-access";
+import { TrustedByMarquee } from "@/components/trusted-by-marquee";
 import Link from "next/link";
 import { Metadata } from "next";
 
@@ -34,6 +35,10 @@ export default async function Home() {
           },
         },
       },
+      priceOptions: {
+        orderBy: { sortOrder: "asc" },
+        select: { priceAmount: true, id: true, label: true, telegramUrl: true, discordUrl: true },
+      },
     },
   });
   const session = await auth();
@@ -43,7 +48,7 @@ export default async function Home() {
     rawItems.map((p) => p.id),
   );
   const items = rawItems.map((p) => {
-    const state = resolveVipViewForProject(p, viewerId, unlocked);
+    const state = resolveVipViewForProject(p, viewerId, unlocked, p.priceOptions);
     return applyVipMaskToProject(p, {
       redactVipText: state.redactVipText,
       maskVipLinks: state.maskVipLinks,
@@ -81,17 +86,7 @@ export default async function Home() {
             </div>
           </div>
 
-          <div className="border-y border-white/10 bg-white/[0.02] py-2">
-            <p className="text-center text-[10px] uppercase tracking-[0.22em] text-zinc-500">Trusted by degen call operators</p>
-            <div className="mt-2 grid grid-cols-2 gap-2 text-center text-xs text-zinc-300 sm:grid-cols-6">
-              <span className="rounded border border-white/10 bg-black/20 px-2 py-1.5">MEME LABS</span>
-              <span className="rounded border border-white/10 bg-black/20 px-2 py-1.5">ALPHA DAO</span>
-              <span className="rounded border border-white/10 bg-black/20 px-2 py-1.5">SOL CREW</span>
-              <span className="rounded border border-white/10 bg-black/20 px-2 py-1.5">DEGEN HUB</span>
-              <span className="rounded border border-white/10 bg-black/20 px-2 py-1.5">MINT CLUB</span>
-              <span className="rounded border border-white/10 bg-black/20 px-2 py-1.5">ONCHAIN X</span>
-            </div>
-          </div>
+          <TrustedByMarquee />
 
           <div className="grid grid-cols-2 divide-x divide-y divide-white/10 bg-black/40 text-center sm:grid-cols-4 sm:divide-y-0">
             <div className="px-3 py-4">

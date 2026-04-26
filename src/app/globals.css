@@ -45,3 +45,28 @@ input[type="search"]::-webkit-search-results-decoration {
     @apply mx-auto w-full max-w-[1600px] px-4 sm:px-5;
   }
 }
+
+/* Infinite partner logo row (home) */
+@keyframes trusted-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.trusted-marquee-track {
+  animation: trusted-marquee 32s linear infinite;
+  will-change: transform;
+}
+
+.trusted-marquee-wrap:hover .trusted-marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trusted-marquee-track {
+    animation: none;
+  }
+}

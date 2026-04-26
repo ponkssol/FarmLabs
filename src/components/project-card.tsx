@@ -9,10 +9,17 @@ type T = Project & {
   user: Pick<User, "name" | "image" | "wallet" | "xHandle"> & {
     accounts?: { providerAccountId: string }[];
   };
+  priceOptions?: { priceAmount: number; telegramUrl?: string | null; discordUrl?: string | null }[];
 };
 
 export function ProjectCard({ project, compact = false }: { project: T; compact?: boolean }) {
-  const priceLabel = formatListingPrice(project);
+  const priceLabel = formatListingPrice(project, project.priceOptions);
+  const hasTierTg = project.priceOptions?.some((o) => o.telegramUrl?.trim());
+  const hasTierDc = project.priceOptions?.some((o) => o.discordUrl?.trim());
+  const showPlatforms =
+    project.telegram?.trim() || project.discord?.trim() || hasTierTg || hasTierDc;
+  const platformTelegram = project.telegram?.trim() || (hasTierTg ? "1" : "");
+  const platformDiscord = project.discord?.trim() || (hasTierDc ? "1" : "");
   const typeLabel = project.groupType === "PUBLIC" ? "Public Call" : "Private Call";
   const accessLabel = project.accessType === "PAID" ? "VIP" : "Open";
 
@@ -53,9 +60,9 @@ export function ProjectCard({ project, compact = false }: { project: T; compact?
         <span className="rounded-full border border-white/10 px-2 py-1 text-zinc-400">{typeLabel}</span>
         <span className="rounded-full border border-white/10 px-2 py-1 text-zinc-400">{accessLabel}</span>
         <span className="rounded-full border border-white/10 px-2 py-1 text-zinc-300">{priceLabel}</span>
-        {(project.telegram?.trim() || project.discord?.trim()) && (
+        {showPlatforms && (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2 py-1">
-            <PlatformIcons telegram={project.telegram} discord={project.discord} />
+            <PlatformIcons telegram={platformTelegram} discord={platformDiscord} />
           </span>
         )}
         {project.category && <span className="rounded-full border border-white/10 px-2 py-1 text-zinc-400">{project.category}</span>}
