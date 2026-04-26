@@ -1,5 +1,6 @@
 ﻿import { auth } from "@/auth";
 import { PlatformIcons } from "@/components/platform-icons";
+import { XUsername } from "@/components/x-username";
 import { formatListingPrice } from "@/lib/listing-price";
 import { prisma } from "@/lib/prisma";
 import {
@@ -9,6 +10,7 @@ import {
 } from "@/lib/viewer-listing-access";
 import type { Prisma } from "@prisma/client";
 import { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -16,7 +18,7 @@ export const metadata: Metadata = {
 };
 
 type SortKey = "newest" | "oldest" | "price_asc" | "price_desc";
-type PlatformKey = "ALL" | "TELEGRAM" | "DISCORD" | "X";
+type PlatformKey = "ALL" | "TELEGRAM" | "DISCORD";
 type TypeKey = "ALL" | "PUBLIC" | "PRIVATE";
 type AccessKey = "ALL" | "FREE" | "PAID";
 
@@ -58,9 +60,7 @@ export default async function ExplorePage({ searchParams }: Props) {
       ? { telegram: { not: null } }
       : platform === "DISCORD"
         ? { discord: { not: null } }
-        : platform === "X"
-          ? { xCommunity: { not: null } }
-          : {};
+        : {};
 
   const typeFilter =
     type === "PUBLIC" ? { groupType: "PUBLIC" } : type === "PRIVATE" ? { groupType: "PRIVATE" } : {};
@@ -122,7 +122,21 @@ export default async function ExplorePage({ searchParams }: Props) {
       where,
       orderBy,
       take: 48,
-      include: { user: { select: { name: true, image: true, wallet: true } } },
+      include: {
+        user: {
+          select: {
+            name: true,
+            image: true,
+            wallet: true,
+            xHandle: true,
+            accounts: {
+              where: { provider: "twitter" },
+              take: 1,
+              select: { providerAccountId: true },
+            },
+          },
+        },
+      },
     }),
     prisma.project.count({ where }),
   ]);
@@ -140,8 +154,13 @@ export default async function ExplorePage({ searchParams }: Props) {
       maskVipLinks: state.maskVipLinks,
     });
   });
+  const platformById = new Map(
+    rawItems.map((p) => [p.id, { telegram: p.telegram, discord: p.discord }]),
+  );
 
   const groupInitial = (title: string) => title.trim().charAt(0).toUpperCase() || "C";
+  const userInitial = (name: string | null | undefined) =>
+    (name?.trim() || "?").charAt(0).toUpperCase() || "?";
 
   return (
     <div className="app-container py-4 sm:py-5">
@@ -153,7 +172,7 @@ export default async function ExplorePage({ searchParams }: Props) {
           </span>
         </div>
         <p className="mt-0.5 text-[10px] leading-snug text-zinc-500 sm:text-[11px]">
-          Public and VIP calls on Telegram, Discord, and X.
+          Public and VIP calls on Telegram and Discord.
         </p>
 
         <form className="mt-2 space-y-1.5" action="/explore" method="get">
@@ -192,7 +211,6 @@ export default async function ExplorePage({ searchParams }: Props) {
               <option value="ALL">Platform</option>
               <option value="TELEGRAM">Telegram</option>
               <option value="DISCORD">Discord</option>
-              <option value="X">X</option>
             </select>
             <select
               name="type"
@@ -253,61 +271,89 @@ export default async function ExplorePage({ searchParams }: Props) {
             <p className="mt-1 text-[10px] text-zinc-600">Try a broader search or clear filters.</p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950/70">
-            <div className="overflow-x-auto">
-              <table className="min-w-full table-fixed text-left text-[11px] sm:text-xs">
-                <thead className="bg-zinc-900/90 text-zinc-500">
-                  <tr className="border-b border-white/10">
-                    <th className="w-[130px] px-3 py-2.5 font-medium">Profile</th>
-                    <th className="w-[360px] px-3 py-2.5 font-medium">Call</th>
-                    <th className="w-[100px] px-3 py-2.5 font-medium text-center">Platform</th>
-                    <th className="w-[130px] px-3 py-2.5 font-medium">Type</th>
-                    <th className="w-[90px] px-3 py-2.5 font-medium">Access</th>
-                    <th className="w-[90px] px-3 py-2.5 font-medium">Price</th>
-                    <th className="w-[180px] px-3 py-2.5 font-medium">Operator</th>
-                    <th className="w-[90px] px-3 py-2.5 font-medium">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((p) => (
-                    <tr key={p.id} className="border-b border-white/5 text-zinc-300 hover:bg-white/[0.03]">
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-zinc-900 text-[10px] font-semibold text-zinc-200">
-                            {groupInitial(p.title)}
-                          </div>
-                          <span className="text-[10px] text-zinc-500">Group/Channel</span>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6">
+            {items.map((p) => {
+              const platform = platformById.get(p.id) ?? { telegram: p.telegram, discord: p.discord };
+              return (
+                <article
+                  key={p.id}
+                  className="flex h-full flex-col rounded-xl border border-white/10 bg-zinc-950/70 p-2.5 transition hover:border-white/20 hover:bg-zinc-900/70"
+                >
+                  <div className="flex items-start justify-between gap-1.5">
+                    <div className="flex min-w-0 flex-1 items-start gap-2">
+                      {p.communityImage ? (
+                        <div className="relative mt-0.5 h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-white/15 sm:h-11 sm:w-11">
+                          <Image
+                            src={p.communityImage}
+                            alt=""
+                            width={44}
+                            height={44}
+                            unoptimized
+                            className="h-full w-full object-cover"
+                          />
                         </div>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <p className="text-xs font-medium text-zinc-100">{p.title}</p>
-                        <p className="mt-0.5 line-clamp-1 text-[11px] text-zinc-500">{p.shortPitch}</p>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <PlatformIcons telegram={p.telegram} discord={p.discord} xCommunity={p.xCommunity} />
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-zinc-300">{p.groupType === "PUBLIC" ? "Public call" : "Private call"}</td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-zinc-300">{p.accessType === "PAID" ? "VIP" : "Open"}</td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-zinc-300">
-                        {formatListingPrice(p)}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5">
-                        <span className="text-zinc-200">{p.user.name || "Anonymous"}</span>
-                        {p.user.wallet && <span className="ml-2 text-[11px] text-emerald-400">verified</span>}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5">
-                        <Link
-                          href={`/p/${p.slug}`}
-                          className="inline-flex rounded-md border border-white/15 px-2 py-1 text-[10px] text-zinc-200 transition hover:border-white/30 hover:text-white"
+                      ) : (
+                        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-zinc-900 text-[10px] font-semibold text-zinc-200 sm:h-11 sm:w-11 sm:text-[11px]">
+                          {groupInitial(p.title)}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1 pt-1 sm:pt-1.5">
+                        <p className="line-clamp-1 text-[11px] font-medium text-zinc-100">{p.title}</p>
+                        <p className="mt-0.5 line-clamp-1 text-[10px] text-zinc-500">{p.shortPitch}</p>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
+                      <span className="rounded-full border border-white/10 px-1 py-0.5 text-[8px] leading-none text-zinc-400">
+                        {p.accessType === "PAID" ? "VIP" : "Open"}
+                      </span>
+                      <div className="flex justify-end">
+                        <PlatformIcons telegram={platform.telegram} discord={platform.discord} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 flex min-w-0 items-center justify-between gap-2">
+                    <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                      {p.user.image ? (
+                        <Image
+                          src={p.user.image}
+                          alt={p.user.name || "Creator"}
+                          width={20}
+                          height={20}
+                          className="h-5 w-5 shrink-0 rounded-full border border-white/10 object-cover"
+                        />
+                      ) : (
+                        <div
+                          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-zinc-800 text-[8px] font-semibold text-zinc-300"
+                          aria-hidden
                         >
-                          View
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                          {userInitial(p.user.name)}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1 truncate text-[10px] text-zinc-400">
+                        <XUsername
+                          name={p.user.name || "Anonymous"}
+                          xHandle={p.user.xHandle}
+                          xUserId={p.user.accounts?.[0]?.providerAccountId}
+                          className="text-zinc-200"
+                        />
+                        {p.user.wallet && <span className="ml-1 text-emerald-400">verified</span>}
+                      </div>
+                    </div>
+                    <span className="shrink-0 tabular-nums text-[10px] font-medium leading-none text-zinc-200">
+                      {formatListingPrice(p)}
+                    </span>
+                  </div>
+
+                  <Link
+                    href={`/p/${p.slug}`}
+                    className="mt-2 inline-flex w-full items-center justify-center rounded-md border border-white/15 px-2 py-1 text-[9px] text-zinc-200 transition hover:border-white/30 hover:text-white"
+                  >
+                    View detail
+                  </Link>
+                </article>
+              );
+            })}
           </div>
         )}
       </section>

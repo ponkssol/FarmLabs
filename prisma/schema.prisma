@@ -14,6 +14,8 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  /// X handle (no @) — for profile link; set on Twitter sign-in
+  xHandle       String?
   accounts      Account[]
   sessions      Session[]
 
@@ -22,6 +24,7 @@ model User {
   projects      Project[]
   escrowBuys    EscrowOrder[] @relation("BuyerOrders")
   escrowSales   EscrowOrder[] @relation("SellerOrders")
+  reportsFiled  ProjectReport[] @relation("ReportsFiled")
 }
 
 model Account {
@@ -73,7 +76,10 @@ model Project {
   category       String?
   rules          String   @default("")
   deliveryPolicy String   @default("")
-  xCommunity     String?
+  /// Optional community logo for listing cards (`/uploads/...` or public https URL)
+  communityImage String?
+  /// JSON string array: up to 3 image URLs (same rules as communityImage); SQLite — no Prisma Json type
+  detailImages   String?
   telegram       String?
   discord        String?
   launchPlan     String   @default("")
@@ -85,6 +91,7 @@ model Project {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   escrowOrders   EscrowOrder[]
+  reports        ProjectReport[]
 }
 
 model EscrowOrder {
@@ -104,5 +111,34 @@ model EscrowOrder {
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   buyer       User     @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
   seller      User     @relation("SellerOrders", fields: [sellerId], references: [id], onDelete: Cascade)
+  review      EscrowReview?
+}
+
+/// Buyer feedback on a completed escrow (one per order).
+model EscrowReview {
+  id            String   @id @default(cuid())
+  escrowOrderId String   @unique
+  rating        Int
+  comment       String   @default("")
+  createdAt     DateTime @default(now())
+  order         EscrowOrder @relation(fields: [escrowOrderId], references: [id], onDelete: Cascade)
+}
+
+/// User-submitted report about a listing.
+model ProjectReport {
+  id         String   @id @default(cuid())
+  projectId  String
+  reporterId String
+  reason     String
+  message    String?
+  status     String   @default("OPEN")
+  createdAt  DateTime @default(now())
+
+  project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reporter User    @relation("ReportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, reporterId])
+  @@index([projectId])
+  @@index([reporterId])
 }
 

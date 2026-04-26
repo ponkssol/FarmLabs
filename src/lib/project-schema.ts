@@ -4,6 +4,42 @@ export const groupTypeSchema = z.enum(["PUBLIC", "PRIVATE"]);
 export const accessTypeSchema = z.enum(["FREE", "PAID"]);
 export const priceCurrencySchema = z.enum(["USDC", "SOL"]);
 
+function isAllowedImageUrl(v: string) {
+  if (v.includes("..") || v.includes("\0")) return false;
+  if (v.startsWith("/uploads/communities/")) return true;
+  try {
+    const u = new URL(v);
+    return u.protocol === "https:" || u.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+const communityImageSchema = z.preprocess(
+  (v) => (v === "" || v === undefined || v === null ? undefined : v),
+  z
+    .string()
+    .max(500)
+    .optional()
+    .refine(
+      (v) => {
+        if (v == null) return true;
+        return isAllowedImageUrl(v);
+      },
+      { message: "Invalid community image" },
+    ),
+);
+
+const detailImageItemSchema = z
+  .string()
+  .max(500)
+  .refine((v) => isAllowedImageUrl(v), { message: "Invalid detail image" });
+
+const detailImagesSchema = z
+  .array(detailImageItemSchema)
+  .max(3)
+  .default([]);
+
 const optUrl = z.preprocess(
   (v) => (v === "" || v === undefined || v === null ? undefined : v),
   z
@@ -38,7 +74,12 @@ export const projectFormSchema = z.object({
   category: z.string().max(80).optional().or(z.literal("")),
   rules: z.string().min(10).max(20_000),
   deliveryPolicy: z.string().min(10).max(20_000),
-  xCommunity: optUrl,
+  communityImage: communityImageSchema,
+  /** Community / product detail images (max 3), same path rules as communityImage */
+  detailImages: z.preprocess(
+    (v) => (v === undefined || v === null || !Array.isArray(v) ? [] : v),
+    detailImagesSchema,
+  ),
   telegram: optUrl,
   discord: optUrl,
   published: z.boolean().optional(),
@@ -52,11 +93,11 @@ export const projectFormSchema = z.object({
       });
     }
   }
-  if (!value.telegram && !value.discord && !value.xCommunity) {
+  if (!value.telegram && !value.discord) {
     ctx.addIssue({
       code: "custom",
       path: ["telegram"],
-      message: "Add at least one link: Telegram, Discord, or X community",
+      message: "Add at least one link: Telegram or Discord",
     });
   }
 });
@@ -73,6 +114,7 @@ export function normalizeProjectForm(input: ProjectForm) {
   const access = isPublic ? "FREE" : input.accessType;
   const isPaid = access === "PAID" && !isPublic;
   const currency: "USDC" | "SOL" = input.priceCurrency === "SOL" ? "SOL" : "USDC";
+  const detailImages = (input.detailImages ?? []).filter(Boolean).slice(0, 3);
   return {
     ...input,
     accessType: access,
@@ -80,7 +122,8 @@ export function normalizeProjectForm(input: ProjectForm) {
     priceAmount: isPaid ? input.priceAmount : undefined,
     priceCurrency: isPaid ? currency : undefined,
     category: emptyToNull(input.category),
-    xCommunity: emptyToNull(input.xCommunity),
+    communityImage: emptyToNull(input.communityImage),
+    detailImages,
     telegram: emptyToNull(input.telegram),
     discord: emptyToNull(input.discord),
     description: (input.description ?? "").trim(),

@@ -19,7 +19,7 @@ export async function fetchEscrowUnlockedProjectIds(
 }
 
 export function resolveVipViewForProject(
-  p: Pick<Project, "id" | "userId" | "accessType" | "telegram" | "discord" | "xCommunity">,
+  p: Pick<Project, "id" | "userId" | "accessType" | "telegram" | "discord">,
   viewerId: string | undefined,
   unlockedProjectIds: Set<string>,
 ) {
@@ -48,6 +48,6 @@ export function applyVipMaskToProject<T extends Project>(
     ...(state.redactVipText && "shortPitch" in p && p.shortPitch
       ? { shortPitch: redactVipSocialLinks(p.shortPitch) }
       : {}),
-    ...(state.maskVipLinks ? { telegram: null, discord: null, xCommunity: null } : {}),
+    ...(state.maskVipLinks ? { telegram: null, discord: null } : {}),
   } as T;
 }

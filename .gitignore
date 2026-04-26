@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# user-uploaded community logos (not committed; folder kept via .gitkeep)
+public/uploads/communities/*
+!public/uploads/communities/.gitkeep
+
 # sqlite lokal
 *.db
 *.db-journal

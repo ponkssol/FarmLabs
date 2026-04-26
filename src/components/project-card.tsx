@@ -1,10 +1,15 @@
 ﻿import { PlatformIcons } from "@/components/platform-icons";
+import { XUsername } from "@/components/x-username";
 import { formatListingPrice } from "@/lib/listing-price";
 import type { Project, User } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
 
-type T = Project & { user: Pick<User, "name" | "image" | "wallet"> };
+type T = Project & {
+  user: Pick<User, "name" | "image" | "wallet" | "xHandle"> & {
+    accounts?: { providerAccountId: string }[];
+  };
+};
 
 export function ProjectCard({ project, compact = false }: { project: T; compact?: boolean }) {
   const priceLabel = formatListingPrice(project);
@@ -16,8 +21,22 @@ export function ProjectCard({ project, compact = false }: { project: T; compact?
       href={`/p/${project.slug}`}
       className="group block h-full rounded-xl border border-white/10 bg-gradient-to-b from-zinc-950 to-zinc-900 p-4 transition hover:-translate-y-0.5 hover:border-white/20"
     >
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="text-sm font-semibold tracking-tight text-white sm:text-base">{project.title}</h3>
+      <div className="flex items-start justify-between gap-2.5 sm:gap-3">
+        <div className="min-w-0 flex flex-1 items-start gap-2.5 sm:gap-3">
+          {project.communityImage ? (
+            <div className="relative mt-0.5 h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-white/10 sm:h-12 sm:w-12">
+              <Image
+                src={project.communityImage}
+                alt=""
+                width={48}
+                height={48}
+                unoptimized
+                className="h-full w-full object-cover"
+              />
+            </div>
+          ) : null}
+          <h3 className="min-w-0 text-sm font-semibold tracking-tight text-white sm:text-base">{project.title}</h3>
+        </div>
         <span className="shrink-0 rounded-full border border-white/10 px-2 py-1 text-[10px] uppercase tracking-widest text-zinc-500">
           {new Date(project.createdAt).toLocaleDateString("en-US", {
             month: "short",
@@ -34,9 +53,9 @@ export function ProjectCard({ project, compact = false }: { project: T; compact?
         <span className="rounded-full border border-white/10 px-2 py-1 text-zinc-400">{typeLabel}</span>
         <span className="rounded-full border border-white/10 px-2 py-1 text-zinc-400">{accessLabel}</span>
         <span className="rounded-full border border-white/10 px-2 py-1 text-zinc-300">{priceLabel}</span>
-        {(project.telegram?.trim() || project.discord?.trim() || project.xCommunity?.trim()) && (
+        {(project.telegram?.trim() || project.discord?.trim()) && (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2 py-1">
-            <PlatformIcons telegram={project.telegram} discord={project.discord} xCommunity={project.xCommunity} />
+            <PlatformIcons telegram={project.telegram} discord={project.discord} />
           </span>
         )}
         {project.category && <span className="rounded-full border border-white/10 px-2 py-1 text-zinc-400">{project.category}</span>}
@@ -55,7 +74,14 @@ export function ProjectCard({ project, compact = false }: { project: T; compact?
           <div className="h-5 w-5 rounded-full border border-white/10 bg-zinc-800" />
         )}
         <span>
-          by <span className="text-zinc-300">{project.user.name || "Anonymous creator"}</span>
+          by{" "}
+          <XUsername
+            name={project.user.name || "Anonymous creator"}
+            xHandle={project.user.xHandle}
+            xUserId={project.user.accounts?.[0]?.providerAccountId}
+            className="text-zinc-300"
+            asNestedInLink
+          />
           {project.user.wallet && <span className="ml-2">- wallet verified</span>}
         </span>
       </div>

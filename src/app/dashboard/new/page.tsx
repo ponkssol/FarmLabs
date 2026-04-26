@@ -15,8 +15,8 @@ export default async function NewProjectPage() {
   return (
     <div className="app-container py-4 sm:py-5">
       <div className="mb-3 sm:mb-4">
-        <h1 className="text-sm font-semibold tracking-tight text-white sm:text-[15px]">New listing</h1>
-        <p className="mt-0.5 text-[10px] leading-snug text-zinc-500 sm:text-[11px]">
+        <h1 className="text-xs font-semibold tracking-tight text-white sm:text-sm">New listing</h1>
+        <p className="mt-0.5 text-[9px] leading-snug text-zinc-500 sm:text-[10px]">
           Form on the left, preview on the right. Same width and type scale as the rest of the app.
         </p>
       </div>

@@ -18,9 +18,23 @@ export const metadata: Metadata = {
 export default async function Home() {
   const rawItems = await prisma.project.findMany({
     where: { published: true },
-    orderBy: { createdAt: "desc" },
-    take: 6,
-    include: { user: { select: { name: true, image: true, wallet: true } } },
+    take: 10,
+    orderBy: [{ escrowOrders: { _count: "desc" } }, { createdAt: "desc" }],
+    include: {
+      user: {
+        select: {
+          name: true,
+          image: true,
+          wallet: true,
+          xHandle: true,
+          accounts: {
+            where: { provider: "twitter" },
+            take: 1,
+            select: { providerAccountId: true },
+          },
+        },
+      },
+    },
   });
   const session = await auth();
   const viewerId = session?.user?.id;
@@ -34,7 +48,7 @@ export default async function Home() {
       redactVipText: state.redactVipText,
       maskVipLinks: state.maskVipLinks,
     });
-  });
+  }) as (typeof rawItems)[number][];
 
   return (
     <div>
@@ -101,19 +115,22 @@ export default async function Home() {
       </section>
 
       <section className="app-container pb-12 pt-7 sm:pb-14 sm:pt-8">
-        <div className="mb-6 flex items-end justify-between">
-          <h2 className="text-base font-semibold tracking-tight">Latest public calls</h2>
-          <Link href="/explore" className="text-sm text-zinc-500 transition hover:text-zinc-300">
-            View all alpha
+        <div className="mb-2 flex items-end justify-between">
+          <div>
+            <h2 className="text-base font-semibold tracking-tight">Top 10 Community</h2>
+            <p className="mt-1 text-xs text-zinc-500">Ranked by escrow activity on FarmLabs (ties → newest first).</p>
+          </div>
+          <Link href="/explore" className="shrink-0 text-sm text-zinc-500 transition hover:text-zinc-300">
+            View all
           </Link>
         </div>
 
         {items.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-zinc-600">
-            No public calls listed yet.
+            No communities listed yet.
           </div>
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {items.map((p) => (
               <li key={p.id} className="h-full">
                 <ProjectCard project={p} />

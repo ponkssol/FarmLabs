@@ -1,4 +1,5 @@
 ﻿import { auth } from "@/auth";
+import Image from "next/image";
 import Link from "next/link";
 import { HeaderWalletConnect } from "./solana/header-wallet-connect";
 import { SignInOut } from "./sign-in-out";
@@ -10,8 +11,15 @@ export async function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-white/10 bg-black/70 backdrop-blur-xl">
       <div className="app-container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link href="/" className="text-sm font-semibold tracking-tight text-white">
-            Farm<span className="text-zinc-500">Labs</span>
+          <Link href="/" className="inline-flex items-center" aria-label="FarmLabs home">
+            <Image
+              src="/farmlabs-logo.png"
+              alt="FarmLabs"
+              width={180}
+              height={38}
+              priority
+              className="h-8 w-auto sm:h-9"
+            />
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
             <Link href="/explore" className="rounded-md px-3 py-2 text-sm text-zinc-400 transition hover:bg-white/5 hover:text-white">

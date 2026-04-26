@@ -42,7 +42,6 @@ export async function GET(
   if (shouldMaskVipLinks(project)) {
     masked.telegram = null;
     masked.discord = null;
-    masked.xCommunity = null;
   }
   return NextResponse.json(masked);
 }
@@ -87,7 +86,8 @@ export async function PATCH(
       category: data.category ?? null,
       rules: data.rules,
       deliveryPolicy: data.deliveryPolicy,
-      xCommunity: data.xCommunity,
+      communityImage: data.communityImage ?? null,
+      detailImages: data.detailImages.length > 0 ? JSON.stringify(data.detailImages) : null,
       telegram: data.telegram ?? null,
       discord: data.discord,
       published: data.published ?? existing.published,

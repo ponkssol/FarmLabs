@@ -1,0 +1,48 @@
+import { auth } from "@/auth";
+import { randomUUID } from "crypto";
+import { mkdir, writeFile } from "fs/promises";
+import { join } from "path";
+import { NextRequest, NextResponse } from "next/server";
+
+const MAX_BYTES = 2 * 1024 * 1024;
+const BY_TYPE: Record<string, string> = {
+  "image/png": ".png",
+  "image/jpeg": ".jpg",
+  "image/webp": ".webp",
+  "image/gif": ".gif",
+};
+
+export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!session.user.wallet) {
+    return NextResponse.json(
+      { error: "Connect your Solana wallet before uploading." },
+      { status: 403 },
+    );
+  }
+
+  const form = await request.formData();
+  const file = form.get("file");
+  if (!file || !(file instanceof File)) {
+    return NextResponse.json({ error: "File required" }, { status: 400 });
+  }
+  if (file.size > MAX_BYTES) {
+    return NextResponse.json({ error: "Max file size 2MB" }, { status: 400 });
+  }
+  const ext = BY_TYPE[file.type];
+  if (!ext) {
+    return NextResponse.json(
+      { error: "Use PNG, JPEG, WebP, or GIF" },
+      { status: 400 },
+    );
+  }
+  const buf = Buffer.from(await file.arrayBuffer());
+  const name = `${randomUUID()}${ext}`;
+  const dir = join(process.cwd(), "public", "uploads", "communities");
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, name), buf);
+  return NextResponse.json({ url: `/uploads/communities/${name}` } as const);
+}

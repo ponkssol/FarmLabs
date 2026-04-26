@@ -41,7 +41,21 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
       take,
       skip,
-      include: { user: { select: { name: true, image: true, wallet: true } } },
+      include: {
+        user: {
+          select: {
+            name: true,
+            image: true,
+            wallet: true,
+            xHandle: true,
+            accounts: {
+              where: { provider: "twitter" },
+              take: 1,
+              select: { providerAccountId: true },
+            },
+          },
+        },
+      },
     }),
     prisma.project.count({ where }),
   ]);
@@ -74,7 +88,7 @@ export async function GET(request: NextRequest) {
     if (!shouldMaskVipLinks(p)) {
       return { ...p, ...textMasked };
     }
-    return { ...p, ...textMasked, telegram: null, discord: null, xCommunity: null };
+    return { ...p, ...textMasked, telegram: null, discord: null };
   });
 
   return NextResponse.json({ items, total });
@@ -113,7 +127,8 @@ export async function POST(request: Request) {
       category: data.category ?? null,
       rules: data.rules,
       deliveryPolicy: data.deliveryPolicy,
-      xCommunity: data.xCommunity,
+      communityImage: data.communityImage ?? null,
+      detailImages: data.detailImages.length > 0 ? JSON.stringify(data.detailImages) : null,
       telegram: data.telegram ?? null,
       discord: data.discord,
       published: data.published ?? false,

@@ -1,9 +1,9 @@
 import type { Project } from "@prisma/client";
 import type { ReactNode } from "react";
 
-type P = Pick<Project, "telegram" | "discord" | "xCommunity">;
+type P = Pick<Project, "telegram" | "discord">;
 
-const iconClass = "h-4 w-4 text-zinc-400";
+const iconClass = "h-3 w-3 text-zinc-400";
 
 function has(s: string | null | undefined) {
   return Boolean(s?.trim());
@@ -29,38 +29,22 @@ function DiscordGlyph({ className }: { className?: string }) {
   );
 }
 
-function XGlyph({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden fill="currentColor">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  );
-}
-
-const titles: Record<"telegram" | "discord" | "x", string> = {
+const titles: Record<"telegram" | "discord", string> = {
   telegram: "Telegram",
   discord: "Discord",
-  x: "X",
 };
 
 /**
  * Monochrome (zinc) platform icons for listing fields — no URLs.
- * Order: Telegram → X → Discord.
+ * Order: Telegram → Discord.
  */
-export function PlatformIcons({ telegram, discord, xCommunity }: P) {
-  const show: Array<{ key: "telegram" | "discord" | "x"; node: ReactNode; title: string }> = [];
+export function PlatformIcons({ telegram, discord }: P) {
+  const show: Array<{ key: "telegram" | "discord"; node: ReactNode; title: string }> = [];
   if (has(telegram)) {
     show.push({
       key: "telegram",
       title: titles.telegram,
       node: <TelegramGlyph className={iconClass} />,
-    });
-  }
-  if (has(xCommunity)) {
-    show.push({
-      key: "x",
-      title: titles.x,
-      node: <XGlyph className={iconClass} />,
     });
   }
   if (has(discord)) {
@@ -77,7 +61,7 @@ export function PlatformIcons({ telegram, discord, xCommunity }: P) {
 
   return (
     <div
-      className="flex items-center justify-center gap-1.5"
+      className="flex items-center justify-center gap-1"
       role="img"
       aria-label={show.map((s) => s.title).join(", ")}
     >

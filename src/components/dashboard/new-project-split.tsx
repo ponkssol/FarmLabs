@@ -1,6 +1,8 @@
 "use client";
 
+import { ProjectDetailImagesField } from "@/components/project-detail-images-field";
 import { normalizeProjectForm, projectFormSchema, type ProjectForm } from "@/lib/project-schema";
+import { uploadCommunityLogoFile } from "@/lib/upload-community-client";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -16,15 +18,16 @@ const initialValues: ProjectForm = {
   category: "",
   rules: "",
   deliveryPolicy: "",
-  xCommunity: "",
+  communityImage: "",
+  detailImages: [] as string[],
   telegram: "",
   discord: "",
   published: false,
 };
 
 const field =
-  "mt-1 w-full rounded-md border border-white/10 bg-zinc-900 px-2 py-1.5 text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/25 focus:outline-none sm:py-2 sm:text-xs";
-const label = "text-[10px] font-medium uppercase tracking-wide text-zinc-500";
+  "mt-0.5 w-full rounded-md border border-white/10 bg-zinc-900 px-1.5 py-1 text-[10px] leading-snug text-zinc-100 placeholder:text-zinc-600 focus:border-white/25 focus:outline-none sm:px-2 sm:py-1.5 sm:text-[11px]";
+const label = "text-[9px] font-medium uppercase tracking-wide text-zinc-500";
 
 type Props = {
   creatorName: string | null;
@@ -47,16 +50,16 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
   const router = useRouter();
   const [values, setValues] = useState<ProjectForm>(initialValues);
   const [submitting, setSubmitting] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const links = useMemo(
     () =>
       [
         { label: "Telegram", value: values.telegram },
-        { label: "X", value: values.xCommunity },
         { label: "Discord", value: values.discord },
       ].filter((l) => l.value && l.value.trim().length > 0),
-    [values.telegram, values.xCommunity, values.discord],
+    [values.telegram, values.discord],
   );
 
   const set = <K extends keyof ProjectForm>(k: K, v: ProjectForm[K]) => {
@@ -71,6 +74,10 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
 
   const showPrice = values.groupType === "PRIVATE" && values.accessType === "PAID";
   const previewPrice = formatPreviewPrice(values);
+  const titleInitial = useMemo(
+    () => (values.title.trim().charAt(0) || "C").toUpperCase(),
+    [values.title],
+  );
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -79,7 +86,8 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
 
     const parsed = projectFormSchema.safeParse({
       ...values,
-      xCommunity: values.xCommunity || undefined,
+      communityImage: values.communityImage || undefined,
+      detailImages: values.detailImages ?? [],
       discord: values.discord || undefined,
     });
 
@@ -117,8 +125,8 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
       <form onSubmit={onSubmit} className="space-y-3 lg:col-span-7">
         <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950/85">
           <div className="border-b border-white/10 px-3 py-2 sm:px-3.5">
-            <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Call details</h2>
-            <p className="mt-0.5 text-[10px] text-zinc-600 sm:text-[11px]">Form on the left, live preview on the right.</p>
+            <h2 className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Call details</h2>
+            <p className="mt-0.5 text-[9px] text-zinc-600 sm:text-[10px]">Form on the left, live preview on the right.</p>
           </div>
           <div className="space-y-3 p-3 sm:p-3.5">
             <div>
@@ -136,7 +144,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
               <textarea
                 value={values.shortPitch}
                 onChange={(e) => set("shortPitch", e.target.value)}
-                className={`${field} min-h-[72px]`}
+                className={`${field} min-h-[64px]`}
                 placeholder="One line pitch."
               />
             </div>
@@ -146,16 +154,72 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
               <textarea
                 value={values.description}
                 onChange={(e) => set("description", e.target.value)}
-                className={`${field} min-h-[100px] sm:min-h-[120px]`}
+                className={`${field} min-h-[80px] sm:min-h-[88px]`}
                 placeholder="Longer context if you want — you can leave this empty."
               />
             </div>
+            <div>
+              <label className={label}>Community logo</label>
+              <p className="mb-1 text-[9px] text-zinc-600 sm:text-[10px]">PNG, JPEG, WebP, or GIF — max 2MB. Shown on explore cards.</p>
+              <div className="flex flex-wrap items-center gap-2">
+                {values.communityImage ? (
+                  <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-white/10">
+                    <Image
+                      src={values.communityImage}
+                      alt=""
+                      width={44}
+                      height={44}
+                      unoptimized
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : null}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  disabled={logoUploading}
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    e.currentTarget.value = "";
+                    if (!f) return;
+                    setLogoUploading(true);
+                    setError(null);
+                    try {
+                      const url = await uploadCommunityLogoFile(f);
+                      set("communityImage", url);
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : "Upload failed");
+                    } finally {
+                      setLogoUploading(false);
+                    }
+                  }}
+                  className="w-full min-w-0 text-[9px] text-zinc-500 file:me-1.5 file:rounded file:border-0 file:bg-zinc-800 file:px-1.5 file:py-1 file:text-zinc-200"
+                />
+                {values.communityImage ? (
+                  <button
+                    type="button"
+                    onClick={() => set("communityImage", "")}
+                    className="shrink-0 rounded border border-white/15 px-1.5 py-1 text-[9px] text-zinc-500 hover:text-zinc-300"
+                  >
+                    Remove
+                  </button>
+                ) : null}
+                {logoUploading ? <span className="text-[9px] text-zinc-500">…</span> : null}
+              </div>
+            </div>
+            <ProjectDetailImagesField
+              compact
+              images={values.detailImages}
+              onChange={(next) => set("detailImages", next)}
+              helpText="Shots of your product or community. Shown on the listing page."
+              labelClass={label}
+            />
           </div>
         </div>
 
         <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950/85">
           <div className="border-b border-white/10 px-3 py-2 sm:px-3.5">
-            <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Access &amp; price</h2>
+            <h2 className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Access &amp; price</h2>
           </div>
           <div className="grid gap-3 p-3 sm:grid-cols-2 sm:gap-2.5 sm:p-3.5">
             <div>
@@ -174,7 +238,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
               <select
                 value={values.accessType}
                 onChange={(e) => set("accessType", e.target.value as ProjectForm["accessType"])}
-                className={field}
+                className={`${field} disabled:cursor-not-allowed disabled:opacity-45 disabled:ring-0`}
                 disabled={values.groupType === "PUBLIC"}
               >
                 <option value="FREE">Open / free</option>
@@ -182,7 +246,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
               </select>
             </div>
             {values.groupType === "PUBLIC" && (
-              <p className="text-[10px] text-zinc-500 sm:col-span-2">Public listings are free. Price applies to private paid calls only.</p>
+              <p className="text-[9px] text-zinc-500 sm:col-span-2">Public listings are free. Price applies to private paid calls only.</p>
             )}
             {showPrice && (
               <>
@@ -227,7 +291,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
               <textarea
                 value={values.rules}
                 onChange={(e) => set("rules", e.target.value)}
-                className={`${field} min-h-[88px] sm:min-h-[100px]`}
+                className={`${field} min-h-[80px] sm:min-h-[92px]`}
                 placeholder="House rules for the room."
               />
             </div>
@@ -236,7 +300,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
               <textarea
                 value={values.deliveryPolicy}
                 onChange={(e) => set("deliveryPolicy", e.target.value)}
-                className={`${field} min-h-[72px]`}
+                className={`${field} min-h-[64px]`}
                 placeholder="What happens after payment, response time, etc."
               />
             </div>
@@ -245,8 +309,8 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
 
         <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950/85">
           <div className="border-b border-white/10 px-3 py-2 sm:px-3.5">
-            <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Links &amp; publish</h2>
-            <p className="mt-0.5 text-[10px] text-zinc-600">At least one: Telegram, X, or Discord.</p>
+            <h2 className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Links &amp; publish</h2>
+            <p className="mt-0.5 text-[9px] text-zinc-600">At least one: Telegram or Discord.</p>
           </div>
           <div className="space-y-2.5 p-3 sm:p-3.5">
             <div>
@@ -259,15 +323,6 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
               />
             </div>
             <div>
-              <span className={label}>X</span>
-              <input
-                value={values.xCommunity ?? ""}
-                onChange={(e) => set("xCommunity", e.target.value)}
-                className={field}
-                placeholder="https://x.com/…"
-              />
-            </div>
-            <div>
               <span className={label}>Discord</span>
               <input
                 value={values.discord ?? ""}
@@ -277,12 +332,12 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
               />
             </div>
 
-            <label className="mt-1 flex items-center gap-2 text-[11px] text-zinc-400">
+            <label className="mt-1 flex items-center gap-1.5 text-[10px] text-zinc-400">
               <input
                 type="checkbox"
                 checked={!!values.published}
                 onChange={(e) => set("published", e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-white/20"
+                className="h-3 w-3 rounded border-white/20"
               />
               Publish in directory
             </label>
@@ -297,14 +352,14 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="rounded-md bg-white px-2.5 py-1.5 text-[10px] font-medium text-black disabled:opacity-60 sm:px-3 sm:text-xs"
+                className="rounded-md bg-white px-2.5 py-1 text-[10px] font-medium text-black disabled:opacity-60 sm:px-2.5"
               >
                 {submitting ? "Saving…" : "Create listing"}
               </button>
               <button
                 type="button"
                 onClick={() => router.push("/dashboard")}
-                className="rounded-md border border-white/15 px-2.5 py-1.5 text-[10px] text-zinc-400 sm:text-xs"
+                className="rounded-md border border-white/15 px-2.5 py-1 text-[10px] text-zinc-400"
               >
                 Cancel
               </button>
@@ -317,7 +372,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
         <div className="lg:sticky lg:top-20">
           <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950/90">
             <div className="border-b border-white/10 px-3 py-2 sm:px-3.5">
-              <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Preview</h2>
+              <h2 className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Preview</h2>
             </div>
             <div className="p-3 sm:p-3.5">
               <div className="rounded-lg border border-white/10 bg-zinc-900/60 p-3">
@@ -334,17 +389,53 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
                     <div className="h-7 w-7 rounded-full border border-white/10 bg-zinc-800" />
                   )}
                   <div className="min-w-0">
-                    <p className="truncate text-[11px] font-medium text-zinc-200">{creatorName || "Operator"}</p>
-                    <p className="text-[10px] text-zinc-500">{wallet ? "Wallet ok" : "No wallet"}</p>
+                    <p className="truncate text-[10px] font-medium text-zinc-200">{creatorName || "Operator"}</p>
+                    <p className="text-[9px] text-zinc-500">{wallet ? "Wallet ok" : "No wallet"}</p>
                   </div>
                 </div>
 
-                <h3 className="mt-3 text-sm font-semibold text-white">
-                  {values.title || "Untitled"}
-                </h3>
-                <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-500 sm:text-[11px]">
+                <div className="mt-3 flex items-start gap-2.5">
+                  {values.communityImage ? (
+                    <Image
+                      src={values.communityImage}
+                      width={40}
+                      height={40}
+                      unoptimized
+                      className="mt-0.5 h-10 w-10 shrink-0 rounded-lg border border-white/10 object-cover"
+                      alt=""
+                    />
+                  ) : (
+                    <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-zinc-800 text-[10px] font-semibold text-zinc-200">
+                      {titleInitial}
+                    </div>
+                  )}
+                  <h3 className="min-w-0 flex-1 text-xs font-semibold text-white sm:text-sm">
+                    {values.title || "Untitled"}
+                  </h3>
+                </div>
+                <p className="mt-1.5 text-[9px] leading-relaxed text-zinc-500 sm:text-[10px]">
                   {values.shortPitch || "Pitch preview…"}
                 </p>
+
+                {values.detailImages.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {values.detailImages.map((src, i) => (
+                      <div
+                        key={`${src}-${i}`}
+                        className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border border-white/10"
+                      >
+                        <Image
+                          src={src}
+                          alt=""
+                          width={48}
+                          height={48}
+                          unoptimized
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <div className="mt-2.5 flex flex-wrap gap-1">
                   {links.length > 0 ? (
@@ -354,11 +445,11 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
                       </span>
                     ))
                   ) : (
-                    <span className="text-[10px] text-zinc-600">No links yet</span>
+                    <span className="text-[9px] text-zinc-600">No links yet</span>
                   )}
                 </div>
 
-                <dl className="mt-2.5 space-y-1 border-t border-white/10 pt-2.5 text-[10px] text-zinc-500">
+                <dl className="mt-2.5 space-y-1 border-t border-white/10 pt-2.5 text-[9px] text-zinc-500 sm:text-[10px]">
                   <div className="flex justify-between gap-2">
                     <dt>Type</dt>
                     <dd className="text-zinc-300">{values.groupType}</dd>

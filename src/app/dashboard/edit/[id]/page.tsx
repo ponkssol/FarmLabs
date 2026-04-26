@@ -21,10 +21,12 @@ export default async function EditProjectPage({ params }: Props) {
   if (!project || project.userId !== session.user.id) notFound();
 
   return (
-    <div className="app-container py-6 sm:py-8">
-      <div className="mb-6">
-        <h1 className="text-base font-semibold tracking-tight">Edit listing</h1>
-        <p className="mt-1.5 text-xs sm:text-sm text-zinc-500">Keep your Telegram listing updated with fresh links, pricing, and access rules.</p>
+    <div className="app-container py-4 sm:py-5">
+      <div className="mb-3.5 sm:mb-4">
+        <h1 className="text-xs font-semibold tracking-tight text-white sm:text-sm">Edit listing</h1>
+        <p className="mt-0.5 text-[9px] leading-snug text-zinc-500 sm:text-[10px]">
+          Keep your Telegram listing updated with fresh links, pricing, and access rules.
+        </p>
       </div>
       <ProjectForm mode="edit" project={project} />
     </div>

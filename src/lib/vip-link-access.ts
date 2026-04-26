@@ -8,17 +8,15 @@ export function isPaidVipListing(p: Pick<Project, "accessType">): boolean {
 /** @deprecated use isPaidVipListing */
 export const isVipPaidListing = isPaidVipListing;
 
-export function hasCommunityLinks(p: Pick<Project, "telegram" | "discord" | "xCommunity">): boolean {
+export function hasCommunityLinks(p: Pick<Project, "telegram" | "discord">): boolean {
   return Boolean(
-    (p.telegram && p.telegram.trim()) ||
-      (p.discord && p.discord.trim()) ||
-      (p.xCommunity && p.xCommunity.trim()),
+    (p.telegram && p.telegram.trim()) || (p.discord && p.discord.trim()),
   );
 }
 
-/** True when the public UI should not expose Telegram / X / Discord link fields. */
+/** True when the public UI should not expose Telegram / Discord link fields. */
 export function shouldMaskVipLinks(
-  p: Pick<Project, "accessType" | "telegram" | "discord" | "xCommunity">,
+  p: Pick<Project, "accessType" | "telegram" | "discord">,
 ): boolean {
   return isPaidVipListing(p) && hasCommunityLinks(p);
 }
