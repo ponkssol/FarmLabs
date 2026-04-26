@@ -57,6 +57,19 @@ export function escrowEligible(
   return true;
 }
 
+/** When true, show the Solana monogram left of a formatted price label. */
+export function shouldShowSolanaMonogram(
+  p: {
+    groupType: string;
+    accessType: string;
+    priceCurrency: string | null;
+  },
+  label: string,
+): boolean {
+  if (label === "—" || label === "Free") return false;
+  return resolvePriceCurrency(p.priceCurrency) === "SOL";
+}
+
 export function formatEscrowAmountLabel(amount: number, currency: "USDC" | "SOL"): string {
   if (currency === "SOL") {
     const s = amount % 1 === 0 ? String(amount) : amount.toFixed(4).replace(/\.?0+$/, "");

@@ -66,14 +66,14 @@ export function HeaderWalletConnect() {
     return (
       <div className="flex min-w-0 max-w-full items-center gap-2 sm:gap-2.5">
         <span
-          className="max-w-[100px] shrink truncate font-mono text-[10px] text-zinc-400 sm:max-w-[140px] sm:text-[11px]"
+          className="max-w-[100px] shrink truncate font-mono text-sm text-zinc-400 sm:max-w-[140px] sm:text-sm"
           title={s}
         >
           {short}
         </span>
         {savingProfileWallet ? (
           <span
-            className="shrink-0 text-[9px] text-amber-200/80 sm:text-[10px]"
+            className="shrink-0 text-xs text-amber-200/80 sm:text-sm"
             title="Saving address to your profile (required for escrow checkout)"
           >
             Saving…
@@ -81,7 +81,7 @@ export function HeaderWalletConnect() {
         ) : !session.user.wallet ? (
           <Link
             href="/dashboard"
-            className="shrink-0 text-[9px] text-amber-200/80 underline decoration-white/20 sm:text-[10px]"
+            className="shrink-0 text-xs text-amber-200/80 underline decoration-white/20 sm:text-sm"
             title="Auto-save failed: open dashboard and save to profile"
           >
             Save to profile
@@ -89,7 +89,7 @@ export function HeaderWalletConnect() {
         ) : (
           <Link
             href="/dashboard"
-            className="shrink-0 text-[10px] text-zinc-500 transition hover:text-zinc-300 sm:text-xs"
+            className="shrink-0 text-xs text-zinc-500 transition hover:text-zinc-300 sm:text-sm"
           >
             Dashboard
           </Link>
@@ -105,7 +105,7 @@ export function HeaderWalletConnect() {
         onClick={() => void onConnect()}
         disabled={connecting}
         title={hint ?? "Connect Phantom"}
-        className="rounded-md border border-emerald-500/25 bg-emerald-950/35 px-2 py-1.5 text-[10px] font-medium text-emerald-200/90 transition hover:border-emerald-500/45 hover:bg-emerald-950/50 disabled:opacity-50 sm:px-2.5 sm:text-xs"
+        className="rounded-md border border-emerald-500/25 bg-emerald-950/35 px-2 py-1.5 text-sm font-medium text-emerald-200/90 transition hover:border-emerald-500/45 hover:bg-emerald-950/50 disabled:opacity-50 sm:px-2.5"
       >
         {connecting ? (
           "…"

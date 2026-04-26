@@ -3,6 +3,7 @@
 import { DecimalPriceInput } from "@/components/decimal-price-input";
 import { PriceOptionsField } from "@/components/price-options-field";
 import { ProjectDetailImagesField } from "@/components/project-detail-images-field";
+import { TELEGRAM_GROUP_BOT_UI, TELEGRAM_GROUP_ID_FORM_UI } from "@/lib/feature-flags";
 import { normalizeProjectForm, projectFormSchema, type ProjectForm } from "@/lib/project-schema";
 import { uploadCommunityLogoFile } from "@/lib/upload-community-client";
 import Image from "next/image";
@@ -30,8 +31,8 @@ const initialValues: ProjectForm = {
 };
 
 const field =
-  "mt-0.5 w-full rounded-md border border-white/10 bg-zinc-900 px-1.5 py-1 text-[10px] leading-snug text-zinc-100 placeholder:text-zinc-600 focus:border-white/25 focus:outline-none sm:px-2 sm:py-1.5 sm:text-[11px]";
-const label = "text-[9px] font-medium uppercase tracking-wide text-zinc-500";
+  "mt-0.5 w-full rounded-md border border-white/10 bg-zinc-900 px-1.5 py-1.5 text-sm leading-snug text-zinc-100 placeholder:text-zinc-600 focus:border-white/25 focus:outline-none sm:px-2 sm:py-1.5";
+const label = "text-xs font-medium uppercase tracking-wide text-zinc-500";
 
 type Props = {
   creatorName: string | null;
@@ -144,8 +145,8 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
       <form onSubmit={onSubmit} className="space-y-3 lg:col-span-7">
         <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950/85">
           <div className="border-b border-white/10 px-3 py-2 sm:px-3.5">
-            <h2 className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Call details</h2>
-            <p className="mt-0.5 text-[9px] text-zinc-600 sm:text-[10px]">Form on the left, live preview on the right.</p>
+            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 sm:text-sm">Call details</h2>
+            <p className="mt-0.5 text-xs text-zinc-600 sm:text-sm">Form on the left, live preview on the right.</p>
           </div>
           <div className="space-y-3 p-3 sm:p-3.5">
             <div>
@@ -179,7 +180,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
             </div>
             <div>
               <label className={label}>Community logo</label>
-              <p className="mb-1 text-[9px] text-zinc-600 sm:text-[10px]">PNG, JPEG, WebP, or GIF — max 2MB. Shown on explore cards.</p>
+              <p className="mb-1 text-xs text-zinc-600 sm:text-sm">PNG, JPEG, WebP, or GIF — max 2MB. Shown on explore cards.</p>
               <div className="flex flex-wrap items-center gap-2">
                 {values.communityImage ? (
                   <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-white/10">
@@ -212,18 +213,18 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
                       setLogoUploading(false);
                     }
                   }}
-                  className="w-full min-w-0 text-[9px] text-zinc-500 file:me-1.5 file:rounded file:border-0 file:bg-zinc-800 file:px-1.5 file:py-1 file:text-zinc-200"
+                  className="w-full min-w-0 text-xs text-zinc-500 file:me-1.5 file:rounded file:border-0 file:bg-zinc-800 file:px-1.5 file:py-1 file:text-zinc-200"
                 />
                 {values.communityImage ? (
                   <button
                     type="button"
                     onClick={() => set("communityImage", "")}
-                    className="shrink-0 rounded border border-white/15 px-1.5 py-1 text-[9px] text-zinc-500 hover:text-zinc-300"
+                    className="shrink-0 rounded border border-white/15 px-1.5 py-1 text-xs text-zinc-500 hover:text-zinc-300"
                   >
                     Remove
                   </button>
                 ) : null}
-                {logoUploading ? <span className="text-[9px] text-zinc-500">…</span> : null}
+                {logoUploading ? <span className="text-xs text-zinc-500">…</span> : null}
               </div>
             </div>
             <ProjectDetailImagesField
@@ -238,7 +239,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
 
         <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950/85">
           <div className="border-b border-white/10 px-3 py-2 sm:px-3.5">
-            <h2 className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Access &amp; price</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 sm:text-sm">Access &amp; price</h2>
           </div>
           <div className="grid gap-3 p-3 sm:grid-cols-2 sm:gap-2.5 sm:p-3.5">
             <div>
@@ -265,7 +266,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
               </select>
             </div>
             {values.groupType === "PUBLIC" && (
-              <p className="text-[9px] text-zinc-500 sm:col-span-2">Public listings are free. Price applies to private paid calls only.</p>
+              <p className="text-xs text-zinc-500 sm:col-span-2">Public listings are free. Price applies to private paid calls only.</p>
             )}
             {showPrice && (values.priceOptions?.length ?? 0) === 0 && (
               <>
@@ -321,31 +322,40 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
             {showPrice && !hasAccessTiers && (
               <div className="sm:col-span-2">
                 <label className={label}>Telegram invite (optional)</label>
-                <p className="mb-1 text-[9px] text-zinc-600 sm:text-[10px]">
-                  Create the listing, then on Edit use “Open verification in Telegram” to auto-fill the invite and
-                  group id.
+                <p className="mb-1 text-xs text-zinc-600 sm:text-sm">
+                  {TELEGRAM_GROUP_BOT_UI
+                    ? "Create the listing, then on Edit use “Open verification in Telegram” to auto-fill the invite and group id (optional)."
+                    : "t.me invite for buyers. You can set it on this step or on Edit after save."}
                 </p>
                 <input
                   value={values.telegram ?? ""}
                   onChange={(e) => set("telegram", e.target.value)}
                   className={field}
-                  placeholder="https://t.me/+… (auto after verification in edit)"
+                  placeholder={
+                    TELEGRAM_GROUP_BOT_UI
+                      ? "https://t.me/+… (can auto in edit with bot)"
+                      : "https://t.me/+…"
+                  }
                 />
               </div>
             )}
             {showPrice && hasAccessTiers && (
               <div className="sm:col-span-2">
-                <p className="text-[9px] text-zinc-500">
-                  <span className="text-zinc-400">With tiers:</span> set <strong>Telegram (tier)</strong> on each row. For
-                  the default link + group id, create the listing then on <strong>Edit</strong> run bot verification.
+                <p className="text-xs text-zinc-500">
+                  <span className="text-zinc-400">With tiers:</span> set <strong>Telegram (tier)</strong> on each row.
+                  {TELEGRAM_GROUP_BOT_UI
+                    ? " For default link + group id, create the listing, then on Edit use bot verification."
+                    : " Set the default invite and group id on Edit after you save."}
                 </p>
               </div>
             )}
-            {showPrice && (
+            {showPrice && TELEGRAM_GROUP_ID_FORM_UI && (
               <div className="sm:col-span-2">
                 <label className={label}>Telegram group id (optional)</label>
-                <p className="mb-1 text-[9px] text-zinc-600 sm:text-[10px]">
-                  Filled from bot verification, or set manually (e.g. -100…, @RawDataBot).
+                <p className="mb-1 text-xs text-zinc-600 sm:text-sm">
+                  {TELEGRAM_GROUP_BOT_UI
+                    ? "From bot verification or paste manually (e.g. -100…, @RawDataBot)."
+                    : "Supergroup id (e.g. -100…). Get it from a bot in the group (e.g. @RawDataBot) or your client."}
                 </p>
                 <input
                   value={values.telegramGroupChatId ?? ""}
@@ -386,7 +396,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
           </div>
           {hasAccessTiers && (
             <div className="space-y-2.5 border-t border-white/10 p-3 sm:p-3.5">
-              <label className="mt-0.5 flex items-center gap-1.5 text-[10px] text-zinc-400">
+              <label className="mt-0.5 flex items-center gap-1.5 text-sm text-zinc-400">
                 <input
                   type="checkbox"
                   checked={!!values.published}
@@ -396,7 +406,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
                 Publish in directory
               </label>
               {error && (
-                <div className="rounded-md border border-rose-400/30 bg-rose-950/25 px-2.5 py-1.5 text-[10px] text-rose-200 sm:text-[11px]">
+                <div className="rounded-md border border-rose-400/30 bg-rose-950/25 px-2.5 py-1.5 text-sm text-rose-200">
                   {error}
                 </div>
               )}
@@ -404,14 +414,14 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-md bg-white px-2.5 py-1 text-[10px] font-medium text-black disabled:opacity-60 sm:px-2.5"
+                  className="rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-black disabled:opacity-60 sm:px-2.5"
                 >
                   {submitting ? "Saving…" : "Create listing"}
                 </button>
                 <button
                   type="button"
                   onClick={() => router.push("/dashboard")}
-                  className="rounded-md border border-white/15 px-2.5 py-1 text-[10px] text-zinc-400"
+                  className="rounded-md border border-white/15 px-2.5 py-1.5 text-sm text-zinc-400"
                 >
                   Cancel
                 </button>
@@ -423,8 +433,8 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
         {!hasAccessTiers && (
           <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950/85">
             <div className="border-b border-white/10 px-3 py-2 sm:px-3.5">
-              <h2 className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Links &amp; publish</h2>
-              <p className="mt-0.5 text-[9px] text-zinc-600">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 sm:text-sm">Links &amp; publish</h2>
+              <p className="mt-0.5 text-xs text-zinc-600">
                 {showPrice
                   ? "Use Discord here. For Telegram, use the paid / VIP block above."
                   : "At least one: Telegram or Discord."}
@@ -452,7 +462,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
                 />
               </div>
 
-              <label className="mt-1 flex items-center gap-1.5 text-[10px] text-zinc-400">
+              <label className="mt-1 flex items-center gap-1.5 text-sm text-zinc-400">
                 <input
                   type="checkbox"
                   checked={!!values.published}
@@ -463,7 +473,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
               </label>
 
               {error && (
-                <div className="rounded-md border border-rose-400/30 bg-rose-950/25 px-2.5 py-1.5 text-[10px] text-rose-200 sm:text-[11px]">
+                <div className="rounded-md border border-rose-400/30 bg-rose-950/25 px-2.5 py-1.5 text-sm text-rose-200">
                   {error}
                 </div>
               )}
@@ -472,14 +482,14 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-md bg-white px-2.5 py-1 text-[10px] font-medium text-black disabled:opacity-60 sm:px-2.5"
+                  className="rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-black disabled:opacity-60 sm:px-2.5"
                 >
                   {submitting ? "Saving…" : "Create listing"}
                 </button>
                 <button
                   type="button"
                   onClick={() => router.push("/dashboard")}
-                  className="rounded-md border border-white/15 px-2.5 py-1 text-[10px] text-zinc-400"
+                  className="rounded-md border border-white/15 px-2.5 py-1.5 text-sm text-zinc-400"
                 >
                   Cancel
                 </button>
@@ -493,7 +503,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
         <div className="lg:sticky lg:top-20">
           <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950/90">
             <div className="border-b border-white/10 px-3 py-2 sm:px-3.5">
-              <h2 className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Preview</h2>
+              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 sm:text-sm">Preview</h2>
             </div>
             <div className="p-3 sm:p-3.5">
               <div className="rounded-lg border border-white/10 bg-zinc-900/60 p-3">
@@ -510,8 +520,8 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
                     <div className="h-7 w-7 rounded-full border border-white/10 bg-zinc-800" />
                   )}
                   <div className="min-w-0">
-                    <p className="truncate text-[10px] font-medium text-zinc-200">{creatorName || "Operator"}</p>
-                    <p className="text-[9px] text-zinc-500">{wallet ? "Wallet ok" : "No wallet"}</p>
+                    <p className="truncate text-sm font-medium text-zinc-200">{creatorName || "Operator"}</p>
+                    <p className="text-xs text-zinc-500">{wallet ? "Wallet ok" : "No wallet"}</p>
                   </div>
                 </div>
 
@@ -526,7 +536,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
                       alt=""
                     />
                   ) : (
-                    <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-zinc-800 text-[10px] font-semibold text-zinc-200">
+                    <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-zinc-800 text-sm font-semibold text-zinc-200">
                       {titleInitial}
                     </div>
                   )}
@@ -534,7 +544,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
                     {values.title || "Untitled"}
                   </h3>
                 </div>
-                <p className="mt-1.5 text-[9px] leading-relaxed text-zinc-500 sm:text-[10px]">
+                <p className="mt-1.5 text-xs leading-relaxed text-zinc-500 sm:text-sm">
                   {values.shortPitch || "Pitch preview…"}
                 </p>
 
@@ -561,16 +571,16 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
                 <div className="mt-2.5 flex flex-wrap gap-1">
                   {links.length > 0 ? (
                     links.map((l) => (
-                      <span key={l.label} className="rounded border border-white/10 px-1.5 py-0.5 text-[9px] text-zinc-400">
+                      <span key={l.label} className="rounded border border-white/10 px-1.5 py-0.5 text-xs text-zinc-400">
                         {l.label}
                       </span>
                     ))
                   ) : (
-                    <span className="text-[9px] text-zinc-600">No links yet</span>
+                    <span className="text-xs text-zinc-600">No links yet</span>
                   )}
                 </div>
 
-                <dl className="mt-2.5 space-y-1 border-t border-white/10 pt-2.5 text-[9px] text-zinc-500 sm:text-[10px]">
+                <dl className="mt-2.5 space-y-1 border-t border-white/10 pt-2.5 text-xs text-zinc-500 sm:text-sm">
                   <div className="flex justify-between gap-2">
                     <dt>Type</dt>
                     <dd className="text-zinc-300">{values.groupType}</dd>

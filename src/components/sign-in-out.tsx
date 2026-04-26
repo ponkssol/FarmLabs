@@ -37,12 +37,6 @@ export function SignInOut({ hasSession, image, name }: Props) {
     return (
       <div className="flex flex-wrap items-center justify-end gap-2">
         <Link
-          href="/login#telegram-login"
-          className="rounded-lg border border-sky-500/35 bg-sky-500/10 px-3 py-2 text-xs font-medium text-sky-200/95 transition hover:border-sky-400/50 hover:bg-sky-500/20 sm:text-sm"
-        >
-          Telegram
-        </Link>
-        <Link
           href="/login"
           className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-zinc-200"
         >
@@ -74,7 +68,7 @@ export function SignInOut({ hasSession, image, name }: Props) {
           />
         ) : (
           <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-zinc-800 text-[10px] font-semibold text-zinc-300 sm:h-8 sm:w-8"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-zinc-800 text-sm font-semibold text-zinc-300 sm:h-8 sm:w-8"
             aria-hidden
           >
             {display.charAt(0).toUpperCase() || "?"}

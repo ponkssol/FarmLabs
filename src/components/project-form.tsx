@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { Project } from "@prisma/client";
 import { projectFormSchema, type ProjectForm, normalizeProjectForm } from "@/lib/project-schema";
 import { parseDetailImagesJson } from "@/lib/project-detail-images";
+import { TELEGRAM_GROUP_BOT_UI, TELEGRAM_GROUP_ID_FORM_UI } from "@/lib/feature-flags";
 import { DecimalPriceInput } from "@/components/decimal-price-input";
 import { PriceOptionsField } from "@/components/price-options-field";
 import { ProjectDetailImagesField } from "@/components/project-detail-images-field";
@@ -192,16 +193,16 @@ export function ProjectForm({ mode, project }: Props) {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <section className="rounded-xl border border-white/10 bg-zinc-950 p-3 sm:p-3.5">
-        <h2 className="text-xs font-semibold text-white">Core information</h2>
-        <p className="mt-0.5 text-[9px] leading-snug text-zinc-500 sm:text-[10px]">
+        <h2 className="ui-form-section-title">Core information</h2>
+        <p className="mt-0.5 ui-form-hint">
           Describe your community call clearly and credibly.
         </p>
 
         <div className="mt-3 space-y-3.5">
           <div>
-            <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">Call name</label>
+            <label className="ui-form-label">Call name</label>
             <input
-              className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
+              className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
               value={values.title}
               onChange={(e) => set("title", e.target.value)}
               placeholder="e.g. Alpha Hunters VIP"
@@ -210,9 +211,9 @@ export function ProjectForm({ mode, project }: Props) {
           </div>
 
           <div>
-            <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">Pitch</label>
+            <label className="ui-form-label">Pitch</label>
             <textarea
-              className="mt-1.5 min-h-[72px] w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
+              className="mt-1.5 min-h-[72px] w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
               value={values.shortPitch}
               onChange={(e) => set("shortPitch", e.target.value)}
               placeholder="A short one-paragraph description of your narrative and target community."
@@ -220,11 +221,11 @@ export function ProjectForm({ mode, project }: Props) {
           </div>
 
           <div>
-            <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">
+            <label className="ui-form-label">
               Call summary (optional)
             </label>
             <textarea
-              className="mt-1.5 min-h-[120px] w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
+              className="mt-1.5 min-h-[120px] w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
               value={values.description}
               onChange={(e) => set("description", e.target.value)}
               placeholder="Longer text if you need it — you can leave this empty."
@@ -232,8 +233,8 @@ export function ProjectForm({ mode, project }: Props) {
           </div>
 
           <div>
-            <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">Community logo</label>
-            <p className="mt-0.5 text-[9px] leading-snug text-zinc-500 sm:text-[10px]">
+            <label className="ui-form-label">Community logo</label>
+            <p className="mt-0.5 ui-form-hint">
               PNG, JPEG, WebP, or GIF — max 2MB. Shown on directory cards.
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2.5">
@@ -249,7 +250,7 @@ export function ProjectForm({ mode, project }: Props) {
                   />
                 </div>
               ) : (
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-dashed border-white/15 bg-zinc-900/50 text-[9px] text-zinc-600">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-dashed border-white/15 bg-zinc-900/50 text-xs text-zinc-600">
                   No logo
                 </div>
               )}
@@ -273,18 +274,18 @@ export function ProjectForm({ mode, project }: Props) {
                       setLogoUploading(false);
                     }
                   }}
-                  className="w-full max-w-xs text-[9px] text-zinc-400 file:me-1.5 file:rounded file:border-0 file:bg-zinc-800 file:px-1.5 file:py-1 file:text-[10px] file:text-zinc-200"
+                  className="w-full max-w-xs text-xs text-zinc-400 file:me-1.5 file:rounded file:border-0 file:bg-zinc-800 file:px-1.5 file:py-1 file:text-xs file:text-zinc-200"
                 />
                 {values.communityImage ? (
                   <button
                     type="button"
                     onClick={() => set("communityImage", "")}
-                    className="rounded border border-white/15 px-2 py-1 text-[10px] text-zinc-400 transition hover:border-white/30 hover:text-zinc-200"
+                    className="rounded border border-white/15 px-2 py-1 text-sm text-zinc-400 transition hover:border-white/30 hover:text-zinc-200"
                   >
                     Remove logo
                   </button>
                 ) : null}
-                {logoUploading ? <span className="text-[9px] text-zinc-500">Uploading…</span> : null}
+                {logoUploading ? <span className="text-xs text-zinc-500">Uploading…</span> : null}
               </div>
             </div>
           </div>
@@ -294,7 +295,7 @@ export function ProjectForm({ mode, project }: Props) {
               images={values.detailImages}
               onChange={(next) => set("detailImages", next)}
               helpText="Shots of your product, group, or community — shown on the public listing page."
-              labelClass="block text-[9px] font-medium uppercase tracking-widest text-zinc-500"
+              labelClass="ui-form-label"
             />
           </div>
         </div>
@@ -302,10 +303,12 @@ export function ProjectForm({ mode, project }: Props) {
 
       {!hasAccessTiers && (
         <section className="rounded-xl border border-white/10 bg-zinc-950 p-3 sm:p-3.5">
-          <h2 className="text-xs font-semibold text-white">Community links</h2>
-          <p className="mt-0.5 text-[9px] leading-snug text-zinc-500 sm:text-[10px]">
+          <h2 className="ui-form-section-title">Community links</h2>
+          <p className="mt-0.5 ui-form-hint">
             {showPrice
-              ? "Use Discord here. For Telegram, use the “Access and delivery” section (VIP invite + bot verification)."
+              ? TELEGRAM_GROUP_BOT_UI
+                ? "Use Discord here. For Telegram, use the “Access and delivery” section (VIP invite + optional bot verification)."
+                : "Use Discord here. For Telegram, use “Access and delivery” (manual VIP invite and group id)."
               : "Use at least one valid link: Telegram or Discord."}
           </p>
 
@@ -318,9 +321,9 @@ export function ProjectForm({ mode, project }: Props) {
               const plabel = key === "telegram" ? "Telegram" : "Discord";
               return (
                 <div key={key}>
-                  <label className="text-[9px] font-medium uppercase tracking-widest text-zinc-500">{plabel}</label>
+                  <label className="ui-form-label">{plabel}</label>
                   <input
-                    className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
+                    className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
                     value={String(values[key] ?? "")}
                     onChange={(e) => set(key, e.target.value)}
                     placeholder="https://..."
@@ -333,17 +336,17 @@ export function ProjectForm({ mode, project }: Props) {
       )}
 
       <section className="rounded-xl border border-white/10 bg-zinc-950 p-3 sm:p-3.5">
-        <h2 className="text-xs font-semibold text-white">Access and delivery</h2>
-        <p className="mt-0.5 text-[9px] leading-snug text-zinc-500 sm:text-[10px]">
+        <h2 className="ui-form-section-title">Access and delivery</h2>
+        <p className="mt-0.5 ui-form-hint">
           Configure public/private access and pricing.
         </p>
 
         <div className="mt-3 space-y-3.5">
           <div className="grid gap-2.5 sm:grid-cols-2">
             <div>
-              <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">Call type</label>
+              <label className="ui-form-label">Call type</label>
               <select
-                className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 focus:border-white/30 focus:outline-none"
+                className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-100 focus:border-white/30 focus:outline-none"
                 value={values.groupType}
                 onChange={(e) => set("groupType", e.target.value as ProjectForm["groupType"])}
               >
@@ -352,9 +355,9 @@ export function ProjectForm({ mode, project }: Props) {
               </select>
             </div>
             <div>
-              <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">Access mode</label>
+              <label className="ui-form-label">Access mode</label>
               <select
-                className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 focus:border-white/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-45"
+                className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-100 focus:border-white/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-45"
                 value={values.accessType}
                 onChange={(e) => set("accessType", e.target.value as ProjectForm["accessType"])}
                 disabled={values.groupType === "PUBLIC"}
@@ -365,25 +368,25 @@ export function ProjectForm({ mode, project }: Props) {
             </div>
           </div>
           {values.groupType === "PUBLIC" && (
-            <p className="text-[9px] leading-snug text-zinc-500 sm:text-[10px]">
+            <p className="ui-form-hint">
               Public calls are free. Price and currency apply only to private paid listings.
             </p>
           )}
           {showPrice && (values.priceOptions?.length ?? 0) === 0 && (
             <div className="grid gap-2.5 sm:grid-cols-2">
               <div>
-                <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">Price</label>
+                <label className="ui-form-label">Price</label>
                 <DecimalPriceInput
-                  className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
+                  className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
                   value={values.priceAmount}
                   onValueChange={(n) => set("priceAmount", n)}
                   placeholder="e.g. 0.002, 1.5"
                 />
               </div>
               <div>
-                <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">Currency</label>
+                <label className="ui-form-label">Currency</label>
                 <select
-                  className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 focus:border-white/30 focus:outline-none"
+                  className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-100 focus:border-white/30 focus:outline-none"
                   value={values.priceCurrency}
                   onChange={(e) => set("priceCurrency", e.target.value as ProjectForm["priceCurrency"])}
                 >
@@ -395,11 +398,11 @@ export function ProjectForm({ mode, project }: Props) {
           )}
           {showPrice && (values.priceOptions?.length ?? 0) > 0 && (
             <div>
-              <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">
+              <label className="ui-form-label">
                 Currency (all tiers)
               </label>
               <select
-                className="mt-1.5 w-full max-w-sm rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 focus:border-white/30 focus:outline-none"
+                className="mt-1.5 w-full max-w-sm rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-100 focus:border-white/30 focus:outline-none"
                 value={values.priceCurrency}
                 onChange={(e) => set("priceCurrency", e.target.value as ProjectForm["priceCurrency"])}
               >
@@ -410,7 +413,7 @@ export function ProjectForm({ mode, project }: Props) {
           )}
           {showPrice && (
             <div>
-              <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">
+              <label className="ui-form-label">
                 Access tiers (optional)
               </label>
               <PriceOptionsField
@@ -425,36 +428,44 @@ export function ProjectForm({ mode, project }: Props) {
           )}
           {showPrice && hasAccessTiers ? (
             <div className="rounded-md border border-white/8 bg-zinc-900/30 px-2.5 py-2">
-              <p className="text-[9px] leading-snug text-zinc-500 sm:text-[10px]">
+              <p className="ui-form-hint">
                 <strong className="text-zinc-400">Per tier</strong>: set <em>Telegram (tier)</em> on each row (override
-                for buyers of that tier). <strong className="text-zinc-400">Listing default</strong> is filled
-                automatically after <strong>bot verification</strong> (below) when a tier has no own link.
+                for buyers of that tier). <strong className="text-zinc-400">Listing default</strong>{" "}
+                {TELEGRAM_GROUP_BOT_UI
+                  ? "is filled automatically after bot verification (below) when a tier has no own link."
+                  : "is the “Telegram invite” field below when a tier has no per-tier link."}
               </p>
               {values.telegram ? (
-                <p className="mt-1.5 break-all font-mono text-[8px] text-zinc-400">
-                  Listing default (from bot / save): {values.telegram}
+                <p className="mt-1.5 break-all font-mono text-xs text-zinc-400">
+                  Listing default (saved): {values.telegram}
                 </p>
               ) : null}
             </div>
           ) : null}
           {showPrice && !hasAccessTiers ? (
             <div>
-              <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">
-                1 — Telegram invite (optional)
+              <label className="ui-form-label">
+                {TELEGRAM_GROUP_BOT_UI || TELEGRAM_GROUP_ID_FORM_UI ? "1 — " : ""}Telegram invite (optional)
               </label>
-              <p className="mt-0.5 text-[9px] leading-snug text-zinc-500 sm:text-[10px]">
-                t.me invite. After <strong>bot verification</strong> (bot is admin) this usually fills in; you can still
-                edit.
+              <p className="mt-0.5 ui-form-hint">
+                {TELEGRAM_GROUP_BOT_UI ? (
+                  <>
+                    t.me invite. After <strong>bot verification</strong> (bot is admin) this can fill in automatically;
+                    you can still edit.
+                  </>
+                ) : (
+                  "Public t.me invite link (e.g. t.me/+… for your group)."
+                )}
               </p>
               <input
-                className="mt-1.5 w-full max-w-md rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
+                className="mt-1.5 w-full max-w-md rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
                 value={values.telegram ?? ""}
                 onChange={(e) => set("telegram", e.target.value)}
-                placeholder="https://t.me/+... (auto after verification)"
+                placeholder={TELEGRAM_GROUP_BOT_UI ? "https://t.me/+... (can auto-fill after verify)" : "https://t.me/+..."}
               />
             </div>
           ) : null}
-          {showPrice && mode === "edit" && project?.id ? (
+          {TELEGRAM_GROUP_BOT_UI && showPrice && mode === "edit" && project?.id ? (
             <div className="mt-0.5">
               <ProjectTelegramGroupSetup
                 projectId={project.id}
@@ -467,46 +478,49 @@ export function ProjectForm({ mode, project }: Props) {
             </div>
           ) : null}
           {showPrice && !project?.id && (
-            <p className="text-[8px] text-zinc-500">
-              Click <strong className="text-zinc-400">Create listing</strong> — you are taken to the edit page where
-              verification appears.
+            <p className="text-xs text-zinc-500">
+              {TELEGRAM_GROUP_BOT_UI
+                ? "Click Create listing — the edit page has bot verification when you’re ready."
+                : "Click Create listing, then set Telegram links and group id on the next screen."}
             </p>
           )}
-          {showPrice && (
+          {showPrice && TELEGRAM_GROUP_ID_FORM_UI ? (
             <div>
-              <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">
-                3 — Telegram group id (optional)
+              <label className="ui-form-label">
+                {TELEGRAM_GROUP_BOT_UI ? "3 —" : "2 —"} Telegram group id (optional)
               </label>
-              <p className="mt-0.5 text-[9px] leading-snug text-zinc-500 sm:text-[10px]">
-                Filled from the bot after verification. Set manually only if needed (e.g. RawData bot).
+              <p className="mt-0.5 ui-form-hint">
+                {TELEGRAM_GROUP_BOT_UI
+                  ? "Filled from the bot after verification. You can also paste manually (e.g. RawData bot)."
+                  : "Supergroup id (e.g. -100…). Use a bot like @userinfobot or your client’s group details. For future auto-kick, run the separate Telegram worker and enable the flags in .env."}
               </p>
               {mode === "edit" && project?.telegramGroupTitle ? (
-                <p className="mt-1.5 text-[9px] text-zinc-400">
+                <p className="mt-1.5 text-xs text-zinc-400">
                   Group (from Telegram): <span className="text-zinc-200">{project.telegramGroupTitle}</span>
                 </p>
               ) : null}
               <input
-                className="mt-1.5 w-full max-w-md rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 font-mono text-[10px] sm:text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
+                className="mt-1.5 w-full max-w-md rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 font-mono text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
                 value={values.telegramGroupChatId ?? ""}
                 onChange={(e) => set("telegramGroupChatId", e.target.value)}
                 placeholder="-1001234567890"
                 inputMode="numeric"
               />
             </div>
-          )}
+          ) : null}
           <div>
-            <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">Category</label>
+            <label className="ui-form-label">Category</label>
             <input
-              className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 focus:border-white/30 focus:outline-none"
+              className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-100 focus:border-white/30 focus:outline-none"
               value={values.category ?? ""}
               onChange={(e) => set("category", e.target.value)}
               placeholder="Airdrop / Calls / Education"
             />
           </div>
           <div>
-            <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">Call rules</label>
+            <label className="ui-form-label">Call rules</label>
             <textarea
-              className="mt-1.5 min-h-[140px] w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
+              className="mt-1.5 min-h-[140px] w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
               value={values.rules}
               onChange={(e) => set("rules", e.target.value)}
               placeholder="Member rules, banned actions, and expectations."
@@ -514,16 +528,16 @@ export function ProjectForm({ mode, project }: Props) {
           </div>
 
           <div>
-            <label className="block text-[9px] font-medium uppercase tracking-widest text-zinc-500">Access delivery policy</label>
+            <label className="ui-form-label">Access delivery policy</label>
             <textarea
-              className="mt-1.5 min-h-[100px] w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
+              className="mt-1.5 min-h-[100px] w-full rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
               value={values.deliveryPolicy}
               onChange={(e) => set("deliveryPolicy", e.target.value)}
               placeholder="How you provide invite access after payment."
             />
           </div>
 
-          <label className="flex items-center gap-2 text-[10px] sm:text-[11px] text-zinc-300">
+          <label className="flex items-center gap-2 text-sm text-zinc-300">
             <input
               type="checkbox"
               className="h-3.5 w-3.5 shrink-0 rounded border-white/20"
@@ -536,7 +550,7 @@ export function ProjectForm({ mode, project }: Props) {
       </section>
 
       {error && (
-        <div className="rounded-lg border border-rose-400/20 bg-rose-950/30 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-rose-200">
+        <div className="rounded-lg border border-rose-400/20 bg-rose-950/30 px-2.5 py-1.5 text-sm text-rose-200">
           {error}
         </div>
       )}
@@ -545,14 +559,14 @@ export function ProjectForm({ mode, project }: Props) {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-white px-3 py-1.5 text-[10px] sm:text-[11px] font-medium text-black transition hover:bg-zinc-200 disabled:opacity-50"
+          className="rounded-md bg-white px-3 py-1.5 text-sm font-medium text-black transition hover:bg-zinc-200 disabled:opacity-50"
         >
           {submitting ? "Saving..." : mode === "create" ? "Create listing" : "Update listing"}
         </button>
         <button
           type="button"
           onClick={() => router.back()}
-          className="rounded-md border border-white/15 px-2.5 py-1.5 text-[10px] sm:text-[11px] text-zinc-300 transition hover:border-white/30"
+          className="rounded-md border border-white/15 px-2.5 py-1.5 text-sm text-zinc-300 transition hover:border-white/30"
         >
           Cancel
         </button>

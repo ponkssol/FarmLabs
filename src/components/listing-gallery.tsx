@@ -6,14 +6,21 @@ import { createPortal } from "react-dom";
 
 type Props = {
   images: string[];
+  /** Tighter card / thumbnails (listing page) */
+  compact?: boolean;
 };
 
-function gridClassName(count: number) {
-  if (count === 1) return "mt-3";
-  return "mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3";
+function gridClassName(count: number, compact: boolean) {
+  const m = compact ? "mt-1.5" : "mt-3";
+  if (count === 1) return compact ? `${m} max-w-lg w-full` : m;
+  const g = compact ? "gap-2" : "gap-3";
+  const cols = compact
+    ? `grid ${m} grid-cols-1 ${g} sm:grid-cols-2 sm:max-w-2xl lg:max-w-3xl lg:grid-cols-3`
+    : `grid ${m} grid-cols-1 ${g} sm:grid-cols-2 lg:grid-cols-3`;
+  return cols;
 }
 
-export function ListingGallery({ images }: Props) {
+export function ListingGallery({ images, compact = false }: Props) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -72,7 +79,7 @@ export function ListingGallery({ images }: Props) {
             >
               <div className="mb-1 flex w-full items-center justify-between gap-2 px-0.5 sm:px-0">
                 {images.length > 1 ? (
-                  <span className="text-[10px] text-zinc-300">
+                  <span className="text-sm text-zinc-300">
                     {openIndex + 1} / {images.length}
                   </span>
                 ) : (
@@ -85,7 +92,7 @@ export function ListingGallery({ images }: Props) {
                         type="button"
                         onClick={() => go(-1)}
                         disabled={openIndex <= 0}
-                        className="rounded border border-white/15 bg-zinc-900/80 px-2 py-0.5 text-[10px] text-zinc-200 transition enabled:hover:border-white/30 disabled:opacity-30"
+                        className="rounded border border-white/15 bg-zinc-900/80 px-2 py-0.5 text-sm text-zinc-200 transition enabled:hover:border-white/30 disabled:opacity-30"
                         aria-label="Previous image"
                       >
                         ←
@@ -94,7 +101,7 @@ export function ListingGallery({ images }: Props) {
                         type="button"
                         onClick={() => go(1)}
                         disabled={openIndex >= images.length - 1}
-                        className="rounded border border-white/15 bg-zinc-900/80 px-2 py-0.5 text-[10px] text-zinc-200 transition enabled:hover:border-white/30 disabled:opacity-30"
+                        className="rounded border border-white/15 bg-zinc-900/80 px-2 py-0.5 text-sm text-zinc-200 transition enabled:hover:border-white/30 disabled:opacity-30"
                         aria-label="Next image"
                       >
                         →
@@ -104,7 +111,7 @@ export function ListingGallery({ images }: Props) {
                   <button
                     type="button"
                     onClick={close}
-                    className="rounded border border-white/20 bg-zinc-900/90 px-2 py-0.5 text-[12px] leading-none text-zinc-100 transition hover:border-white/40"
+                    className="rounded border border-white/20 bg-zinc-900/90 px-2 py-0.5 text-sm leading-none text-zinc-100 transition hover:border-white/40"
                     aria-label="Close"
                   >
                     ×
@@ -127,35 +134,49 @@ export function ListingGallery({ images }: Props) {
         )
       : null;
 
+  const aspect = compact ? "aspect-[5/3] max-h-36 sm:max-h-40" : "aspect-[4/3]";
+  const hintCls = compact
+    ? "mt-1 text-[8px] leading-relaxed text-zinc-600 sm:text-[9px]"
+    : "mt-1.5 text-[10px] leading-relaxed text-zinc-600 sm:text-[11px]";
+  const btnRounded = compact ? "rounded-md" : "rounded-lg";
+  const inset = compact ? "inset-1" : "inset-1.5 sm:inset-2";
+  const viewLbl = compact ? "px-1 py-0.5 text-[10px]" : "px-1.5 py-0.5 text-xs sm:text-xs";
+
   return (
     <>
-      <p className="mt-1.5 text-[8px] text-zinc-600 sm:text-[9px]">
-        Thumbnails are uncropped. Click to open full size. In the lightbox use{" "}
-        <kbd className="rounded border border-white/10 px-0.5 text-[7px]">←</kbd> /{" "}
-        <kbd className="rounded border border-white/10 px-0.5 text-[7px]">→</kbd> /{" "}
-        <kbd className="rounded border border-white/10 px-0.5 text-[7px]">Esc</kbd>.
+      <p className={hintCls}>
+        Tap to open full size · in lightbox{" "}
+        <kbd className="rounded border border-white/10 px-0.5 font-sans">←</kbd>{" "}
+        <kbd className="rounded border border-white/10 px-0.5 font-sans">→</kbd>{" "}
+        <kbd className="rounded border border-white/10 px-0.5 font-sans">Esc</kbd>
       </p>
-      <div className={gridClassName(images.length)}>
+      <div className={gridClassName(images.length, compact)}>
         {images.map((src, i) => (
           <button
             key={src}
             type="button"
             onClick={() => open(i)}
-            className="group relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-white/8 bg-zinc-950/90 text-left transition hover:border-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/35"
+            className={`group relative w-full overflow-hidden border border-white/8 bg-zinc-950/90 text-left transition hover:border-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/35 ${btnRounded} ${aspect}`}
             aria-label={`Open image ${i + 1} at full size`}
           >
-            <div className="absolute inset-1.5 z-0 sm:inset-2">
+            <div className={`absolute z-0 ${inset}`}>
               <Image
                 src={src}
                 alt=""
                 fill
                 unoptimized
                 className="object-contain transition group-hover:opacity-95"
-                sizes="(min-width: 1024px) 30vw, 100vw"
+                sizes={compact ? "(min-width: 1024px) 22vw, 100vw" : "(min-width: 1024px) 30vw, 100vw"}
               />
             </div>
-            <span className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex items-end justify-end bg-gradient-to-t from-black/45 via-black/5 to-transparent p-1.5 sm:p-2">
-              <span className="rounded border border-white/20 bg-black/50 px-1.5 py-0.5 text-[8px] text-zinc-200 sm:text-[9px]">
+            <span
+              className={`pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex items-end justify-end bg-gradient-to-t from-black/45 via-black/5 to-transparent ${
+                compact ? "p-1" : "p-1.5 sm:p-2"
+              }`}
+            >
+              <span
+                className={`rounded border border-white/20 bg-black/50 text-zinc-200 ${viewLbl}`}
+              >
                 View
               </span>
             </span>

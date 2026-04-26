@@ -34,7 +34,7 @@ function MarqueeGroup() {
 export function TrustedByMarquee() {
   return (
     <div className="border-y border-white/10 bg-white/[0.02] py-2">
-      <p className="text-center text-[10px] uppercase tracking-[0.22em] text-zinc-500">Trusted by degen call operators</p>
+      <p className="text-center text-sm uppercase tracking-[0.22em] text-zinc-500">Trusted by degen call operators</p>
       <div className="trusted-marquee-wrap relative mt-2 cursor-grab active:cursor-grabbing overflow-hidden">
         <div
           className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-[#09090b] to-transparent sm:w-16"

@@ -58,14 +58,14 @@ export function SellerReviewReply({ orderId, initialReply, initialRepliedAt, com
       <p
         className={
           c
-            ? "text-[9px] font-medium uppercase tracking-wide text-zinc-500"
-            : "text-[8px] font-medium uppercase tracking-wide text-zinc-500 sm:text-[9px]"
+            ? "text-xs font-medium uppercase tracking-wide text-zinc-500"
+            : "text-xs font-medium uppercase tracking-wide text-zinc-500 sm:text-xs"
         }
       >
         Your reply
       </p>
       {repliedAt && savedOnServer && (
-        <p className={c ? "mb-0.5 text-[9px] text-zinc-600" : "mb-1 text-[8px] text-zinc-600"}>
+        <p className={c ? "mb-0.5 text-xs text-zinc-600" : "mb-1 text-xs text-zinc-600"}>
           Last:{" "}
           {repliedAt.toLocaleString("en-US", {
             dateStyle: "short",
@@ -78,21 +78,21 @@ export function SellerReviewReply({ orderId, initialReply, initialRepliedAt, com
         onChange={(e) => setText(e.target.value)}
         className={
           c
-            ? "min-h-[44px] w-full resize-y rounded border border-white/10 bg-zinc-950/80 px-2 py-1 text-[11px] text-zinc-200 placeholder:text-zinc-600"
-            : "min-h-[52px] w-full resize-y rounded border border-white/10 bg-zinc-950/80 px-2 py-1.5 text-[10px] text-zinc-200 placeholder:text-zinc-600 sm:min-h-[64px] sm:text-[11px]"
+            ? "min-h-[44px] w-full resize-y rounded border border-white/10 bg-zinc-950/80 px-2 py-1 text-sm text-zinc-200 placeholder:text-zinc-600"
+            : "min-h-[52px] w-full resize-y rounded border border-white/10 bg-zinc-950/80 px-2 py-1.5 text-sm text-zinc-200 placeholder:text-zinc-600 sm:min-h-[64px] sm:text-sm"
         }
         placeholder="Thanks for the review — public reply to this buyer (optional)"
         maxLength={2000}
         disabled={loading}
       />
-      {err && <p className={c ? "mt-0.5 text-[11px] text-rose-300" : "mt-1 text-[9px] text-rose-300 sm:text-[10px]"}>{err}</p>}
+      {err && <p className={c ? "mt-0.5 text-sm text-rose-300" : "mt-1 text-xs text-rose-300 sm:text-sm"}>{err}</p>}
       <button
         type="submit"
         disabled={loading}
         className={
           c
-            ? "mt-1 rounded border border-white/12 bg-white/5 px-2 py-1 text-[11px] text-zinc-200 transition hover:bg-white/10 disabled:opacity-50"
-            : "mt-1.5 rounded border border-white/12 bg-white/5 px-2.5 py-1 text-[9px] text-zinc-200 transition hover:bg-white/10 disabled:opacity-50 sm:text-[10px]"
+            ? "mt-1 rounded border border-white/12 bg-white/5 px-2 py-1 text-sm text-zinc-200 transition hover:bg-white/10 disabled:opacity-50"
+            : "mt-1.5 rounded border border-white/12 bg-white/5 px-2.5 py-1 text-xs text-zinc-200 transition hover:bg-white/10 disabled:opacity-50 sm:text-sm"
         }
       >
         {loading ? "…" : savedOnServer ? "Update reply" : "Post reply"}

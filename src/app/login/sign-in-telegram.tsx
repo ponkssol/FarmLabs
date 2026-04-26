@@ -94,7 +94,7 @@ export function SignInTelegram({ callbackUrl, botName: botNameFromServer }: Prop
         </div>
         <div>
           <p className="text-sm font-medium text-sky-100/95">Log in with Telegram</p>
-          <p className="text-[10px] text-sky-200/60">Uses @{bot} — your session is saved in FarmLabs.</p>
+          <p className="text-sm text-sky-200/60">Uses @{bot} — your session is saved in FarmLabs.</p>
         </div>
       </div>
       <p className="mb-2 text-xs text-sky-100/70">Tap the button below. If you don’t see it, set your domain in BotFather (/setdomain) or use a deployed or tunneled URL (localhost often does not work with the official widget).</p>
@@ -106,7 +106,7 @@ export function SignInTelegram({ callbackUrl, botName: botNameFromServer }: Prop
         <p className="mt-2 text-center text-xs text-zinc-500">Loading Telegram button…</p>
       )}
       {err && <p className="mt-2 text-sm text-rose-300">{err}</p>}
-      <p className="mt-3 text-[10px] leading-relaxed text-zinc-500">
+      <p className="mt-3 text-sm leading-relaxed text-zinc-500">
         BotFather → <span className="text-zinc-400">/setdomain</span> for your exact site origin
         (https://…), then restart. First-time: open this page from the same host you /setdomain.
       </p>

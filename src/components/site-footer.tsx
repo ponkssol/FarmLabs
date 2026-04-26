@@ -16,7 +16,7 @@ function FooterLink({ href, children }: { href: string; children: React.ReactNod
 function FooterCol({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500 sm:text-xs sm:tracking-[0.16em]">
+      <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 sm:text-sm sm:tracking-[0.16em]">
         {title}
       </h2>
       <nav className="flex flex-col items-start gap-0.5">{children}</nav>
@@ -87,7 +87,7 @@ export async function SiteFooter() {
 
           <div className="sm:col-span-2 sm:flex sm:items-start sm:justify-end lg:col-span-4">
             <div className="w-full max-w-sm rounded-xl border border-white/[0.07] bg-zinc-900/50 p-4 sm:p-4">
-              <h2 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500 sm:text-xs">Get started</h2>
+              <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 sm:text-sm">Get started</h2>
               <p className="mt-2 text-sm leading-relaxed text-zinc-500">
                 Publish a paid or free listing, set tiers, and share one link with your X and Telegram.
               </p>
@@ -105,7 +105,7 @@ export async function SiteFooter() {
           <p className="text-xs text-zinc-500">
             © {year} FarmLabs. All rights reserved.
           </p>
-          <p className="mt-2 max-w-md text-right text-[11px] leading-snug text-zinc-600 sm:mt-0">
+          <p className="mt-2 max-w-md text-right text-sm leading-snug text-zinc-600 sm:mt-0">
             Links are user-submitted. Always DYOR — this site does not endorse tokens or run trades.
           </p>
         </div>

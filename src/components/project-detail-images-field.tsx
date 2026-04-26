@@ -39,8 +39,8 @@ export function ProjectDetailImagesField({ images, onChange, helpText, labelClas
       <p
         className={
           compact
-            ? "mb-1 text-[9px] text-zinc-500 sm:text-[10px]"
-            : "mt-0.5 text-[9px] leading-snug text-zinc-500 sm:text-[10px]"
+            ? "mb-1 text-xs text-zinc-500 sm:text-sm"
+            : "mt-0.5 text-xs leading-snug text-zinc-500 sm:text-sm"
         }
       >
         {helpText} Max {MAX} — same image rules as the logo (PNG, JPEG, WebP, GIF; 2MB).
@@ -67,7 +67,7 @@ export function ProjectDetailImagesField({ images, onChange, helpText, labelClas
               <button
                 type="button"
                 onClick={() => remove(i)}
-                className="absolute end-0.5 top-0.5 rounded bg-black/60 px-1 text-[8px] text-zinc-200 transition hover:bg-black/80"
+                className="absolute end-0.5 top-0.5 rounded bg-black/60 px-1 text-xs text-zinc-200 transition hover:bg-black/80"
                 aria-label={`Remove image ${i + 1}`}
               >
                 ×
@@ -88,19 +88,19 @@ export function ProjectDetailImagesField({ images, onChange, helpText, labelClas
               }}
               className={
                 compact
-                  ? "w-full min-w-0 text-[9px] text-zinc-500 file:me-1.5 file:rounded file:border-0 file:bg-zinc-800 file:px-1.5 file:py-1 file:text-zinc-200"
-                  : "w-full max-w-xs text-[9px] text-zinc-400 file:me-1.5 file:rounded file:border-0 file:bg-zinc-800 file:px-1.5 file:py-1 file:text-[10px] file:text-zinc-200"
+                  ? "w-full min-w-0 text-xs text-zinc-500 file:me-1.5 file:rounded file:border-0 file:bg-zinc-800 file:px-1.5 file:py-1 file:text-zinc-200"
+                  : "w-full max-w-xs text-xs text-zinc-400 file:me-1.5 file:rounded file:border-0 file:bg-zinc-800 file:px-1.5 file:py-1 file:text-sm file:text-zinc-200"
               }
             />
             {uploading ? (
-              <span className={compact ? "text-[9px] text-zinc-500" : "text-[9px] text-zinc-500 sm:text-[10px]"}>
+              <span className={compact ? "text-xs text-zinc-500" : "text-xs text-zinc-500 sm:text-sm"}>
                 Uploading…
               </span>
             ) : null}
           </div>
         )}
         {images.length > 0 && !compact ? (
-          <p className="text-[8px] text-zinc-600 sm:text-[9px]">
+          <p className="text-xs text-zinc-600 sm:text-xs">
             {images.length}/{MAX} image{images.length === 1 ? "" : "s"}.
           </p>
         ) : null}

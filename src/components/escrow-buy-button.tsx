@@ -210,7 +210,7 @@ export function EscrowBuyButton({
     const d = grantedAfterPay?.discord;
     return (
       <div className="space-y-2">
-        <p className="text-[10px] leading-relaxed text-emerald-200/90">
+        <p className="text-sm leading-relaxed text-emerald-200/90">
           {message || "You’re in."}
         </p>
         {(t || d) && (
@@ -220,7 +220,7 @@ export function EscrowBuyButton({
                 href={t}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex w-full items-center justify-center rounded-md border border-white/15 bg-white/10 px-2.5 py-2 text-[10px] font-medium text-white sm:w-auto"
+                className="inline-flex w-full items-center justify-center rounded-md border border-white/15 bg-white/10 px-2.5 py-2 text-sm font-medium text-white sm:w-auto"
               >
                 Open Telegram
               </a>
@@ -230,7 +230,7 @@ export function EscrowBuyButton({
                 href={d}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex w-full items-center justify-center rounded-md border border-indigo-500/30 bg-indigo-950/40 px-2.5 py-2 text-[10px] font-medium text-indigo-100 sm:w-auto"
+                className="inline-flex w-full items-center justify-center rounded-md border border-indigo-500/30 bg-indigo-950/40 px-2.5 py-2 text-sm font-medium text-indigo-100 sm:w-auto"
               >
                 Open Discord
               </a>
@@ -243,7 +243,7 @@ export function EscrowBuyButton({
               href={`https://solscan.io/tx/${buyerTx}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-block text-[10px] text-sky-400/90 underline"
+              className="inline-block text-sm text-sky-400/90 underline"
             >
               View payment on Solscan
             </a>
@@ -253,7 +253,7 @@ export function EscrowBuyButton({
               href={`https://solscan.io/tx/${settlementTx}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-block text-[10px] text-sky-400/90 underline"
+              className="inline-block text-sm text-sky-400/90 underline"
             >
               View on Solscan
             </a>
@@ -270,7 +270,7 @@ export function EscrowBuyButton({
           type="button"
           onClick={() => void payWithWallet()}
           disabled={sendingWallet || confirming}
-          className="w-full rounded-md bg-emerald-600/90 px-2.5 py-2 text-[10px] font-medium text-white transition hover:bg-emerald-500/90 disabled:opacity-60"
+          className="w-full rounded-md bg-emerald-600/90 px-2.5 py-2 text-sm font-medium text-white transition hover:bg-emerald-500/90 disabled:opacity-60"
         >
           {sendingWallet || confirming
             ? sendingWallet
@@ -279,11 +279,11 @@ export function EscrowBuyButton({
             : `Pay ${order.amountLabel} with wallet`}
         </button>
         <details className="rounded border border-white/8 bg-zinc-950/40 p-1.5">
-          <summary className="cursor-pointer text-[8px] text-zinc-500">I sent manually</summary>
+          <summary className="cursor-pointer text-xs text-zinc-500">I sent manually</summary>
           <div className="mt-2 space-y-2">
             <div className="flex flex-col gap-1">
-              <span className="text-[8px] font-medium uppercase tracking-wider text-zinc-500">Deposit address</span>
-              <code className="break-all rounded border border-white/10 bg-zinc-900/80 p-1.5 text-[9px] text-zinc-200">
+              <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">Deposit address</span>
+              <code className="break-all rounded border border-white/10 bg-zinc-900/80 p-1.5 text-xs text-zinc-200">
                 {order.depositAddress}
               </code>
               <button
@@ -291,29 +291,29 @@ export function EscrowBuyButton({
                 onClick={() => {
                   void navigator.clipboard.writeText(order.depositAddress);
                 }}
-                className="self-start rounded border border-white/12 px-2 py-0.5 text-[9px] text-zinc-300 hover:border-white/25"
+                className="self-start rounded border border-white/12 px-2 py-0.5 text-xs text-zinc-300 hover:border-white/25"
               >
                 Copy address
               </button>
             </div>
-            <label className="block text-[8px] font-medium uppercase tracking-wider text-zinc-500">Payment tx signature</label>
+            <label className="block text-xs font-medium uppercase tracking-wider text-zinc-500">Payment tx signature</label>
             <input
               value={txSig}
               onChange={(e) => setTxSig(e.target.value)}
               placeholder="Transaction signature"
-              className="w-full rounded border border-white/10 bg-zinc-900/80 px-2 py-1.5 text-[10px] text-zinc-100 placeholder:text-zinc-600"
+              className="w-full rounded border border-white/10 bg-zinc-900/80 px-2 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600"
             />
             <button
               type="button"
               onClick={() => void confirm()}
               disabled={confirming}
-              className="w-full rounded-md border border-white/20 bg-zinc-100/10 px-2.5 py-1.5 text-[10px] font-medium text-white disabled:opacity-60"
+              className="w-full rounded-md border border-white/20 bg-zinc-100/10 px-2.5 py-1.5 text-sm font-medium text-white disabled:opacity-60"
             >
               {confirming ? "Verifying…" : "Confirm & settle"}
             </button>
           </div>
         </details>
-        {message && <p className="text-[10px] text-amber-200/90">{message}</p>}
+        {message && <p className="text-sm text-amber-200/90">{message}</p>}
       </div>
     );
   }
@@ -322,11 +322,11 @@ export function EscrowBuyButton({
     <div className="space-y-2">
       {hasTiers && (
         <div className="space-y-1">
-          <label className="text-[8px] font-medium uppercase text-zinc-500">Tier</label>
+          <label className="text-xs font-medium uppercase text-zinc-500">Tier</label>
           <select
             value={selectedTierId}
             onChange={(e) => setSelectedTierId(e.target.value)}
-            className="w-full rounded-md border border-white/10 bg-zinc-900 px-2 py-1.5 text-[10px] text-zinc-200"
+            className="w-full rounded-md border border-white/10 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-200"
           >
             {priceOptions.map((o) => (
               <option key={o.id} value={o.id}>
@@ -340,11 +340,11 @@ export function EscrowBuyButton({
         type="button"
         onClick={buy}
         disabled={loading}
-        className="w-full rounded-md bg-white px-2.5 py-1.5 text-[10px] font-medium text-black disabled:opacity-60"
+        className="w-full rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-black disabled:opacity-60"
       >
         {loading ? "Preparing…" : ctaLabel}
       </button>
-      {message && <p className="text-[10px] text-zinc-500">{message}</p>}
+      {message && <p className="text-sm text-zinc-500">{message}</p>}
     </div>
   );
 }

@@ -27,7 +27,7 @@ export default async function EditProjectPage({ params }: Props) {
     <div className="app-container py-4 sm:py-5">
       <div className="mb-3.5 sm:mb-4">
         <h1 className="text-xs font-semibold tracking-tight text-white sm:text-sm">Edit listing</h1>
-        <p className="mt-0.5 text-[9px] leading-snug text-zinc-500 sm:text-[10px]">
+        <p className="mt-0.5 text-xs leading-snug text-zinc-500 sm:text-sm">
           Keep your Telegram listing updated with fresh links, pricing, and access rules.
         </p>
       </div>

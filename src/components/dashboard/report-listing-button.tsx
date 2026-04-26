@@ -34,7 +34,7 @@ export function ReportListingButton({ projectId, isOwner, isLoggedIn, callbackPa
     return (
       <Link
         href={`/login?callbackUrl=${encodeURIComponent(callbackPath)}`}
-        className="inline-flex w-full items-center justify-center rounded-lg border border-white/12 px-2.5 py-1.5 text-[10px] text-zinc-500 transition hover:border-rose-500/30 hover:text-rose-200/90"
+        className="inline-flex w-full items-center justify-center rounded-lg border border-white/12 px-2.5 py-1.5 text-sm text-zinc-500 transition hover:border-rose-500/30 hover:text-rose-200/90"
       >
         Report listing (sign in)
       </Link>
@@ -50,7 +50,7 @@ export function ReportListingButton({ projectId, isOwner, isLoggedIn, callbackPa
           setErr(null);
           setOk(false);
         }}
-        className="inline-flex w-full items-center justify-center rounded-lg border border-rose-500/20 bg-rose-950/20 px-2.5 py-1.5 text-[10px] text-rose-200/80 transition hover:border-rose-500/40"
+        className="inline-flex w-full items-center justify-center rounded-lg border border-rose-500/20 bg-rose-950/20 px-2.5 py-1.5 text-sm text-rose-200/80 transition hover:border-rose-500/40"
       >
         Report listing
       </button>
@@ -70,9 +70,9 @@ export function ReportListingButton({ projectId, isOwner, isLoggedIn, callbackPa
             ) : (
               <>
                 <h3 className="text-sm font-semibold text-white">Report listing</h3>
-                <p className="mt-1 text-[10px] text-zinc-500">We will review it against community policy.</p>
+                <p className="mt-1 text-sm text-zinc-500">We will review it against community policy.</p>
                 <div className="mt-3 space-y-2">
-                  <label className="block text-[9px] uppercase text-zinc-500">Reason</label>
+                  <label className="block text-xs uppercase text-zinc-500">Reason</label>
                   <select
                     value={reason}
                     onChange={(e) => setReason(e.target.value as (typeof reasons)[number]["value"])}
@@ -92,7 +92,7 @@ export function ReportListingButton({ projectId, isOwner, isLoggedIn, callbackPa
                   placeholder="Details (optional)"
                   maxLength={2000}
                 />
-                {err && <p className="mt-2 text-[10px] text-rose-300">{err}</p>}
+                {err && <p className="mt-2 text-sm text-rose-300">{err}</p>}
                 <div className="mt-3 flex gap-2">
                   <button
                     type="button"

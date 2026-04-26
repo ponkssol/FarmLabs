@@ -69,7 +69,7 @@ export function EscrowReviewForm({ orderId, review, operatorName, compact = fals
           <div
             className={
               compact
-                ? "flex flex-wrap items-center justify-between gap-1 text-[11px]"
+                ? "flex flex-wrap items-center justify-between gap-1 text-sm"
                 : "flex flex-wrap items-center justify-between gap-1.5 text-xs sm:text-sm"
             }
           >
@@ -79,7 +79,7 @@ export function EscrowReviewForm({ orderId, review, operatorName, compact = fals
                 {new Date(review.createdAt).toLocaleDateString("en-US", { day: "numeric", month: "short" })}
               </span>
             </div>
-            <span className={compact ? "text-[10px] font-medium text-zinc-500" : "text-xs font-medium text-zinc-500 sm:text-sm"}>
+            <span className={compact ? "text-sm font-medium text-zinc-500" : "text-xs font-medium text-zinc-500 sm:text-sm"}>
               Your review
             </span>
           </div>
@@ -87,7 +87,7 @@ export function EscrowReviewForm({ orderId, review, operatorName, compact = fals
             <p
               className={
                 compact
-                  ? "mt-1 text-[11px] leading-relaxed text-zinc-400"
+                  ? "mt-1 text-sm leading-relaxed text-zinc-400"
                   : "mt-1.5 text-sm leading-relaxed text-zinc-300"
               }
             >
@@ -124,20 +124,20 @@ export function EscrowReviewForm({ orderId, review, operatorName, compact = fals
             <p
               className={
                 compact
-                  ? "text-[9px] font-medium uppercase tracking-wide text-emerald-200/90"
-                  : "text-[10px] font-medium uppercase tracking-wide text-emerald-200/90 sm:text-xs sm:tracking-wider"
+                  ? "text-xs font-medium uppercase tracking-wide text-emerald-200/90"
+                  : "text-xs font-medium uppercase tracking-wide text-emerald-200/90 sm:text-sm sm:tracking-wider"
               }
             >
               {operatorName ? `${operatorName} (operator)` : "Operator reply"}
             </p>
             <p
               className={
-                compact ? "mt-0.5 text-[11px] leading-relaxed text-zinc-300" : "mt-1.5 text-sm leading-relaxed text-zinc-200"
+                compact ? "mt-0.5 text-sm leading-relaxed text-zinc-300" : "mt-1.5 text-sm leading-relaxed text-zinc-200"
               }
             >
               {opReply}
             </p>
-            <p className={compact ? "mt-0.5 text-[10px] text-zinc-500" : "mt-1 text-xs text-zinc-500"}>
+            <p className={compact ? "mt-0.5 text-sm text-zinc-500" : "mt-1 text-xs text-zinc-500"}>
               {repliedAt.toLocaleString("en-US", { dateStyle: "short", timeStyle: "short" })}
             </p>
           </div>
@@ -205,7 +205,7 @@ export function EscrowReviewForm({ orderId, review, operatorName, compact = fals
       <summary
         className={
           c
-            ? "flex cursor-pointer list-none items-center justify-between gap-2 rounded px-2 py-1.5 text-[11px] text-zinc-400 transition hover:text-zinc-200 [&::-webkit-details-marker]:hidden"
+            ? "flex cursor-pointer list-none items-center justify-between gap-2 rounded px-2 py-1.5 text-sm text-zinc-400 transition hover:text-zinc-200 [&::-webkit-details-marker]:hidden"
             : "flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 rounded-md px-3 py-2 text-sm text-zinc-400 transition hover:text-zinc-200 [&::-webkit-details-marker]:hidden sm:min-h-0"
         }
       >
@@ -213,7 +213,7 @@ export function EscrowReviewForm({ orderId, review, operatorName, compact = fals
           <span className="font-medium text-zinc-200">Rate this purchase</span>
           <span className="ml-1 text-zinc-500">· optional</span>
         </span>
-        <span className={c ? "text-[10px] text-zinc-500" : "text-sm text-zinc-500"} aria-hidden>
+        <span className={c ? "text-sm text-zinc-500" : "text-sm text-zinc-500"} aria-hidden>
           ▼
         </span>
       </summary>
@@ -229,7 +229,7 @@ export function EscrowReviewForm({ orderId, review, operatorName, compact = fals
               onClick={() => setRating(n)}
               className={
                 c
-                  ? `rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                  ? `rounded px-1.5 py-0.5 text-sm font-medium ${
                       rating === n ? "bg-amber-500/20 text-amber-200" : "text-zinc-500 hover:text-zinc-300"
                     }`
                   : `min-h-9 min-w-9 rounded px-2 text-xs font-medium transition sm:min-h-0 sm:min-w-0 sm:py-1.5 ${
@@ -247,14 +247,14 @@ export function EscrowReviewForm({ orderId, review, operatorName, compact = fals
           onChange={(e) => setComment(e.target.value)}
           className={
             c
-              ? "min-h-[52px] w-full resize-y rounded border border-white/8 bg-zinc-950/90 px-2 py-1 text-[11px] text-zinc-200 placeholder:text-zinc-600"
+              ? "min-h-[52px] w-full resize-y rounded border border-white/8 bg-zinc-950/90 px-2 py-1 text-sm text-zinc-200 placeholder:text-zinc-600"
               : "min-h-[88px] w-full resize-y rounded border border-white/8 bg-zinc-950/90 px-2.5 py-2 text-sm text-zinc-200 placeholder:text-zinc-500 sm:min-h-[80px]"
           }
           placeholder="Short feedback (optional)"
           maxLength={2000}
         />
         <div className={c ? "space-y-0.5" : "space-y-1"}>
-          <label className={c ? "block text-[10px] text-zinc-500" : "block text-xs text-zinc-500"}>Photo (optional, max 2MB)</label>
+          <label className={c ? "block text-sm text-zinc-500" : "block text-xs text-zinc-500"}>Photo (optional, max 2MB)</label>
           <input
             ref={fileRef}
             type="file"
@@ -266,7 +266,7 @@ export function EscrowReviewForm({ orderId, review, operatorName, compact = fals
             }}
             className={
               c
-                ? "w-full text-[10px] file:mr-2 file:rounded file:border-0 file:bg-zinc-800 file:px-1.5 file:py-1 file:text-[10px] file:text-zinc-200"
+                ? "w-full text-sm file:mr-2 file:rounded file:border-0 file:bg-zinc-800 file:px-1.5 file:py-1 file:text-sm file:text-zinc-200"
                 : "w-full text-xs file:mr-2 file:rounded file:border-0 file:bg-zinc-800 file:px-2 file:py-1.5 file:text-sm file:font-medium file:text-zinc-200"
             }
           />
@@ -285,7 +285,7 @@ export function EscrowReviewForm({ orderId, review, operatorName, compact = fals
                 onClick={clearPhoto}
                 className={
                   c
-                    ? "absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-zinc-800 text-[10px] text-zinc-200"
+                    ? "absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-zinc-800 text-sm text-zinc-200"
                     : "absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-zinc-800 text-sm text-zinc-200"
                 }
                 aria-label="Remove photo"
@@ -295,14 +295,14 @@ export function EscrowReviewForm({ orderId, review, operatorName, compact = fals
             </div>
           ) : null}
         </div>
-        {err && <p className={c ? "text-[11px] text-rose-300" : "text-sm text-rose-300"}>{err}</p>}
+        {err && <p className={c ? "text-sm text-rose-300" : "text-sm text-rose-300"}>{err}</p>}
         <div className="pt-0.5">
           <button
             type="submit"
             disabled={loading}
             className={
               c
-                ? "rounded bg-white/90 px-2.5 py-1 text-[11px] font-medium text-zinc-950 transition hover:bg-white disabled:opacity-50"
+                ? "rounded bg-white/90 px-2.5 py-1 text-sm font-medium text-zinc-950 transition hover:bg-white disabled:opacity-50"
                 : "min-h-9 rounded-md bg-white/90 px-3 py-2 text-sm font-medium text-zinc-950 transition hover:bg-white disabled:opacity-50"
             }
           >

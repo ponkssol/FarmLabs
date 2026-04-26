@@ -1,7 +1,7 @@
 ﻿import { auth } from "@/auth";
 import { PlatformIcons } from "@/components/platform-icons";
 import { XUsername } from "@/components/x-username";
-import { formatListingPrice } from "@/lib/listing-price";
+import { ListingPriceLabel } from "@/components/listing-price-label";
 import { prisma } from "@/lib/prisma";
 import {
   applyVipMaskToProject,
@@ -168,14 +168,14 @@ export default async function ExplorePage({ searchParams }: Props) {
 
   return (
     <div className="app-container py-4 sm:py-5">
-      <section className="rounded-xl border border-white/10 bg-zinc-950/80 p-2.5 sm:p-3">
+      <section className="rounded-xl border border-white/10 bg-zinc-950/80 p-2 sm:p-2.5">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-          <h1 className="text-sm font-semibold tracking-tight text-white sm:text-[15px]">Explore calls</h1>
-          <span className="text-[10px] tabular-nums text-zinc-500">
+          <h1 className="text-xs font-semibold tracking-tight text-white sm:text-sm">Explore calls</h1>
+          <span className="text-xs tabular-nums text-zinc-500">
             {total} listing{total === 1 ? "" : "s"}
           </span>
         </div>
-        <p className="mt-0.5 text-[10px] leading-snug text-zinc-500 sm:text-[11px]">
+        <p className="mt-0.5 text-xs leading-snug text-zinc-500">
           Public and VIP calls on Telegram and Discord.
         </p>
 
@@ -186,19 +186,19 @@ export default async function ExplorePage({ searchParams }: Props) {
               defaultValue={q}
               type="search"
               placeholder="Search…"
-              className="min-h-0 min-w-0 flex-1 rounded-md border border-white/10 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/25 focus:outline-none sm:py-1.5"
+              className="min-h-0 min-w-0 flex-1 rounded-md border border-white/10 bg-zinc-900 px-2 py-1 text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-white/25 focus:outline-none sm:py-1.5"
             />
             <div className="flex shrink-0 gap-1.5 sm:items-stretch">
               <button
                 type="submit"
-                className="rounded-md bg-white px-2.5 py-1 text-[10px] font-medium text-black transition hover:bg-zinc-200 sm:px-3 sm:py-1.5"
+                className="rounded-md bg-white px-2.5 py-1 text-xs font-medium text-black transition hover:bg-zinc-200 sm:px-3 sm:py-1.5"
               >
                 Search
               </button>
               {hasActiveFilters && (
                 <Link
                   href="/explore"
-                  className="inline-flex items-center justify-center rounded-md border border-white/12 px-2.5 py-1 text-center text-[10px] text-zinc-400 transition hover:border-white/20 hover:text-zinc-200 sm:px-3"
+                  className="inline-flex items-center justify-center rounded-md border border-white/12 px-2.5 py-1 text-center text-xs text-zinc-400 transition hover:border-white/20 hover:text-zinc-200 sm:px-3"
                 >
                   Clear
                 </Link>
@@ -210,7 +210,7 @@ export default async function ExplorePage({ searchParams }: Props) {
             <select
               name="platform"
               defaultValue={platform}
-              className="h-7 min-w-0 max-w-full flex-1 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-[10px] text-zinc-100 focus:border-white/25 focus:outline-none sm:max-w-[7.5rem] sm:flex-none"
+              className="h-6 min-w-0 max-w-full flex-1 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-xs text-zinc-100 focus:border-white/25 focus:outline-none sm:h-7 sm:max-w-[7.5rem] sm:flex-none"
             >
               <option value="ALL">Platform</option>
               <option value="TELEGRAM">Telegram</option>
@@ -219,7 +219,7 @@ export default async function ExplorePage({ searchParams }: Props) {
             <select
               name="type"
               defaultValue={type}
-              className="h-7 min-w-0 max-w-full flex-1 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-[10px] text-zinc-100 focus:border-white/25 focus:outline-none sm:max-w-[7.5rem] sm:flex-none"
+              className="h-6 min-w-0 max-w-full flex-1 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-xs text-zinc-100 focus:border-white/25 focus:outline-none sm:h-7 sm:max-w-[7.5rem] sm:flex-none"
             >
               <option value="ALL">Type</option>
               <option value="PUBLIC">Public</option>
@@ -228,7 +228,7 @@ export default async function ExplorePage({ searchParams }: Props) {
             <select
               name="access"
               defaultValue={access}
-              className="h-7 min-w-0 max-w-full flex-1 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-[10px] text-zinc-100 focus:border-white/25 focus:outline-none sm:max-w-[6.5rem] sm:flex-none"
+              className="h-6 min-w-0 max-w-full flex-1 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-xs text-zinc-100 focus:border-white/25 focus:outline-none sm:h-7 sm:max-w-[6.5rem] sm:flex-none"
             >
               <option value="ALL">Access</option>
               <option value="FREE">Open</option>
@@ -237,7 +237,7 @@ export default async function ExplorePage({ searchParams }: Props) {
             <select
               name="sort"
               defaultValue={sort}
-              className="h-7 min-w-0 max-w-full flex-1 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-[10px] text-zinc-100 focus:border-white/25 focus:outline-none sm:max-w-[9.5rem] sm:flex-none"
+              className="h-6 min-w-0 max-w-full flex-1 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-xs text-zinc-100 focus:border-white/25 focus:outline-none sm:h-7 sm:max-w-[9.5rem] sm:flex-none"
             >
               <option value="newest">Newest</option>
               <option value="oldest">Oldest</option>
@@ -252,7 +252,7 @@ export default async function ExplorePage({ searchParams }: Props) {
                 step="0.01"
                 defaultValue={minPrice}
                 placeholder="Min $"
-                className="h-7 w-16 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-[10px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/25 focus:outline-none sm:w-[4.5rem]"
+                className="h-6 w-14 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-white/25 focus:outline-none sm:h-7 sm:w-[4.5rem]"
               />
               <input
                 name="maxPrice"
@@ -261,7 +261,7 @@ export default async function ExplorePage({ searchParams }: Props) {
                 step="0.01"
                 defaultValue={maxPrice}
                 placeholder="Max $"
-                className="h-7 w-16 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-[10px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/25 focus:outline-none sm:w-[4.5rem]"
+                className="h-6 w-14 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-white/25 focus:outline-none sm:h-7 sm:w-[4.5rem]"
               />
             </div>
           </div>
@@ -272,7 +272,7 @@ export default async function ExplorePage({ searchParams }: Props) {
         {items.length === 0 ? (
           <div className="rounded-xl border border-dashed border-white/10 bg-zinc-950/60 px-4 py-6 text-center">
             <p className="text-xs text-zinc-400">No matching calls found.</p>
-            <p className="mt-1 text-[10px] text-zinc-600">Try a broader search or clear filters.</p>
+            <p className="mt-1 text-xs text-zinc-600">Try a broader search or clear filters.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6">
@@ -281,33 +281,34 @@ export default async function ExplorePage({ searchParams }: Props) {
               return (
                 <article
                   key={p.id}
-                  className="flex h-full flex-col rounded-xl border border-white/10 bg-zinc-950/70 p-2.5 transition hover:border-white/20 hover:bg-zinc-900/70"
+                  className="flex h-full flex-col rounded-xl border border-white/10 bg-zinc-950/70 p-2 transition hover:border-white/20 hover:bg-zinc-900/70"
                 >
                   <div className="flex items-start justify-between gap-1.5">
-                    <div className="flex min-w-0 flex-1 items-start gap-2">
+                    <div className="flex min-w-0 flex-1 items-start gap-1.5">
                       {p.communityImage ? (
-                        <div className="relative mt-0.5 h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-white/15 sm:h-11 sm:w-11">
+                        <div className="relative mt-0.5 h-8 w-8 shrink-0 overflow-hidden rounded-md border border-white/15 sm:h-9 sm:w-9">
                           <Image
                             src={p.communityImage}
                             alt=""
-                            width={44}
-                            height={44}
+                            width={36}
+                            height={36}
                             unoptimized
                             className="h-full w-full object-cover"
                           />
                         </div>
                       ) : (
-                        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-zinc-900 text-[10px] font-semibold text-zinc-200 sm:h-11 sm:w-11 sm:text-[11px]">
+                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-zinc-900 text-xs font-semibold text-zinc-200 sm:h-9 sm:w-9">
                           {groupInitial(p.title)}
                         </div>
                       )}
-                      <div className="min-w-0 flex-1 pt-1 sm:pt-1.5">
-                        <p className="line-clamp-1 text-[11px] font-medium text-zinc-100">{p.title}</p>
-                        <p className="mt-0.5 line-clamp-1 text-[10px] text-zinc-500">{p.shortPitch}</p>
+                      <div className="min-w-0 flex-1 pt-0.5 sm:pt-0.5">
+                        <p className="line-clamp-2 text-xs font-semibold leading-snug text-zinc-100 sm:text-sm">
+                          {p.title}
+                        </p>
                       </div>
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
-                      <span className="rounded-full border border-white/10 px-1 py-0.5 text-[8px] leading-none text-zinc-400">
+                    <div className="flex shrink-0 flex-col items-end gap-0.5 pt-0.5">
+                      <span className="rounded-full border border-white/10 px-1 py-px text-[10px] font-medium leading-none tracking-wide text-zinc-500">
                         {p.accessType === "PAID" ? "VIP" : "Open"}
                       </span>
                       <div className="flex justify-end">
@@ -316,42 +317,53 @@ export default async function ExplorePage({ searchParams }: Props) {
                     </div>
                   </div>
 
-                  <div className="mt-2 flex min-w-0 items-center justify-between gap-2">
-                    <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                  <p className="mt-1.5 line-clamp-2 text-[8px] leading-snug text-zinc-500/90 sm:text-[9px] sm:leading-relaxed">
+                    {p.shortPitch}
+                  </p>
+
+                  <div className="mt-1.5 flex min-w-0 items-center justify-between gap-1.5 border-t border-white/10 pt-1.5 text-[9px] leading-tight sm:text-[10px] sm:gap-2">
+                    <div className="flex min-w-0 flex-1 items-center gap-0.5">
                       {p.user.image ? (
                         <Image
                           src={p.user.image}
                           alt={p.user.name || "Creator"}
-                          width={20}
-                          height={20}
-                          className="h-5 w-5 shrink-0 rounded-full border border-white/10 object-cover"
+                          width={12}
+                          height={12}
+                          className="h-3 w-3 shrink-0 rounded-full border border-white/10 object-cover"
                         />
                       ) : (
                         <div
-                          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-zinc-800 text-[8px] font-semibold text-zinc-300"
+                          className="flex h-3 w-3 shrink-0 items-center justify-center rounded-full border border-white/10 bg-zinc-800 text-[8px] font-semibold leading-none text-zinc-300"
                           aria-hidden
                         >
                           {userInitial(p.user.name)}
                         </div>
                       )}
-                      <div className="min-w-0 flex-1 truncate text-[10px] text-zinc-400">
+                      <div className="min-w-0 flex-1 truncate text-zinc-400">
                         <XUsername
                           name={p.user.name || "Anonymous"}
                           xHandle={p.user.xHandle}
                           xUserId={p.user.accounts?.[0]?.providerAccountId}
-                          className="text-zinc-200"
+                          className="text-zinc-300"
                         />
-                        {p.user.wallet && <span className="ml-1 text-emerald-400">verified</span>}
+                        {p.user.wallet ? (
+                          <span className="ml-1 text-emerald-500/90">· verified</span>
+                        ) : null}
                       </div>
                     </div>
-                    <span className="shrink-0 tabular-nums text-[10px] font-medium leading-none text-zinc-200">
-                      {formatListingPrice(p, p.priceOptions)}
+                    <span className="shrink-0 text-right text-inherit text-zinc-300">
+                      <ListingPriceLabel
+                        project={p}
+                        priceOptions={p.priceOptions}
+                        compact
+                        textClassName="text-inherit font-medium tabular-nums"
+                      />
                     </span>
                   </div>
 
                   <Link
                     href={`/p/${p.slug}`}
-                    className="mt-2 inline-flex w-full items-center justify-center rounded-md border border-white/15 px-2 py-1 text-[9px] text-zinc-200 transition hover:border-white/30 hover:text-white"
+                    className="mt-1.5 inline-flex w-full items-center justify-center rounded-md border border-white/15 px-1.5 py-0.5 text-xs text-zinc-400 transition hover:border-white/30 hover:text-zinc-200 sm:py-1"
                   >
                     View detail
                   </Link>

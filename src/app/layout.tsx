@@ -39,7 +39,7 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`${sora.variable} ${geistMono.variable} h-full`}
     >
-      <body className="min-h-full bg-black text-zinc-100 antialiased">
+      <body className="min-h-full bg-black text-sm text-zinc-100 antialiased">
         <AppProviders>
           <div className="relative flex min-h-screen flex-col bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.07),transparent_35%)]">
             <SiteHeader />

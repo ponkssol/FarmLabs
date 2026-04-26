@@ -61,7 +61,7 @@ export default async function Home() {
         <div className="app-container">
           <div className="relative pb-5 pt-8 text-center sm:pb-6 sm:pt-10">
             <div className="pointer-events-none absolute inset-x-0 -top-14 h-64 bg-[radial-gradient(circle,rgba(255,255,255,0.18),transparent_70%)]" />
-            <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-zinc-500">Degen calls marketplace</p>
+            <p className="text-sm font-medium uppercase tracking-[0.24em] text-zinc-500">Degen calls marketplace</p>
             <h1 className="mx-auto mt-3 max-w-3xl text-2xl font-semibold tracking-tight text-white sm:text-4xl">
               Built for degens. Public calls to VIP alpha.
             </h1>
@@ -91,31 +91,33 @@ export default async function Home() {
           <div className="grid grid-cols-2 divide-x divide-y divide-white/10 bg-black/40 text-center sm:grid-cols-4 sm:divide-y-0">
             <div className="px-3 py-4">
               <p className="text-lg font-semibold text-white">$950k+</p>
-              <p className="text-[11px] text-zinc-500">Escrowed volume</p>
+              <p className="text-sm text-zinc-500">Escrowed volume</p>
             </div>
             <div className="px-3 py-4">
               <p className="text-lg font-semibold text-white">1,200+</p>
-              <p className="text-[11px] text-zinc-500">Public + private calls</p>
+              <p className="text-sm text-zinc-500">Public + private calls</p>
             </div>
             <div className="px-3 py-4">
               <p className="text-lg font-semibold text-white">&lt;300ms</p>
-              <p className="text-[11px] text-zinc-500">API response</p>
+              <p className="text-sm text-zinc-500">API response</p>
             </div>
             <div className="px-3 py-4">
               <p className="text-lg font-semibold text-white">24/7</p>
-              <p className="text-[11px] text-zinc-500">Degen activity</p>
+              <p className="text-sm text-zinc-500">Degen activity</p>
             </div>
           </div>
         </div>
       </section>
 
       <section className="app-container pb-12 pt-7 sm:pb-14 sm:pt-8">
-        <div className="mb-2 flex items-end justify-between">
+        <div className="mb-1.5 flex items-end justify-between gap-2">
           <div>
-            <h2 className="text-base font-semibold tracking-tight">Top 10 Community</h2>
-            <p className="mt-1 text-xs text-zinc-500">Ranked by escrow activity on FarmLabs (ties → newest first).</p>
+            <h2 className="text-sm font-semibold tracking-tight text-white sm:text-base">Top 10 Community</h2>
+            <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">
+              Ranked by escrow activity on FarmLabs (ties → newest first).
+            </p>
           </div>
-          <Link href="/explore" className="shrink-0 text-sm text-zinc-500 transition hover:text-zinc-300">
+          <Link href="/explore" className="shrink-0 text-xs text-zinc-500 transition hover:text-zinc-300">
             View all
           </Link>
         </div>

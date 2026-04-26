@@ -14,6 +14,9 @@ export async function POST(
   _request: NextRequest,
   context: { params: Promise<Params> },
 ) {
+  if (process.env.NEXT_PUBLIC_ENABLE_TELEGRAM_GROUP_BOT !== "true") {
+    return NextResponse.json({ error: "Telegram group bot is disabled" }, { status: 403 });
+  }
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

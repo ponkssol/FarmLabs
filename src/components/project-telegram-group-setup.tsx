@@ -96,8 +96,8 @@ export function ProjectTelegramGroupSetup({ projectId, onSynced }: Props) {
 
   return (
     <div className="mt-2 rounded-md border border-amber-400/15 bg-amber-950/20 px-2.5 py-2">
-      <p className="text-[9px] font-medium uppercase tracking-wide text-amber-200/80">2 — Verify bot in the group</p>
-      <p className="mt-0.5 text-[9px] leading-relaxed text-zinc-500 sm:text-[10px]">
+      <p className="text-xs font-medium uppercase tracking-wide text-amber-200/80">2 — Verify bot in the group</p>
+      <p className="mt-0.5 text-xs leading-relaxed text-zinc-500 sm:text-sm">
         The bot must be an <strong>admin</strong> in your VIP supergroup. On the site, link Telegram: Dashboard →
         Create link. Click below, open the bot, then in the <strong>group</strong> send{" "}
         <code className="text-zinc-400">/setgroup</code> (the code is stored when you use the “Open bot” link). This
@@ -108,17 +108,17 @@ export function ProjectTelegramGroupSetup({ projectId, onSynced }: Props) {
           type="button"
           onClick={() => void create()}
           disabled={loading}
-          className="rounded border border-amber-400/25 bg-zinc-900/90 px-2.5 py-1 text-[9px] font-medium text-amber-100 disabled:opacity-50"
+          className="rounded border border-amber-400/25 bg-zinc-900/90 px-2.5 py-1 text-xs font-medium text-amber-100 disabled:opacity-50"
         >
           {loading ? "…" : "Open verification in Telegram"}
         </button>
         {polling && !synced ? (
-          <span className="text-[8px] text-zinc-500">Waiting for /setgroup in the group… (auto-checking)</span>
+          <span className="text-xs text-zinc-500">Waiting for /setgroup in the group… (auto-checking)</span>
         ) : null}
-        {synced ? <span className="text-[8px] text-emerald-400/90">Synced</span> : null}
+        {synced ? <span className="text-xs text-emerald-400/90">Synced</span> : null}
       </div>
       {openUrl ? (
-        <p className="mt-2 text-[8px] text-zinc-400">
+        <p className="mt-2 text-xs text-zinc-400">
           <a className="text-sky-400 underline" href={openUrl} target="_blank" rel="noreferrer">
             Open bot in Telegram
           </a>{" "}
@@ -127,11 +127,11 @@ export function ProjectTelegramGroupSetup({ projectId, onSynced }: Props) {
         </p>
       ) : null}
       {inGroup ? (
-        <pre className="mt-1.5 max-h-40 overflow-auto rounded border border-white/10 bg-black/30 p-2 text-[8px] leading-normal whitespace-pre-wrap text-zinc-400">
+        <pre className="mt-1.5 max-h-40 overflow-auto rounded border border-white/10 bg-black/30 p-2 text-xs leading-normal whitespace-pre-wrap text-zinc-400">
           {inGroup}
         </pre>
       ) : null}
-      {err ? <p className="mt-1.5 text-[9px] text-rose-400/90">{err}</p> : null}
+      {err ? <p className="mt-1.5 text-xs text-rose-400/90">{err}</p> : null}
     </div>
   );
 }

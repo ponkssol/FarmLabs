@@ -56,7 +56,7 @@ export function PlatformIcons({ telegram, discord }: P) {
   }
 
   if (show.length === 0) {
-    return <span className="text-[11px] text-zinc-600">—</span>;
+    return <span className="text-sm text-zinc-600">—</span>;
   }
 
   return (

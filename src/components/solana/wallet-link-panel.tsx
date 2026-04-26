@@ -4,6 +4,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { useSession } from "next-auth/react";
 import { useCallback, useState } from "react";
 import { resultToPanelMessage, runPhantomConnectFlow } from "@/lib/solana-phantom-connect";
+import { shortSolanaAddress } from "@/lib/wallet-display";
 
 type PanelProps = {
   /** Tighter padding and type scale for embedded dashboard sidebar */
@@ -11,11 +12,6 @@ type PanelProps = {
   /** No outer card — sits inside dashboard profile card; address shown here when saved */
   inProfile?: boolean;
 };
-
-function shortAddr(s: string) {
-  if (s.length <= 12) return s;
-  return `${s.slice(0, 4)}…${s.slice(-4)}`;
-}
 
 export function WalletLinkPanel({ compact = false, inProfile = false }: PanelProps) {
   const { publicKey, connect, disconnect, connected, connecting, wallet, select } = useWallet();
@@ -93,7 +89,7 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
       }
     >
       {inProfile ? (
-        <p className="text-[8px] font-semibold uppercase tracking-[0.12em] text-zinc-500 sm:text-[9px] sm:tracking-[0.16em]">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 sm:text-xs sm:tracking-[0.16em]">
           Wallet
         </p>
       ) : (
@@ -102,7 +98,7 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
             <h2
               className={
                 compact
-                  ? "text-[9px] font-semibold uppercase tracking-widest text-zinc-500"
+                  ? "text-xs font-semibold uppercase tracking-widest text-zinc-500"
                   : "text-sm font-semibold uppercase tracking-widest text-zinc-500"
               }
             >
@@ -111,7 +107,7 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
             <p
               className={
                 compact
-                  ? "mt-1.5 text-[9px] leading-relaxed text-zinc-500 sm:text-[10px]"
+                  ? "mt-1.5 text-xs leading-relaxed text-zinc-500 sm:text-sm"
                   : "mt-2 max-w-xl text-sm leading-relaxed text-zinc-400"
               }
             >
@@ -124,7 +120,7 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
       )}
 
       {inProfile && !session.user.wallet && (
-        <p className="text-[9px] leading-relaxed text-zinc-500 sm:text-[10px]">
+        <p className="text-xs leading-relaxed text-zinc-500 sm:text-sm">
           Connect Phantom and save to verify your listings.
         </p>
       )}
@@ -133,7 +129,7 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
         <p
           className={
             compact
-              ? "mt-2 rounded border border-white/10 bg-zinc-900 px-2 py-1 font-mono text-[8px] break-all text-zinc-300 sm:text-[9px]"
+              ? "mt-2 rounded border border-white/10 bg-zinc-900 px-2 py-1 font-mono text-xs break-all text-zinc-300 sm:text-xs"
               : "mt-4 rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 font-mono text-xs break-all text-zinc-300"
           }
         >
@@ -143,10 +139,10 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
 
       {session.user.wallet && inProfile && !connected && (
         <p
-          className="max-w-full rounded border border-white/8 bg-zinc-900/80 px-2 py-1 font-mono text-[8px] text-zinc-200 sm:text-[9px]"
+          className="max-w-full rounded border border-white/8 bg-zinc-900/80 px-2 py-1 font-mono text-xs text-zinc-200 sm:text-xs"
           title={session.user.wallet}
         >
-          {shortAddr(session.user.wallet)}
+          {shortSolanaAddress(session.user.wallet)}
         </p>
       )}
 
@@ -166,9 +162,9 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
             disabled={connecting}
             className={
               inProfile
-                ? "w-full rounded-md border border-white/20 bg-white px-2.5 py-1.5 text-center text-[10px] font-medium text-zinc-950 transition hover:bg-zinc-200 disabled:opacity-50 sm:w-auto"
+                ? "w-full rounded-md border border-white/20 bg-white px-2.5 py-1.5 text-center text-sm font-medium text-zinc-950 transition hover:bg-zinc-200 disabled:opacity-50 sm:w-auto"
                 : tight
-                ? "w-full rounded-md bg-white px-2.5 py-1.5 text-[10px] font-medium text-black transition hover:bg-zinc-200 disabled:opacity-50 sm:w-auto"
+                ? "w-full rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-black transition hover:bg-zinc-200 disabled:opacity-50 sm:w-auto"
                 : "rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:bg-zinc-200 disabled:opacity-50"
             }
           >
@@ -179,14 +175,14 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
             <span
               className={
                 inProfile
-                  ? "block max-w-full rounded border border-white/8 bg-zinc-900/80 px-2 py-1 font-mono text-[8px] break-all text-zinc-200 sm:text-[9px]"
+                  ? "block max-w-full rounded border border-white/8 bg-zinc-900/80 px-2 py-1 font-mono text-xs break-all text-zinc-200 sm:text-xs"
                   : tight
-                  ? "block max-w-full rounded border border-white/10 bg-zinc-900 px-2 py-1 font-mono text-[8px] break-all text-zinc-400 sm:text-[9px]"
+                  ? "block max-w-full rounded border border-white/10 bg-zinc-900 px-2 py-1 font-mono text-xs break-all text-zinc-400 sm:text-xs"
                   : "max-w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 font-mono text-xs break-all text-zinc-400"
               }
               title={publicKey?.toBase58() ?? ""}
             >
-              {inProfile ? (publicKey ? shortAddr(publicKey.toBase58()) : "—") : (publicKey?.toBase58() ?? "-")}
+              {inProfile ? (publicKey ? shortSolanaAddress(publicKey.toBase58()) : "—") : (publicKey?.toBase58() ?? "-")}
             </span>
             <button
               type="button"
@@ -194,9 +190,9 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
               disabled={saving || !publicKey || sameAsSaved}
               className={
                 inProfile
-                  ? "shrink-0 rounded border border-white/20 px-2 py-1.5 text-[9px] text-white transition hover:border-white/40 disabled:opacity-50"
+                  ? "shrink-0 rounded border border-white/20 px-2 py-1.5 text-xs text-white transition hover:border-white/40 disabled:opacity-50"
                   : tight
-                  ? "rounded border border-white/20 px-2 py-1 text-[9px] text-white transition hover:border-white/40 disabled:opacity-50"
+                  ? "rounded border border-white/20 px-2 py-1 text-xs text-white transition hover:border-white/40 disabled:opacity-50"
                   : "rounded-lg border border-white/20 px-3 py-2 text-sm text-white transition hover:border-white/40 disabled:opacity-50"
               }
             >
@@ -208,9 +204,9 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
               disabled={saving}
               className={
                 inProfile
-                  ? "self-start text-left text-[8px] text-zinc-500 sm:text-[9px]"
+                  ? "self-start text-left text-xs text-zinc-500 sm:text-xs"
                   : tight
-                  ? "text-left text-[8px] text-zinc-500 sm:text-[9px]"
+                  ? "text-left text-xs text-zinc-500 sm:text-xs"
                   : "text-xs text-zinc-500 transition hover:text-zinc-300"
               }
             >
@@ -224,9 +220,9 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
         <p
           className={
             inProfile
-              ? "mt-0.5 text-[8px] text-zinc-500 sm:text-[9px]"
+              ? "mt-0.5 text-xs text-zinc-500 sm:text-xs"
               : tight
-                ? "mt-1.5 text-[9px] text-zinc-500 sm:text-[10px]"
+                ? "mt-1.5 text-xs text-zinc-500 sm:text-sm"
                 : "mt-3 text-sm text-zinc-400"
           }
         >
