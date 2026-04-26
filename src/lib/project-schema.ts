@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const groupTypeSchema = z.enum(["PUBLIC", "PRIVATE"]);
 export const accessTypeSchema = z.enum(["FREE", "PAID"]);
+export const priceCurrencySchema = z.enum(["USDC", "SOL"]);
 
 const optUrl = z.preprocess(
   (v) => (v === "" || v === undefined || v === null ? undefined : v),
@@ -26,12 +27,15 @@ const optUrl = z.preprocess(
 export const projectFormSchema = z.object({
   title: z.string().min(2).max(120),
   shortPitch: z.string().min(10).max(280),
-  description: z.string().min(30).max(20_000),
+  description: z.string().max(20_000).default(""),
   groupType: groupTypeSchema.default("PUBLIC"),
   accessType: accessTypeSchema.default("FREE"),
-  priceUsd: z.coerce.number().min(1).max(100_000).optional(),
+  priceAmount: z.preprocess(
+    (v) => (v === "" || v === undefined || v === null ? undefined : v),
+    z.coerce.number().min(0.000_001).max(1_000_000_000).optional(),
+  ),
+  priceCurrency: priceCurrencySchema.default("USDC"),
   category: z.string().max(80).optional().or(z.literal("")),
-  memberCount: z.coerce.number().int().min(0).max(10_000_000).optional(),
   rules: z.string().min(10).max(20_000),
   deliveryPolicy: z.string().min(10).max(20_000),
   xCommunity: optUrl,
@@ -39,12 +43,14 @@ export const projectFormSchema = z.object({
   discord: optUrl,
   published: z.boolean().optional(),
 }).superRefine((value, ctx) => {
-  if (value.accessType === "PAID" && (value.priceUsd == null || Number.isNaN(value.priceUsd))) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["priceUsd"],
-      message: "Price is required for paid groups",
-    });
+  if (value.groupType === "PRIVATE" && value.accessType === "PAID") {
+    if (value.priceAmount == null || Number.isNaN(value.priceAmount)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["priceAmount"],
+        message: "Price is required for paid private calls",
+      });
+    }
   }
   if (!value.telegram && !value.discord && !value.xCommunity) {
     ctx.addIssue({
@@ -63,14 +69,20 @@ function emptyToNull(s: string | undefined) {
 }
 
 export function normalizeProjectForm(input: ProjectForm) {
+  const isPublic = input.groupType === "PUBLIC";
+  const access = isPublic ? "FREE" : input.accessType;
+  const isPaid = access === "PAID" && !isPublic;
+  const currency: "USDC" | "SOL" = input.priceCurrency === "SOL" ? "SOL" : "USDC";
   return {
     ...input,
-    priceUsd: input.accessType === "PAID" ? input.priceUsd : undefined,
+    accessType: access,
+    groupType: input.groupType,
+    priceAmount: isPaid ? input.priceAmount : undefined,
+    priceCurrency: isPaid ? currency : undefined,
     category: emptyToNull(input.category),
     xCommunity: emptyToNull(input.xCommunity),
     telegram: emptyToNull(input.telegram),
     discord: emptyToNull(input.discord),
-    memberCount: input.memberCount ?? undefined,
+    description: (input.description ?? "").trim(),
   };
 }
-

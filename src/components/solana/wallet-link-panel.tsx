@@ -1,9 +1,9 @@
 "use client";
 
 import { useWallet } from "@solana/wallet-adapter-react";
-import type { WalletName } from "@solana/wallet-adapter-base";
 import { useSession } from "next-auth/react";
 import { useCallback, useState } from "react";
+import { resultToPanelMessage, runPhantomConnectFlow } from "@/lib/solana-phantom-connect";
 
 export function WalletLinkPanel() {
   const { publicKey, connect, disconnect, connected, connecting, wallet, select } = useWallet();
@@ -57,16 +57,9 @@ export function WalletLinkPanel() {
 
   const onConnect = useCallback(async () => {
     setMessage(null);
-    try {
-      if (!wallet) {
-        select("Phantom" as WalletName);
-        setMessage("Phantom selected. Click connect once more.");
-        return;
-      }
-      await connect();
-    } catch {
-      setMessage("Failed to connect wallet. Make sure Phantom is installed and unlocked.");
-    }
+    const r = await runPhantomConnectFlow({ wallet, select, connect });
+    const m = resultToPanelMessage(r);
+    if (m) setMessage(m);
   }, [wallet, select, connect]);
 
   if (status === "unauthenticated" || !session) return null;

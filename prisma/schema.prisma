@@ -1,4 +1,4 @@
-// FarmLabs — Auth.js + SQLite (ganti ke PostgreSQL untuk produksi)
+// FarmLabs — Auth.js + SQLite (use PostgreSQL in production)
 generator client {
   provider = "prisma-client-js"
 }
@@ -17,7 +17,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
 
-  /// Alamat publik dompet Solana (Pump.fun) setelah dihubungkan
+  /// Public Solana wallet address (Pump.fun) after connecting
   wallet        String?
   projects      Project[]
   escrowBuys    EscrowOrder[] @relation("BuyerOrders")
@@ -64,12 +64,13 @@ model Project {
   slug           String   @unique
   title          String
   shortPitch     String
-  description    String
+  description    String   @default("")
   groupType      String   @default("PUBLIC")
   accessType     String   @default("FREE")
-  priceUsd       Float?
+  /// Price for paid access; currency in priceCurrency (USDC or SOL)
+  priceAmount    Float?
+  priceCurrency  String?  // USDC | SOL
   category       String?
-  memberCount    Int?
   rules          String   @default("")
   deliveryPolicy String   @default("")
   xCommunity     String?
@@ -91,7 +92,9 @@ model EscrowOrder {
   projectId   String
   buyerId     String
   sellerId    String
-  amountUsd   Float
+  amount      Float
+  /// USDC | SOL
+  currency    String
   status      String   @default("FUNDED")
   note        String?
   createdAt   DateTime @default(now())

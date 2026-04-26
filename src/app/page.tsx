@@ -1,5 +1,11 @@
-﻿import { ProjectCard } from "@/components/project-card";
+﻿import { auth } from "@/auth";
+import { ProjectCard } from "@/components/project-card";
 import { prisma } from "@/lib/prisma";
+import {
+  applyVipMaskToProject,
+  fetchEscrowUnlockedProjectIds,
+  resolveVipViewForProject,
+} from "@/lib/viewer-listing-access";
 import Link from "next/link";
 import { Metadata } from "next";
 
@@ -10,18 +16,31 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const items = await prisma.project.findMany({
+  const rawItems = await prisma.project.findMany({
     where: { published: true },
     orderBy: { createdAt: "desc" },
     take: 6,
     include: { user: { select: { name: true, image: true, wallet: true } } },
   });
+  const session = await auth();
+  const viewerId = session?.user?.id;
+  const unlocked = await fetchEscrowUnlockedProjectIds(
+    viewerId,
+    rawItems.map((p) => p.id),
+  );
+  const items = rawItems.map((p) => {
+    const state = resolveVipViewForProject(p, viewerId, unlocked);
+    return applyVipMaskToProject(p, {
+      redactVipText: state.redactVipText,
+      maskVipLinks: state.maskVipLinks,
+    });
+  });
 
   return (
     <div>
       <section className="w-full border-b border-white/10 bg-gradient-to-b from-zinc-950 via-zinc-900 to-black pb-3 pt-2 sm:pt-3">
-        <div className="mx-auto w-full max-w-[1600px]">
-          <div className="relative px-5 pb-5 pt-8 text-center sm:px-8 sm:pb-6 sm:pt-10">
+        <div className="app-container">
+          <div className="relative pb-5 pt-8 text-center sm:pb-6 sm:pt-10">
             <div className="pointer-events-none absolute inset-x-0 -top-14 h-64 bg-[radial-gradient(circle,rgba(255,255,255,0.18),transparent_70%)]" />
             <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-zinc-500">Degen calls marketplace</p>
             <h1 className="mx-auto mt-3 max-w-3xl text-2xl font-semibold tracking-tight text-white sm:text-4xl">
@@ -48,7 +67,7 @@ export default async function Home() {
             </div>
           </div>
 
-          <div className="border-y border-white/10 bg-white/[0.02] px-4 py-2">
+          <div className="border-y border-white/10 bg-white/[0.02] py-2">
             <p className="text-center text-[10px] uppercase tracking-[0.22em] text-zinc-500">Trusted by degen call operators</p>
             <div className="mt-2 grid grid-cols-2 gap-2 text-center text-xs text-zinc-300 sm:grid-cols-6">
               <span className="rounded border border-white/10 bg-black/20 px-2 py-1.5">MEME LABS</span>
@@ -81,7 +100,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-[1600px] px-4 pb-14 pt-8 sm:px-6 sm:pt-10">
+      <section className="app-container pb-12 pt-7 sm:pb-14 sm:pt-8">
         <div className="mb-6 flex items-end justify-between">
           <h2 className="text-base font-semibold tracking-tight">Latest public calls</h2>
           <Link href="/explore" className="text-sm text-zinc-500 transition hover:text-zinc-300">

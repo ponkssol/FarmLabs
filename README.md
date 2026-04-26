@@ -1,41 +1,41 @@
 # FarmLabs
 
-FarmLabs adalah marketplace **degen community calls** untuk listing:
-- Public call (gratis/open)
-- Private/VIP call (berbayar, checkout escrow)
+FarmLabs is a **degen community calls** marketplace for:
+- Public calls (free / open)
+- Private / VIP calls (paid, escrow checkout)
 
-Platform yang didukung untuk listing link: Telegram, Discord, dan X Community.
+Supported platforms for listing links: Telegram, Discord, and X Community.
 
 ## Quick Start
 
-1. Salin `.env.example` menjadi `.env`.
-2. Isi env wajib:
+1. Copy `.env.example` to `.env`.
+2. Set required environment variables:
    - `AUTH_SECRET`
    - `AUTH_TWITTER_ID`
    - `AUTH_TWITTER_SECRET`
    - `DATABASE_URL` (local SQLite: `file:./dev.db`)
-3. Install dan jalanin:
+3. Install and run:
    - `npm install`
    - `npx prisma db push`
    - `npm run dev`
 
 ## Deploy Checklist
 
-- **Env production**
-  - Set semua env auth + database di provider hosting.
-  - Gunakan `AUTH_URL` sesuai domain production.
+- **Production env**
+  - Set all auth + database environment variables on your host.
+  - Set `AUTH_URL` to your production domain.
 - **X OAuth callback**
-  - Tambahkan callback production:
+  - Add the production callback:
     - `https://your-domain.com/api/auth/callback/twitter`
-  - Pastikan callback localhost tetap ada untuk development.
+  - Keep the localhost callback for development.
 - **Database**
-  - Untuk production, pindahkan dari SQLite ke PostgreSQL.
-  - Jalankan `prisma db push` di environment production.
-- **Build verification**
-  - Jalankan `npm run lint`
-  - Jalankan `npm run build`
-- **Wallet + escrow flow**
-  - Test connect wallet.
-  - Test flow beli private/VIP call sampai order escrow tercatat.
+  - For production, move from SQLite to PostgreSQL.
+  - Run `prisma db push` in the production environment.
+- **Build checks**
+  - Run `npm run lint`
+  - Run `npm run build`
+- **Wallet + escrow**
+  - Test wallet connect.
+  - Test buying a private/VIP call until the escrow order is recorded.
 
-Gunakan dengan tanggung jawab masing-masing. Bukan saran finansial.
+Use at your own risk. Not financial advice.

@@ -11,9 +11,9 @@ const initialValues: ProjectForm = {
   description: "",
   groupType: "PUBLIC",
   accessType: "FREE",
-  priceUsd: undefined,
+  priceAmount: undefined,
+  priceCurrency: "USDC",
   category: "",
-  memberCount: undefined,
   rules: "",
   deliveryPolicy: "",
   xCommunity: "",
@@ -22,11 +22,26 @@ const initialValues: ProjectForm = {
   published: false,
 };
 
+const field =
+  "mt-1 w-full rounded-md border border-white/10 bg-zinc-900 px-2 py-1.5 text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-white/25 focus:outline-none sm:py-2 sm:text-xs";
+const label = "text-[10px] font-medium uppercase tracking-wide text-zinc-500";
+
 type Props = {
   creatorName: string | null;
   creatorImage: string | null;
   wallet: string | null;
 };
+
+function formatPreviewPrice(v: ProjectForm) {
+  if (v.groupType === "PUBLIC") return null;
+  if (v.accessType !== "PAID") return "Free";
+  const a = v.priceAmount ?? 0;
+  if (v.priceCurrency === "SOL") {
+    const s = a % 1 === 0 ? String(a) : a.toFixed(4).replace(/\.?0+$/, "");
+    return `${s} SOL`;
+  }
+  return `${a.toFixed(2)} USDC`;
+}
 
 export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
   const router = useRouter();
@@ -45,8 +60,17 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
   );
 
   const set = <K extends keyof ProjectForm>(k: K, v: ProjectForm[K]) => {
-    setValues((prev) => ({ ...prev, [k]: v }));
+    setValues((prev) => {
+      const next = { ...prev, [k]: v } as ProjectForm;
+      if (k === "groupType" && v === "PUBLIC") {
+        next.accessType = "FREE";
+      }
+      return next;
+    });
   };
+
+  const showPrice = values.groupType === "PRIVATE" && values.accessType === "PAID";
+  const previewPrice = formatPreviewPrice(values);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,8 +79,6 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
 
     const parsed = projectFormSchema.safeParse({
       ...values,
-      priceUsd: values.priceUsd,
-      memberCount: values.memberCount,
       xCommunity: values.xCommunity || undefined,
       discord: values.discord || undefined,
     });
@@ -91,215 +113,268 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-10">
-      <form onSubmit={onSubmit} className="space-y-6 lg:col-span-7">
-        <section className="rounded-2xl border border-white/10 bg-zinc-950/80 p-4 sm:p-6">
-          <h2 className="text-base font-semibold text-white">Community call details</h2>
-          <p className="mt-1 text-xs text-zinc-500">Fill the form, preview updates instantly on the right.</p>
-
-          <div className="mt-4 grid gap-4">
+    <div className="grid gap-3 lg:grid-cols-10 lg:items-start">
+      <form onSubmit={onSubmit} className="space-y-3 lg:col-span-7">
+        <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950/85">
+          <div className="border-b border-white/10 px-3 py-2 sm:px-3.5">
+            <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Call details</h2>
+            <p className="mt-0.5 text-[10px] text-zinc-600 sm:text-[11px]">Form on the left, live preview on the right.</p>
+          </div>
+          <div className="space-y-3 p-3 sm:p-3.5">
             <div>
-              <label className="text-xs text-zinc-400">Call name</label>
+              <label className={label}>Name</label>
               <input
                 value={values.title}
                 onChange={(e) => set("title", e.target.value)}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+                className={field}
                 placeholder="e.g. Solana Insider Club"
               />
             </div>
 
             <div>
-              <label className="text-xs text-zinc-400">Pitch</label>
+              <label className={label}>Pitch</label>
               <textarea
                 value={values.shortPitch}
                 onChange={(e) => set("shortPitch", e.target.value)}
-                className="mt-1 min-h-[90px] w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
-                placeholder="One paragraph for your core narrative."
+                className={`${field} min-h-[72px]`}
+                placeholder="One line pitch."
               />
             </div>
 
             <div>
-              <label className="text-xs text-zinc-400">Call description</label>
+              <label className={label}>Description (optional)</label>
               <textarea
                 value={values.description}
                 onChange={(e) => set("description", e.target.value)}
-                className="mt-1 min-h-[130px] w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
-                placeholder="Explain value, posting style, and target members."
+                className={`${field} min-h-[100px] sm:min-h-[120px]`}
+                placeholder="Longer context if you want — you can leave this empty."
               />
             </div>
           </div>
-        </section>
+        </div>
 
-        <section className="rounded-2xl border border-white/10 bg-zinc-950/80 p-4 sm:p-6">
-          <h2 className="text-base font-semibold text-white">Public/private and monetization</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950/85">
+          <div className="border-b border-white/10 px-3 py-2 sm:px-3.5">
+            <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Access &amp; price</h2>
+          </div>
+          <div className="grid gap-3 p-3 sm:grid-cols-2 sm:gap-2.5 sm:p-3.5">
             <div>
-              <label className="text-xs text-zinc-400">Call type</label>
+              <label className={label}>Call type</label>
               <select
                 value={values.groupType}
                 onChange={(e) => set("groupType", e.target.value as ProjectForm["groupType"])}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+                className={field}
               >
-                <option value="PUBLIC">Public call</option>
-                <option value="PRIVATE">Private call</option>
+                <option value="PUBLIC">Public</option>
+                <option value="PRIVATE">Private</option>
               </select>
             </div>
             <div>
-              <label className="text-xs text-zinc-400">Access mode</label>
+              <label className={label}>Access</label>
               <select
                 value={values.accessType}
                 onChange={(e) => set("accessType", e.target.value as ProjectForm["accessType"])}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
+                className={field}
+                disabled={values.groupType === "PUBLIC"}
               >
-                <option value="FREE">Free/Open</option>
-                <option value="PAID">Paid/VIP</option>
+                <option value="FREE">Open / free</option>
+                <option value="PAID">Paid / VIP</option>
               </select>
             </div>
-            <div>
-              <label className="text-xs text-zinc-400">Price (USD, for private VIP)</label>
-              <input
-                value={values.priceUsd ?? ""}
-                onChange={(e) => set("priceUsd", e.target.value === "" ? undefined : Number(e.target.value))}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
-                placeholder="e.g. 49"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-zinc-400">Category</label>
+            {values.groupType === "PUBLIC" && (
+              <p className="text-[10px] text-zinc-500 sm:col-span-2">Public listings are free. Price applies to private paid calls only.</p>
+            )}
+            {showPrice && (
+              <>
+                <div>
+                  <label className={label}>Price</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="any"
+                    value={values.priceAmount ?? ""}
+                    onChange={(e) => set("priceAmount", e.target.value === "" ? undefined : Number(e.target.value))}
+                    className={field}
+                    placeholder="Amount"
+                  />
+                </div>
+                <div>
+                  <label className={label}>Currency</label>
+                  <select
+                    value={values.priceCurrency}
+                    onChange={(e) =>
+                      set("priceCurrency", e.target.value as ProjectForm["priceCurrency"])
+                    }
+                    className={field}
+                  >
+                    <option value="USDC">USDC</option>
+                    <option value="SOL">SOL</option>
+                  </select>
+                </div>
+              </>
+            )}
+            <div className="sm:col-span-2">
+              <label className={label}>Category</label>
               <input
                 value={values.category ?? ""}
                 onChange={(e) => set("category", e.target.value)}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
-                placeholder="e.g. Alpha calls"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-zinc-400">Members (optional)</label>
-              <input
-                value={values.memberCount ?? ""}
-                onChange={(e) => set("memberCount", e.target.value === "" ? undefined : Number(e.target.value))}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
-                placeholder="e.g. 1200"
+                className={field}
+                placeholder="e.g. Alpha"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-xs text-zinc-400">Call rules</label>
+              <label className={label}>Rules</label>
               <textarea
                 value={values.rules}
                 onChange={(e) => set("rules", e.target.value)}
-                className="mt-1 min-h-[140px] w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
-                placeholder="Posting rules, no spam policy, allowed topics..."
+                className={`${field} min-h-[88px] sm:min-h-[100px]`}
+                placeholder="House rules for the room."
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-xs text-zinc-400">Access delivery policy</label>
+              <label className={label}>How access is delivered</label>
               <textarea
                 value={values.deliveryPolicy}
                 onChange={(e) => set("deliveryPolicy", e.target.value)}
-                className="mt-1 min-h-[120px] w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
-                placeholder="How buyer gets access after payment and expected response time."
+                className={`${field} min-h-[72px]`}
+                placeholder="What happens after payment, response time, etc."
               />
             </div>
           </div>
-        </section>
+        </div>
 
-        <section className="rounded-2xl border border-white/10 bg-zinc-950/80 p-4 sm:p-6">
-          <h2 className="text-base font-semibold text-white">Community links</h2>
-          <div className="mt-4 grid gap-3">
-            <input
-              value={values.telegram}
-              onChange={(e) => set("telegram", e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
-              placeholder="https://t.me/..."
-            />
-            <input
-              value={values.xCommunity ?? ""}
-              onChange={(e) => set("xCommunity", e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
-              placeholder="https://x.com/..."
-            />
-            <input
-              value={values.discord ?? ""}
-              onChange={(e) => set("discord", e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
-              placeholder="https://discord.gg/..."
-            />
+        <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950/85">
+          <div className="border-b border-white/10 px-3 py-2 sm:px-3.5">
+            <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Links &amp; publish</h2>
+            <p className="mt-0.5 text-[10px] text-zinc-600">At least one: Telegram, X, or Discord.</p>
           </div>
-
-          <label className="mt-4 flex items-center gap-2 text-xs text-zinc-300">
-            <input
-              type="checkbox"
-              checked={!!values.published}
-              onChange={(e) => set("published", e.target.checked)}
-              className="h-4 w-4 rounded border-white/20"
-            />
-            Publish this call publicly
-          </label>
-
-          {error && (
-            <div className="mt-3 rounded-md border border-rose-400/30 bg-rose-900/20 px-3 py-2 text-xs text-rose-200">
-              {error}
+          <div className="space-y-2.5 p-3 sm:p-3.5">
+            <div>
+              <span className={label}>Telegram</span>
+              <input
+                value={values.telegram}
+                onChange={(e) => set("telegram", e.target.value)}
+                className={field}
+                placeholder="https://t.me/… (public t.me/yourgroup)"
+              />
             </div>
-          )}
+            <div>
+              <span className={label}>X</span>
+              <input
+                value={values.xCommunity ?? ""}
+                onChange={(e) => set("xCommunity", e.target.value)}
+                className={field}
+                placeholder="https://x.com/…"
+              />
+            </div>
+            <div>
+              <span className={label}>Discord</span>
+              <input
+                value={values.discord ?? ""}
+                onChange={(e) => set("discord", e.target.value)}
+                className={field}
+                placeholder="https://discord.gg/…"
+              />
+            </div>
 
-          <div className="mt-4 flex gap-2">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-md bg-white px-4 py-2 text-sm font-medium text-black disabled:opacity-60"
-            >
-              {submitting ? "Saving..." : "Create call listing"}
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/dashboard")}
-              className="rounded-md border border-white/20 px-4 py-2 text-sm text-zinc-300"
-            >
-              Cancel
-            </button>
+            <label className="mt-1 flex items-center gap-2 text-[11px] text-zinc-400">
+              <input
+                type="checkbox"
+                checked={!!values.published}
+                onChange={(e) => set("published", e.target.checked)}
+                className="h-3.5 w-3.5 rounded border-white/20"
+              />
+              Publish in directory
+            </label>
+
+            {error && (
+              <div className="rounded-md border border-rose-400/30 bg-rose-950/25 px-2.5 py-1.5 text-[10px] text-rose-200 sm:text-[11px]">
+                {error}
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-2 pt-0.5">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="rounded-md bg-white px-2.5 py-1.5 text-[10px] font-medium text-black disabled:opacity-60 sm:px-3 sm:text-xs"
+              >
+                {submitting ? "Saving…" : "Create listing"}
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard")}
+                className="rounded-md border border-white/15 px-2.5 py-1.5 text-[10px] text-zinc-400 sm:text-xs"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        </section>
+        </div>
       </form>
 
       <aside className="lg:col-span-3">
-        <div className="sticky top-20 rounded-2xl border border-white/10 bg-zinc-950/90 p-4 sm:p-6">
-          <h2 className="text-sm font-semibold text-white">Live preview</h2>
-          <p className="mt-1 text-xs text-zinc-500">How your listing will look to users.</p>
+        <div className="lg:sticky lg:top-20">
+          <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950/90">
+            <div className="border-b border-white/10 px-3 py-2 sm:px-3.5">
+              <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Preview</h2>
+            </div>
+            <div className="p-3 sm:p-3.5">
+              <div className="rounded-lg border border-white/10 bg-zinc-900/60 p-3">
+                <div className="flex items-center gap-2.5">
+                  {creatorImage ? (
+                    <Image
+                      src={creatorImage}
+                      alt={creatorName || "Operator"}
+                      width={28}
+                      height={28}
+                      className="h-7 w-7 rounded-full border border-white/10 object-cover"
+                    />
+                  ) : (
+                    <div className="h-7 w-7 rounded-full border border-white/10 bg-zinc-800" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate text-[11px] font-medium text-zinc-200">{creatorName || "Operator"}</p>
+                    <p className="text-[10px] text-zinc-500">{wallet ? "Wallet ok" : "No wallet"}</p>
+                  </div>
+                </div>
 
-          <div className="mt-4 rounded-xl border border-white/10 bg-zinc-900/70 p-4">
-            <div className="flex items-center gap-3">
-              {creatorImage ? (
-                <Image src={creatorImage} alt={creatorName || "Creator"} width={36} height={36} className="rounded-full border border-white/10" />
-              ) : (
-                <div className="h-9 w-9 rounded-full border border-white/10 bg-zinc-800" />
-              )}
-              <div>
-                <p className="text-sm text-zinc-200">{creatorName || "Creator"}</p>
-                <p className="text-[11px] text-zinc-500">{wallet ? "Wallet verified" : "Wallet not linked"}</p>
+                <h3 className="mt-3 text-sm font-semibold text-white">
+                  {values.title || "Untitled"}
+                </h3>
+                <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-500 sm:text-[11px]">
+                  {values.shortPitch || "Pitch preview…"}
+                </p>
+
+                <div className="mt-2.5 flex flex-wrap gap-1">
+                  {links.length > 0 ? (
+                    links.map((l) => (
+                      <span key={l.label} className="rounded border border-white/10 px-1.5 py-0.5 text-[9px] text-zinc-400">
+                        {l.label}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[10px] text-zinc-600">No links yet</span>
+                  )}
+                </div>
+
+                <dl className="mt-2.5 space-y-1 border-t border-white/10 pt-2.5 text-[10px] text-zinc-500">
+                  <div className="flex justify-between gap-2">
+                    <dt>Type</dt>
+                    <dd className="text-zinc-300">{values.groupType}</dd>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <dt>Access</dt>
+                    <dd className="text-zinc-300">{values.accessType}</dd>
+                  </div>
+                  {values.groupType !== "PUBLIC" && (
+                    <div className="flex justify-between gap-2">
+                      <dt>Price</dt>
+                      <dd className="text-zinc-300">{previewPrice}</dd>
+                    </div>
+                  )}
+                </dl>
               </div>
-            </div>
-
-            <h3 className="mt-4 text-base font-semibold text-white">{values.title || "Untitled listing"}</h3>
-            <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-              {values.shortPitch || "Your short pitch will appear here."}
-            </p>
-
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {links.length > 0 ? (
-                links.map((l) => (
-                  <span key={l.label} className="rounded-full border border-white/10 px-2 py-1 text-[10px] text-zinc-300">
-                    {l.label}
-                  </span>
-                ))
-              ) : (
-                <span className="text-[11px] text-zinc-600">No community links yet</span>
-              )}
-            </div>
-
-            <div className="mt-4 border-t border-white/10 pt-3 text-[11px] text-zinc-500">
-              <p>Type: <span className="text-zinc-300">{values.groupType}</span></p>
-              <p className="mt-1">Access: <span className="text-zinc-300">{values.accessType}</span></p>
-              <p className="mt-1">Price: <span className="text-zinc-300">{values.accessType === "PAID" ? `$${values.priceUsd ?? 0}` : "Free"}</span></p>
             </div>
           </div>
         </div>

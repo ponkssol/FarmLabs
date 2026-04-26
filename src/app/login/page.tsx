@@ -16,7 +16,8 @@ export default async function LoginPage({ searchParams }: P) {
   }
   const { callbackUrl } = await searchParams;
   return (
-    <div className="mx-auto max-w-md px-4 py-24 sm:px-0">
+    <div className="app-container py-16 sm:py-24">
+      <div className="mx-auto max-w-md">
       <h1 className="text-2xl font-semibold tracking-tight">Login with X</h1>
       <p className="mt-2 text-sm leading-relaxed text-zinc-500">
         Your X identity is used for listing and community trust on FarmLabs. Connect your Solana wallet
@@ -29,6 +30,7 @@ export default async function LoginPage({ searchParams }: P) {
         Requires <code className="text-zinc-500">AUTH_TWITTER_ID</code> and X OAuth credentials in {" "}
         <code className="text-zinc-500">.env</code>.
       </p>
+      </div>
     </div>
   );
 }

@@ -38,3 +38,10 @@ input[type="search"]::-webkit-search-results-button,
 input[type="search"]::-webkit-search-results-decoration {
   -webkit-appearance: none;
 }
+
+/* One consistent content width + horizontal padding sitewide (wide layout) */
+@layer components {
+  .app-container {
+    @apply mx-auto w-full max-w-[1600px] px-4 sm:px-5;
+  }
+}

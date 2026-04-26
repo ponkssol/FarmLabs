@@ -1,7 +1,9 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { redactVipSocialLinks } from "@/lib/redact-vip-text";
 import { normalizeProjectForm, projectFormSchema } from "@/lib/project-schema";
 import { uniqueProjectSlug } from "@/lib/slug";
+import { isPaidVipListing, shouldMaskVipLinks } from "@/lib/vip-link-access";
 import { NextRequest, NextResponse } from "next/server";
 
 type Params = { id: string };
@@ -15,7 +17,34 @@ export async function GET(
   if (!project) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  return NextResponse.json(project);
+  const session = await auth();
+  const viewerId = session?.user?.id;
+  const hasEscrow = !!(
+    viewerId &&
+    (await prisma.escrowOrder.findFirst({
+      where: { projectId: project.id, buyerId: viewerId },
+    }))
+  );
+  const revealLinks = hasEscrow;
+  if (revealLinks) return NextResponse.json(project);
+  if (!isPaidVipListing(project)) return NextResponse.json(project);
+
+  const masked: typeof project = {
+    ...project,
+    description: project.description
+      ? redactVipSocialLinks(project.description)
+      : project.description,
+    rules: project.rules ? redactVipSocialLinks(project.rules) : project.rules,
+    deliveryPolicy: project.deliveryPolicy
+      ? redactVipSocialLinks(project.deliveryPolicy)
+      : project.deliveryPolicy,
+  };
+  if (shouldMaskVipLinks(project)) {
+    masked.telegram = null;
+    masked.discord = null;
+    masked.xCommunity = null;
+  }
+  return NextResponse.json(masked);
 }
 
 export async function PATCH(
@@ -44,6 +73,7 @@ export async function PATCH(
     slug = await uniqueProjectSlug(data.title);
   }
 
+  const paid = data.groupType === "PRIVATE" && data.accessType === "PAID";
   const project = await prisma.project.update({
     where: { id },
     data: {
@@ -52,9 +82,9 @@ export async function PATCH(
       description: data.description,
       groupType: data.groupType,
       accessType: data.accessType,
-      priceUsd: data.accessType === "PAID" ? data.priceUsd ?? null : null,
+      priceAmount: paid ? data.priceAmount ?? null : null,
+      priceCurrency: paid ? data.priceCurrency ?? null : null,
       category: data.category ?? null,
-      memberCount: data.memberCount ?? null,
       rules: data.rules,
       deliveryPolicy: data.deliveryPolicy,
       xCommunity: data.xCommunity,

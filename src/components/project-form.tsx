@@ -11,9 +11,9 @@ const empty: ProjectForm = {
   description: "",
   groupType: "PUBLIC",
   accessType: "FREE",
-  priceUsd: undefined,
+  priceAmount: undefined,
+  priceCurrency: "USDC",
   category: "",
-  memberCount: undefined,
   rules: "",
   deliveryPolicy: "",
   xCommunity: "",
@@ -38,9 +38,9 @@ export function ProjectForm({ mode, project }: Props) {
           description: project.description,
           groupType: (project.groupType as "PUBLIC" | "PRIVATE") ?? "PUBLIC",
           accessType: (project.accessType as "FREE" | "PAID") ?? "FREE",
-          priceUsd: project.priceUsd ?? undefined,
+          priceAmount: project.priceAmount ?? undefined,
+          priceCurrency: (project.priceCurrency === "SOL" ? "SOL" : "USDC") as ProjectForm["priceCurrency"],
           category: project.category ?? "",
-          memberCount: project.memberCount ?? undefined,
           rules: project.rules,
           deliveryPolicy: project.deliveryPolicy,
           xCommunity: project.xCommunity ?? "",
@@ -59,9 +59,9 @@ export function ProjectForm({ mode, project }: Props) {
     description: "Call summary",
     groupType: "Group type",
     accessType: "Access type",
-    priceUsd: "Price",
+    priceAmount: "Price",
+    priceCurrency: "Currency",
     category: "Category",
-    memberCount: "Members",
     rules: "Rules",
     deliveryPolicy: "Delivery policy",
     xCommunity: "X link",
@@ -70,8 +70,16 @@ export function ProjectForm({ mode, project }: Props) {
   };
 
   const set = <K extends keyof ProjectForm>(k: K, v: ProjectForm[K]) => {
-    setValues((p) => ({ ...p, [k]: v }));
+    setValues((p) => {
+      const next = { ...p, [k]: v } as ProjectForm;
+      if (k === "groupType" && v === "PUBLIC") {
+        next.accessType = "FREE";
+      }
+      return next;
+    });
   };
+
+  const showPrice = values.groupType === "PRIVATE" && values.accessType === "PAID";
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -160,12 +168,14 @@ export function ProjectForm({ mode, project }: Props) {
           </div>
 
           <div>
-            <label className="block text-xs font-medium uppercase tracking-widest text-zinc-500">Call summary</label>
+            <label className="block text-xs font-medium uppercase tracking-widest text-zinc-500">
+              Call summary (optional)
+            </label>
             <textarea
               className="mt-2 min-h-[150px] w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2.5 text-xs sm:text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
               value={values.description}
               onChange={(e) => set("description", e.target.value)}
-              placeholder="Explain your niche, posting frequency, and member benefits."
+              placeholder="Longer text if you need it — you can leave this empty."
             />
           </div>
         </div>
@@ -180,9 +190,9 @@ export function ProjectForm({ mode, project }: Props) {
             ["telegram", "Telegram"] as const,
             ["xCommunity", "X (optional)"] as const,
             ["discord", "Discord"] as const,
-          ] as const).map(([key, label]) => (
+          ] as const).map(([key, plabel]) => (
             <div key={key}>
-              <label className="text-xs text-zinc-500">{label}</label>
+              <label className="text-xs text-zinc-500">{plabel}</label>
               <input
                 className="mt-1 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-xs sm:text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
                 value={String(values[key] ?? "")}
@@ -217,40 +227,51 @@ export function ProjectForm({ mode, project }: Props) {
                 className="mt-2 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2.5 text-xs sm:text-sm text-zinc-100 focus:border-white/30 focus:outline-none"
                 value={values.accessType}
                 onChange={(e) => set("accessType", e.target.value as ProjectForm["accessType"])}
+                disabled={values.groupType === "PUBLIC"}
               >
                 <option value="FREE">Free/Open</option>
                 <option value="PAID">Paid/VIP</option>
               </select>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-widest text-zinc-500">Price (USD, VIP)</label>
-              <input
-                className="mt-2 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2.5 text-xs sm:text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
-                value={values.priceUsd ?? ""}
-                onChange={(e) => set("priceUsd", e.target.value === "" ? undefined : Number(e.target.value))}
-                placeholder="49"
-              />
+          {values.groupType === "PUBLIC" && (
+            <p className="text-xs text-zinc-500">Public calls are free. Price and currency apply only to private paid listings.</p>
+          )}
+          {showPrice && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-medium uppercase tracking-widest text-zinc-500">Price</label>
+                <input
+                  type="number"
+                  min={0}
+                  step="any"
+                  className="mt-2 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2.5 text-xs sm:text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
+                  value={values.priceAmount ?? ""}
+                  onChange={(e) => set("priceAmount", e.target.value === "" ? undefined : Number(e.target.value))}
+                  placeholder="e.g. 10"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium uppercase tracking-widest text-zinc-500">Currency</label>
+                <select
+                  className="mt-2 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2.5 text-xs sm:text-sm text-zinc-100 focus:border-white/30 focus:outline-none"
+                  value={values.priceCurrency}
+                  onChange={(e) => set("priceCurrency", e.target.value as ProjectForm["priceCurrency"])}
+                >
+                  <option value="USDC">USDC</option>
+                  <option value="SOL">SOL</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-widest text-zinc-500">Category</label>
-              <input
-                className="mt-2 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2.5 text-xs sm:text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
-                value={values.category ?? ""}
-                onChange={(e) => set("category", e.target.value)}
-                placeholder="Airdrop / Calls / Education"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-widest text-zinc-500">Members</label>
-              <input
-                className="mt-2 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2.5 text-xs sm:text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white/30 focus:outline-none"
-                value={values.memberCount ?? ""}
-                onChange={(e) => set("memberCount", e.target.value === "" ? undefined : Number(e.target.value))}
-                placeholder="1200"
-              />
-            </div>
+          )}
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-widest text-zinc-500">Category</label>
+            <input
+              className="mt-2 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2.5 text-xs sm:text-sm text-zinc-100 focus:border-white/30 focus:outline-none"
+              value={values.category ?? ""}
+              onChange={(e) => set("category", e.target.value)}
+              placeholder="Airdrop / Calls / Education"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium uppercase tracking-widest text-zinc-500">Call rules</label>
@@ -309,4 +330,3 @@ export function ProjectForm({ mode, project }: Props) {
     </form>
   );
 }
-

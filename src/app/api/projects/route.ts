@@ -2,6 +2,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { normalizeProjectForm, projectFormSchema } from "@/lib/project-schema";
 import { uniqueProjectSlug } from "@/lib/slug";
+import { redactVipSocialLinks } from "@/lib/redact-vip-text";
+import { isPaidVipListing, shouldMaskVipLinks } from "@/lib/vip-link-access";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -33,7 +35,7 @@ export async function GET(request: NextRequest) {
       : {}),
   };
 
-  const [items, total] = await Promise.all([
+  const [rawItems, total] = await Promise.all([
     prisma.project.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -43,6 +45,37 @@ export async function GET(request: NextRequest) {
     }),
     prisma.project.count({ where }),
   ]);
+
+  const session = await auth();
+  const viewerId = session?.user?.id;
+  const purchasedIds = viewerId
+    ? new Set(
+        (
+          await prisma.escrowOrder.findMany({
+            where: { buyerId: viewerId },
+            select: { projectId: true },
+          })
+        ).map((o) => o.projectId),
+      )
+    : new Set<string>();
+
+  const items = rawItems.map((p) => {
+    const purchased = viewerId && purchasedIds.has(p.id);
+    const reveal = purchased;
+    if (reveal) return p;
+    if (!isPaidVipListing(p)) return p;
+    const textMasked = {
+      description: p.description ? redactVipSocialLinks(p.description) : p.description,
+      rules: p.rules ? redactVipSocialLinks(p.rules) : p.rules,
+      deliveryPolicy: p.deliveryPolicy
+        ? redactVipSocialLinks(p.deliveryPolicy)
+        : p.deliveryPolicy,
+    };
+    if (!shouldMaskVipLinks(p)) {
+      return { ...p, ...textMasked };
+    }
+    return { ...p, ...textMasked, telegram: null, discord: null, xCommunity: null };
+  });
 
   return NextResponse.json({ items, total });
 }
@@ -67,6 +100,7 @@ export async function POST(request: Request) {
   const data = normalizeProjectForm(out.data);
   const slug = await uniqueProjectSlug(data.title);
 
+  const paid = data.groupType === "PRIVATE" && data.accessType === "PAID";
   const project = await prisma.project.create({
     data: {
       title: data.title,
@@ -74,9 +108,9 @@ export async function POST(request: Request) {
       description: data.description,
       groupType: data.groupType,
       accessType: data.accessType,
-      priceUsd: data.accessType === "PAID" ? data.priceUsd ?? null : null,
+      priceAmount: paid ? data.priceAmount ?? null : null,
+      priceCurrency: paid ? data.priceCurrency ?? null : null,
       category: data.category ?? null,
-      memberCount: data.memberCount ?? null,
       rules: data.rules,
       deliveryPolicy: data.deliveryPolicy,
       xCommunity: data.xCommunity,

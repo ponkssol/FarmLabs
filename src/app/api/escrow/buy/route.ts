@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { formatEscrowAmountLabel, resolvePriceCurrency } from "@/lib/listing-price";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -32,8 +33,12 @@ export async function POST(request: Request) {
   if (listing.accessType !== "PAID" || listing.groupType !== "PRIVATE") {
     return NextResponse.json({ error: "Escrow purchase only applies to paid private groups." }, { status: 400 });
   }
-  if (!listing.priceUsd || listing.priceUsd <= 0) {
+  if (!listing.priceAmount || listing.priceAmount <= 0) {
     return NextResponse.json({ error: "Invalid listing price." }, { status: 400 });
+  }
+  const currency = resolvePriceCurrency(listing.priceCurrency);
+  if (currency !== "USDC" && currency !== "SOL") {
+    return NextResponse.json({ error: "Unsupported price currency for escrow." }, { status: 400 });
   }
 
   const order = await prisma.escrowOrder.create({
@@ -41,16 +46,18 @@ export async function POST(request: Request) {
       projectId: listing.id,
       buyerId: session.user.id,
       sellerId: listing.userId,
-      amountUsd: listing.priceUsd,
+      amount: listing.priceAmount,
+      currency,
       status: "RELEASED",
-      note: "Auto escrow release after successful checkout.",
+      note: `MVP escrow recorded (${currency}). On-chain USDC/SOL transfer not enforced in this build.`,
       releasedAt: new Date(),
     },
   });
 
   return NextResponse.json({
     ok: true,
-    message: "Payment processed via escrow and automatically released to group owner.",
+    message: `Escrow recorded: ${formatEscrowAmountLabel(listing.priceAmount, currency)} — released to the operator in this demo.`,
     orderId: order.id,
+    currency,
   });
 }

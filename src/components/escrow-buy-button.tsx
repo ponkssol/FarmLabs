@@ -1,8 +1,16 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function EscrowBuyButton({ projectId }: { projectId: string }) {
+type Props = {
+  projectId: string;
+  /** e.g. "12.50 USDC" or "0.5 SOL" — label on the button. */
+  amountLabel?: string;
+};
+
+export function EscrowBuyButton({ projectId, amountLabel }: Props) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -18,6 +26,7 @@ export function EscrowBuyButton({ projectId }: { projectId: string }) {
       const data = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
       if (!res.ok) throw new Error(data.error || "Failed to purchase");
       setMessage(data.message || "Escrow purchase completed.");
+      router.refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Error");
     } finally {
@@ -31,11 +40,15 @@ export function EscrowBuyButton({ projectId }: { projectId: string }) {
         type="button"
         onClick={buy}
         disabled={loading}
-        className="rounded-md bg-white px-4 py-2 text-xs font-medium text-black disabled:opacity-60"
+        className="w-full rounded-md bg-white px-2.5 py-1.5 text-[10px] font-medium text-black disabled:opacity-60"
       >
-        {loading ? "Processing..." : "Buy with escrow"}
+        {loading
+          ? "Processing..."
+          : amountLabel
+            ? `Escrow · ${amountLabel}`
+            : "Buy with escrow"}
       </button>
-      {message && <p className="text-xs text-zinc-400">{message}</p>}
+      {message && <p className="text-[10px] text-zinc-400">{message}</p>}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 ﻿import { WalletLinkPanel } from "@/components/solana/wallet-link-panel";
 import { auth } from "@/auth";
+import { formatEscrowAmountLabel, resolvePriceCurrency } from "@/lib/listing-price";
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
 import Link from "next/link";
@@ -63,7 +64,7 @@ export default async function DashboardPage({ searchParams }: Props) {
   });
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6">
+    <div className="app-container py-6 sm:py-8">
       <div className="grid gap-6 lg:grid-cols-10">
         <div className="space-y-6 lg:col-span-7">
           <section className="rounded-2xl border border-white/10 bg-zinc-950/80 p-4 sm:p-6">
@@ -154,7 +155,8 @@ export default async function DashboardPage({ searchParams }: Props) {
                   key={h.id}
                   className="rounded-xl border border-white/10 bg-zinc-900/60 px-3 py-2.5 text-xs text-zinc-400"
                 >
-                  <span className="text-zinc-200">{h.project.title}</span> · {h.status} · ${h.amountUsd.toFixed(2)} · updated{" "}
+                  <span className="text-zinc-200">{h.project.title}</span> · {h.status} ·{" "}
+                  {formatEscrowAmountLabel(h.amount, resolvePriceCurrency(h.currency))} · updated{" "}
                   {new Date(h.updatedAt).toLocaleDateString("en-US", {
                     day: "2-digit",
                     month: "short",

@@ -1,11 +1,13 @@
-﻿import type { Project, User } from "@prisma/client";
+﻿import { PlatformIcons } from "@/components/platform-icons";
+import { formatListingPrice } from "@/lib/listing-price";
+import type { Project, User } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
 
 type T = Project & { user: Pick<User, "name" | "image" | "wallet"> };
 
 export function ProjectCard({ project, compact = false }: { project: T; compact?: boolean }) {
-  const priceLabel = project.accessType === "PAID" ? `$${project.priceUsd?.toFixed(2) ?? "0.00"}` : "Free";
+  const priceLabel = formatListingPrice(project);
   const typeLabel = project.groupType === "PUBLIC" ? "Public Call" : "Private Call";
   const accessLabel = project.accessType === "PAID" ? "VIP" : "Open";
 
@@ -32,9 +34,11 @@ export function ProjectCard({ project, compact = false }: { project: T; compact?
         <span className="rounded-full border border-white/10 px-2 py-1 text-zinc-400">{typeLabel}</span>
         <span className="rounded-full border border-white/10 px-2 py-1 text-zinc-400">{accessLabel}</span>
         <span className="rounded-full border border-white/10 px-2 py-1 text-zinc-300">{priceLabel}</span>
-        {project.xCommunity && <span className="rounded-full border border-white/10 px-2 py-1 text-zinc-400">X Community</span>}
-        {project.discord && <span className="rounded-full border border-white/10 px-2 py-1 text-zinc-400">Discord</span>}
-        {project.telegram && <span className="rounded-full border border-white/10 px-2 py-1 text-zinc-400">Telegram</span>}
+        {(project.telegram?.trim() || project.discord?.trim() || project.xCommunity?.trim()) && (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2 py-1">
+            <PlatformIcons telegram={project.telegram} discord={project.discord} xCommunity={project.xCommunity} />
+          </span>
+        )}
         {project.category && <span className="rounded-full border border-white/10 px-2 py-1 text-zinc-400">{project.category}</span>}
       </div>
 
