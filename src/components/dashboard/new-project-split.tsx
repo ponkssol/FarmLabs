@@ -6,6 +6,8 @@ import { ProjectDetailImagesField } from "@/components/project-detail-images-fie
 import { TELEGRAM_GROUP_BOT_UI, TELEGRAM_GROUP_ID_FORM_UI } from "@/lib/feature-flags";
 import { normalizeProjectForm, projectFormSchema, type ProjectForm } from "@/lib/project-schema";
 import { uploadCommunityLogoFile } from "@/lib/upload-community-client";
+import { resultToPanelMessage, runPhantomConnectFlow } from "@/lib/solana-phantom-connect";
+import { useWallet } from "@solana/wallet-adapter-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -17,7 +19,7 @@ const initialValues: ProjectForm = {
   groupType: "PUBLIC",
   accessType: "FREE",
   priceAmount: undefined,
-  priceCurrency: "USDC",
+  priceCurrency: "SOL",
   category: "",
   rules: "",
   deliveryPolicy: "",
@@ -43,13 +45,13 @@ type Props = {
 function formatPreviewPrice(v: ProjectForm) {
   if (v.groupType === "PUBLIC") return null;
   if (v.accessType !== "PAID") return "Free";
-  const cur = v.priceCurrency === "SOL" ? "SOL" : "USDC";
+  const cur = "SOL";
   const line = (amount: number) => {
     if (cur === "SOL") {
       const s = amount % 1 === 0 ? String(amount) : amount.toFixed(4).replace(/\.?0+$/, "");
       return `${s} SOL`;
     }
-    return `${amount.toFixed(2)} USDC`;
+    return `${amount.toFixed(4).replace(/\.?0+$/, "")} SOL`;
   };
   const opts = (v.priceOptions ?? []).filter((o) => o.label.trim().length > 0 && o.priceAmount > 0);
   if (opts.length > 1) {
@@ -64,6 +66,7 @@ function formatPreviewPrice(v: ProjectForm) {
 
 export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
   const router = useRouter();
+  const { connected, connect, connecting, wallet: selectedWallet, wallets, select } = useWallet();
   const [values, setValues] = useState<ProjectForm>(initialValues);
   const [submitting, setSubmitting] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
@@ -127,17 +130,60 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
       if (!res.ok) {
         throw new Error(typeof body.error === "string" ? body.error : "Failed to create project");
       }
-      if (body.id) {
-        router.push(`/dashboard/edit/${body.id}`);
-      } else {
-        router.push("/dashboard");
-      }
+      router.push("/dashboard");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function onConnectWallet() {
+    const result = await runPhantomConnectFlow({
+      wallet: selectedWallet,
+      wallets,
+      select,
+      connect,
+    });
+    if (result.kind !== "connected") {
+      setError(
+        resultToPanelMessage(result, {
+          selected: "Phantom selected. Click connect once more.",
+        }) ?? "Failed to connect wallet.",
+      );
+      return;
+    }
+    setError(null);
+  }
+
+  if (!connected) {
+    return (
+      <div className="rounded-xl border border-amber-500/25 bg-amber-950/15 p-4 sm:p-5">
+        <h2 className="text-sm font-semibold text-amber-200/90 sm:text-base">Connect wallet first</h2>
+        <p className="mt-1 text-xs leading-relaxed text-amber-200/80 sm:text-sm">
+          You must connect your Solana wallet before creating a new listing.
+        </p>
+        {error ? <p className="mt-2 text-xs text-rose-200/90 sm:text-sm">{error}</p> : null}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => void onConnectWallet()}
+            disabled={connecting}
+            className="rounded-md bg-white px-3 py-1.5 text-sm font-medium text-black disabled:opacity-60"
+          >
+            {connecting ? "Connecting…" : "Connect wallet"}
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard")}
+            className="rounded-md border border-white/15 px-3 py-1.5 text-sm text-zinc-300"
+          >
+            Back to dashboard
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -288,7 +334,6 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
                     }
                     className={field}
                   >
-                    <option value="USDC">USDC</option>
                     <option value="SOL">SOL</option>
                   </select>
                 </div>
@@ -302,7 +347,6 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
                   onChange={(e) => set("priceCurrency", e.target.value as ProjectForm["priceCurrency"])}
                   className={field}
                 >
-                  <option value="USDC">USDC</option>
                   <option value="SOL">SOL</option>
                 </select>
               </div>

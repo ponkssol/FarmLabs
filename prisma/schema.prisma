@@ -21,6 +21,8 @@ model User {
 
   /// Public Solana wallet address (Pump.fun) after connecting
   wallet        String?
+  /// Manual blue checkmark toggle (set by admin in database)
+  blueCheckmark Boolean   @default(false)
   /// Numeric Telegram user id (from @FarmLabs bot /start) — used to remove from groups when access expires
   telegramUserId   String?   @unique
   projects         Project[]

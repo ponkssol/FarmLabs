@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 type P = Pick<Project, "telegram" | "discord">;
 
-const iconClass = "h-3 w-3 text-zinc-400";
+const defaultIconClass = "h-3 w-3 text-zinc-400";
 
 function has(s: string | null | undefined) {
   return Boolean(s?.trim());
@@ -38,24 +38,31 @@ const titles: Record<"telegram" | "discord", string> = {
  * Monochrome (zinc) platform icons for listing fields — no URLs.
  * Order: Telegram → Discord.
  */
-export function PlatformIcons({ telegram, discord }: P) {
+export function PlatformIcons({
+  telegram,
+  discord,
+  iconClassName,
+  hideIfEmpty = false,
+  boxed = false,
+}: P & { iconClassName?: string; hideIfEmpty?: boolean; boxed?: boolean }) {
   const show: Array<{ key: "telegram" | "discord"; node: ReactNode; title: string }> = [];
   if (has(telegram)) {
     show.push({
       key: "telegram",
       title: titles.telegram,
-      node: <TelegramGlyph className={iconClass} />,
+      node: <TelegramGlyph className={iconClassName || defaultIconClass} />,
     });
   }
   if (has(discord)) {
     show.push({
       key: "discord",
       title: titles.discord,
-      node: <DiscordGlyph className={iconClass} />,
+      node: <DiscordGlyph className={iconClassName || defaultIconClass} />,
     });
   }
 
   if (show.length === 0) {
+    if (hideIfEmpty) return null;
     return <span className="text-sm text-zinc-600">—</span>;
   }
 
@@ -66,7 +73,15 @@ export function PlatformIcons({ telegram, discord }: P) {
       aria-label={show.map((s) => s.title).join(", ")}
     >
       {show.map((s) => (
-        <span key={s.key} title={s.title} className="inline-flex shrink-0">
+        <span
+          key={s.key}
+          title={s.title}
+          className={
+            boxed
+              ? "inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-md border border-white/15 bg-zinc-900/60 px-1.5"
+              : "inline-flex shrink-0"
+          }
+        >
           {s.node}
         </span>
       ))}

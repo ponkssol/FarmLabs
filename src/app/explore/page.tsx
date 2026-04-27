@@ -2,6 +2,7 @@
 import { PlatformIcons } from "@/components/platform-icons";
 import { XUsername } from "@/components/x-username";
 import { ListingPriceLabel } from "@/components/listing-price-label";
+import { ExploreFilters } from "@/components/explore-filters";
 import { prisma } from "@/lib/prisma";
 import {
   applyVipMaskToProject,
@@ -54,12 +55,17 @@ export default async function ExplorePage({ searchParams }: Props) {
 
   const min = parseOptionalPrice(minPrice);
   const max = parseOptionalPrice(maxPrice);
+  const query = q?.trim();
 
   const platformFilter =
     platform === "TELEGRAM"
-      ? { telegram: { not: null } }
+      ? {
+          AND: [{ telegram: { not: null } }, { telegram: { not: "" } }],
+        }
       : platform === "DISCORD"
-        ? { discord: { not: null } }
+        ? {
+            AND: [{ discord: { not: null } }, { discord: { not: "" } }],
+          }
         : {};
 
   const typeFilter =
@@ -69,7 +75,7 @@ export default async function ExplorePage({ searchParams }: Props) {
     access === "FREE" ? { accessType: "FREE" } : access === "PAID" ? { accessType: "PAID" } : {};
 
   const priceFilter =
-    min != null || max != null
+    (min != null || max != null) && access !== "FREE"
       ? {
           accessType: "PAID",
           priceAmount: {
@@ -92,13 +98,15 @@ export default async function ExplorePage({ searchParams }: Props) {
 
   const where = {
     published: true,
-    ...(q
+    ...(query
       ? {
           OR: [
-            { title: { contains: q } },
-            { shortPitch: { contains: q } },
-            { description: { contains: q } },
-            { category: { contains: q } },
+            { title: { contains: query } },
+            { shortPitch: { contains: query } },
+            { description: { contains: query } },
+            { category: { contains: query } },
+            { user: { name: { contains: query } } },
+            { user: { xHandle: { contains: query } } },
           ],
         }
       : {}),
@@ -109,7 +117,7 @@ export default async function ExplorePage({ searchParams }: Props) {
   };
 
   const hasActiveFilters =
-    Boolean(q) ||
+    Boolean(query) ||
     platform !== "ALL" ||
     type !== "ALL" ||
     access !== "ALL" ||
@@ -128,6 +136,7 @@ export default async function ExplorePage({ searchParams }: Props) {
             name: true,
             image: true,
             wallet: true,
+            blueCheckmark: true,
             xHandle: true,
             accounts: {
               where: { provider: "twitter" },
@@ -167,7 +176,7 @@ export default async function ExplorePage({ searchParams }: Props) {
     (name?.trim() || "?").charAt(0).toUpperCase() || "?";
 
   return (
-    <div className="app-container py-4 sm:py-5">
+    <div className="app-main-container py-4 sm:py-5">
       <section className="rounded-xl border border-white/10 bg-zinc-950/80 p-2 sm:p-2.5">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
           <h1 className="text-xs font-semibold tracking-tight text-white sm:text-sm">Explore calls</h1>
@@ -179,93 +188,16 @@ export default async function ExplorePage({ searchParams }: Props) {
           Public and VIP calls on Telegram and Discord.
         </p>
 
-        <form className="mt-2 space-y-1.5" action="/explore" method="get">
-          <div className="flex flex-col gap-1.5 sm:flex-row sm:items-stretch">
-            <input
-              name="q"
-              defaultValue={q}
-              type="search"
-              placeholder="Search…"
-              className="min-h-0 min-w-0 flex-1 rounded-md border border-white/10 bg-zinc-900 px-2 py-1 text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-white/25 focus:outline-none sm:py-1.5"
-            />
-            <div className="flex shrink-0 gap-1.5 sm:items-stretch">
-              <button
-                type="submit"
-                className="rounded-md bg-white px-2.5 py-1 text-xs font-medium text-black transition hover:bg-zinc-200 sm:px-3 sm:py-1.5"
-              >
-                Search
-              </button>
-              {hasActiveFilters && (
-                <Link
-                  href="/explore"
-                  className="inline-flex items-center justify-center rounded-md border border-white/12 px-2.5 py-1 text-center text-xs text-zinc-400 transition hover:border-white/20 hover:text-zinc-200 sm:px-3"
-                >
-                  Clear
-                </Link>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            <select
-              name="platform"
-              defaultValue={platform}
-              className="h-6 min-w-0 max-w-full flex-1 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-xs text-zinc-100 focus:border-white/25 focus:outline-none sm:h-7 sm:max-w-[7.5rem] sm:flex-none"
-            >
-              <option value="ALL">Platform</option>
-              <option value="TELEGRAM">Telegram</option>
-              <option value="DISCORD">Discord</option>
-            </select>
-            <select
-              name="type"
-              defaultValue={type}
-              className="h-6 min-w-0 max-w-full flex-1 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-xs text-zinc-100 focus:border-white/25 focus:outline-none sm:h-7 sm:max-w-[7.5rem] sm:flex-none"
-            >
-              <option value="ALL">Type</option>
-              <option value="PUBLIC">Public</option>
-              <option value="PRIVATE">Private</option>
-            </select>
-            <select
-              name="access"
-              defaultValue={access}
-              className="h-6 min-w-0 max-w-full flex-1 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-xs text-zinc-100 focus:border-white/25 focus:outline-none sm:h-7 sm:max-w-[6.5rem] sm:flex-none"
-            >
-              <option value="ALL">Access</option>
-              <option value="FREE">Open</option>
-              <option value="PAID">VIP</option>
-            </select>
-            <select
-              name="sort"
-              defaultValue={sort}
-              className="h-6 min-w-0 max-w-full flex-1 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-xs text-zinc-100 focus:border-white/25 focus:outline-none sm:h-7 sm:max-w-[9.5rem] sm:flex-none"
-            >
-              <option value="newest">Newest</option>
-              <option value="oldest">Oldest</option>
-              <option value="price_asc">Price ↑</option>
-              <option value="price_desc">Price ↓</option>
-            </select>
-            <div className="ml-auto flex flex-wrap items-center gap-1.5">
-              <input
-                name="minPrice"
-                type="number"
-                min={0}
-                step="0.01"
-                defaultValue={minPrice}
-                placeholder="Min $"
-                className="h-6 w-14 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-white/25 focus:outline-none sm:h-7 sm:w-[4.5rem]"
-              />
-              <input
-                name="maxPrice"
-                type="number"
-                min={0}
-                step="0.01"
-                defaultValue={maxPrice}
-                placeholder="Max $"
-                className="h-6 w-14 rounded-md border border-white/10 bg-zinc-900 px-1.5 text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-white/25 focus:outline-none sm:h-7 sm:w-[4.5rem]"
-              />
-            </div>
-          </div>
-        </form>
+        <ExploreFilters
+          q={q ?? ""}
+          platform={platform}
+          type={type}
+          access={access}
+          sort={sort}
+          minPrice={minPrice ?? ""}
+          maxPrice={maxPrice ?? ""}
+          hasActiveFilters={hasActiveFilters}
+        />
       </section>
 
       <section className="mt-3">
@@ -308,12 +240,15 @@ export default async function ExplorePage({ searchParams }: Props) {
                       </div>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-0.5 pt-0.5">
-                      <span className="rounded-full border border-white/10 px-1 py-px text-[10px] font-medium leading-none tracking-wide text-zinc-500">
-                        {p.accessType === "PAID" ? "VIP" : "Open"}
-                      </span>
-                      <div className="flex justify-end">
-                        <PlatformIcons telegram={platform.telegram} discord={platform.discord} />
-                      </div>
+                      {p.accessType === "PAID" ? (
+                        <span className="rounded-full border border-amber-300/70 bg-amber-400/15 px-1.5 py-0.5 text-[8px] font-semibold leading-none tracking-[0.08em] text-amber-200 shadow-[0_0_10px_rgba(251,191,36,0.4)]">
+                          VIP
+                        </span>
+                      ) : (
+                        <span className="rounded-full border border-white/10 px-1 py-px text-[9px] font-medium leading-none tracking-wide text-zinc-500">
+                          Open
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -322,33 +257,41 @@ export default async function ExplorePage({ searchParams }: Props) {
                   </p>
 
                   <div className="mt-1.5 flex min-w-0 items-center justify-between gap-1.5 border-t border-white/10 pt-1.5 text-[9px] leading-tight sm:text-[10px] sm:gap-2">
-                    <div className="flex min-w-0 flex-1 items-center gap-0.5">
+                    <div className="flex min-w-0 flex-1 items-center gap-1">
                       {p.user.image ? (
                         <Image
                           src={p.user.image}
                           alt={p.user.name || "Creator"}
-                          width={12}
-                          height={12}
-                          className="h-3 w-3 shrink-0 rounded-full border border-white/10 object-cover"
+                          width={14}
+                          height={14}
+                          className="h-3.5 w-3.5 shrink-0 rounded-full border border-white/10 object-cover"
                         />
                       ) : (
                         <div
-                          className="flex h-3 w-3 shrink-0 items-center justify-center rounded-full border border-white/10 bg-zinc-800 text-[8px] font-semibold leading-none text-zinc-300"
+                          className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-zinc-800 text-[8px] font-semibold leading-none text-zinc-300"
                           aria-hidden
                         >
                           {userInitial(p.user.name)}
                         </div>
                       )}
-                      <div className="min-w-0 flex-1 truncate text-zinc-400">
-                        <XUsername
-                          name={p.user.name || "Anonymous"}
-                          xHandle={p.user.xHandle}
-                          xUserId={p.user.accounts?.[0]?.providerAccountId}
-                          className="text-zinc-300"
-                        />
-                        {p.user.wallet ? (
-                          <span className="ml-1 text-emerald-500/90">· verified</span>
-                        ) : null}
+                      <div className="min-w-0 flex flex-1 items-center text-zinc-400">
+                        <span className="inline-flex min-w-0 max-w-full items-center leading-none">
+                          <XUsername
+                            name={p.user.name || "Anonymous"}
+                            xHandle={p.user.xHandle}
+                            xUserId={p.user.accounts?.[0]?.providerAccountId}
+                            className="block truncate text-zinc-300"
+                          />
+                          {p.user.blueCheckmark ? (
+                            <Image
+                              src="/verified-badge.png"
+                              alt="Verified"
+                              width={12}
+                              height={12}
+                              className="ml-1 h-3 w-3 shrink-0"
+                            />
+                          ) : null}
+                        </span>
                       </div>
                     </div>
                     <span className="shrink-0 text-right text-inherit text-zinc-300">
@@ -361,12 +304,21 @@ export default async function ExplorePage({ searchParams }: Props) {
                     </span>
                   </div>
 
-                  <Link
-                    href={`/p/${p.slug}`}
-                    className="mt-1.5 inline-flex w-full items-center justify-center rounded-md border border-white/15 px-1.5 py-0.5 text-xs text-zinc-400 transition hover:border-white/30 hover:text-zinc-200 sm:py-1"
-                  >
-                    View detail
-                  </Link>
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <Link
+                      href={`/p/${p.slug}`}
+                      className="inline-flex h-6 flex-1 items-center justify-center rounded-md border border-white/15 px-1.5 text-[11px] font-medium text-zinc-400 transition hover:border-white/30 hover:text-zinc-200"
+                    >
+                      View detail
+                    </Link>
+                    <PlatformIcons
+                      telegram={platform.telegram}
+                      discord={platform.discord}
+                      iconClassName="h-2.5 w-2.5 text-zinc-400"
+                      hideIfEmpty
+                      boxed
+                    />
+                  </div>
                 </article>
               );
             })}

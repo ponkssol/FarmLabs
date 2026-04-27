@@ -1,6 +1,7 @@
 ﻿import { auth } from "@/auth";
 import Image from "next/image";
 import Link from "next/link";
+import { Compass, LayoutGrid, Trophy } from "lucide-react";
 import { HeaderWalletConnect } from "./solana/header-wallet-connect";
 import { SignInOut } from "./sign-in-out";
 
@@ -9,8 +10,8 @@ export async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-black/70 backdrop-blur-xl">
-      <div className="app-container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-6">
+      <div className="app-container relative flex h-16 items-center justify-between gap-2">
+        <div className="flex items-center">
           <Link href="/" className="inline-flex items-center" aria-label="FarmLabs home">
             <Image
               src="/farmlabs-logo.png"
@@ -18,30 +19,59 @@ export async function SiteHeader() {
               width={180}
               height={38}
               priority
-              className="h-8 w-auto sm:h-9"
+              className="h-8 w-auto mix-blend-screen sm:h-9"
             />
           </Link>
-          <nav className="hidden items-center gap-1 md:flex">
-            <Link href="/explore" className="rounded-md px-3 py-2 text-sm text-zinc-400 transition hover:bg-white/5 hover:text-white">
+          <nav className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-1 md:flex">
+            <Link href="/explore" className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs text-zinc-400 transition hover:bg-white/5 hover:text-white">
+              <Compass className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
               Explore
             </Link>
+            <span className="text-xs text-zinc-700" aria-hidden>
+              |
+            </span>
+            <Link href="/leaderboard" className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs text-zinc-400 transition hover:bg-white/5 hover:text-white">
+              <Trophy className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+              Leader Board
+            </Link>
             {session && (
-              <Link href="/dashboard" className="rounded-md px-3 py-2 text-sm text-zinc-400 transition hover:bg-white/5 hover:text-white">
+              <>
+                <span className="text-xs text-zinc-700" aria-hidden>
+                  |
+                </span>
+                <Link href="/dashboard" className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs text-zinc-400 transition hover:bg-white/5 hover:text-white">
+                  <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+                  Dashboard
+                </Link>
+              </>
+            )}
+            {!session && (
+              <span className="text-xs text-zinc-700" aria-hidden>
+                |
+              </span>
+            )}
+            {!session && (
+              <span className="inline-flex h-8 items-center justify-center px-2.5 text-xs text-zinc-600">
                 Dashboard
-              </Link>
+              </span>
             )}
           </nav>
         </div>
 
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          <Link href="/explore" className="shrink-0 rounded-md px-3 py-2 text-sm text-zinc-400 transition hover:bg-white/5 hover:text-white md:hidden">
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
+          <Link href="/explore" className="hidden h-8 shrink-0 items-center justify-center rounded-md px-2.5 text-xs text-zinc-400 transition hover:bg-white/5 hover:text-white md:hidden min-[430px]:inline-flex">
             Explore
           </Link>
-          <HeaderWalletConnect />
+          <HeaderWalletConnect
+            isAuthenticated={!!session?.user}
+            userId={session?.user?.id ?? null}
+            savedWallet={session?.user?.wallet ?? null}
+          />
           <SignInOut
             hasSession={!!session}
             image={session?.user?.image ?? null}
             name={session?.user?.name ?? null}
+            verified={Boolean(session?.user?.blueCheckmark)}
           />
         </div>
       </div>

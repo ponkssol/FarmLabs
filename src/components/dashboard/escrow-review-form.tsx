@@ -205,15 +205,15 @@ export function EscrowReviewForm({ orderId, review, operatorName, compact = fals
       <summary
         className={
           c
-            ? "flex cursor-pointer list-none items-center justify-between gap-2 rounded px-2 py-1.5 text-sm text-zinc-400 transition hover:text-zinc-200 [&::-webkit-details-marker]:hidden"
+            ? "flex cursor-pointer list-none items-center justify-between gap-2 rounded px-2 py-1.5 text-xs text-zinc-400 transition hover:text-zinc-200 [&::-webkit-details-marker]:hidden"
             : "flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 rounded-md px-3 py-2 text-sm text-zinc-400 transition hover:text-zinc-200 [&::-webkit-details-marker]:hidden sm:min-h-0"
         }
       >
-        <span>
+        <span className={c ? "text-xs" : undefined}>
           <span className="font-medium text-zinc-200">Rate this purchase</span>
           <span className="ml-1 text-zinc-500">· optional</span>
         </span>
-        <span className={c ? "text-sm text-zinc-500" : "text-sm text-zinc-500"} aria-hidden>
+        <span className={c ? "text-xs text-zinc-500" : "text-sm text-zinc-500"} aria-hidden>
           ▼
         </span>
       </summary>

@@ -1,6 +1,7 @@
 "use client";
 
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
+import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
 import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
 import { Buffer } from "buffer";
 import { useEffect, useMemo, type ReactNode } from "react";
@@ -17,7 +18,7 @@ export function SolanaProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
+  const wallets = useMemo(() => [new PhantomWalletAdapter(), new SolflareWalletAdapter()], []);
 
   return (
     <ConnectionProvider endpoint={endpoint}>

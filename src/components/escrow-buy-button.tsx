@@ -6,6 +6,7 @@ import { formatEscrowAmountLabel, resolvePriceCurrency } from "@/lib/listing-pri
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { solListingToLamports } from "@/lib/escrow-lamports";
+import { resultToPanelMessage, runPhantomConnectFlow } from "@/lib/solana-phantom-connect";
 
 type PriceTier = { id: string; label: string; priceAmount: number };
 
@@ -35,12 +36,11 @@ export function EscrowBuyButton({
 }: Props) {
   const router = useRouter();
   const { connection } = useConnection();
-  const { publicKey, sendTransaction, connected } = useWallet();
+  const { publicKey, sendTransaction, connected, connect, connecting, wallet, wallets, select } = useWallet();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [step, setStep] = useState<"start" | "pay" | "done">("start");
   const [order, setOrder] = useState<BuyOk | null>(null);
-  const [txSig, setTxSig] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [sendingWallet, setSendingWallet] = useState(false);
   const [settlementTx, setSettlementTx] = useState<string | null>(null);
@@ -55,11 +55,29 @@ export function EscrowBuyButton({
 
   const selectedTier = hasTiers ? priceOptions.find((o) => o.id === selectedTierId) : null;
   const ctaLabel =
-    hasTiers && selectedTier
-      ? `Join · ${selectedTier.label} — ${formatEscrowAmountLabel(selectedTier.priceAmount, cur)}`
-      : amountLabel
-        ? `Join · ${amountLabel}`
-        : "Join";
+    !connected
+      ? "Connect wallet"
+      : hasTiers && selectedTier
+        ? `Join · ${selectedTier.label} — ${formatEscrowAmountLabel(selectedTier.priceAmount, cur)}`
+        : amountLabel
+          ? `Join · ${amountLabel}`
+          : "Join";
+
+  async function onStartClick() {
+    if (!connected) {
+      setMessage(null);
+      const result = await runPhantomConnectFlow({ wallet, wallets, select, connect });
+      if (result.kind !== "connected") {
+        setMessage(
+          resultToPanelMessage(result, {
+            selected: "Phantom selected. Click connect once more.",
+          }) ?? "Failed to connect wallet.",
+        );
+      }
+      return;
+    }
+    await buy();
+  }
 
   async function buy() {
     setLoading(true);
@@ -150,10 +168,6 @@ export function EscrowBuyButton({
     }
   }
 
-  function confirm() {
-    void confirmWithSignature(txSig);
-  }
-
   /** Build SystemProgram transfer → Phantom signs → auto confirm. */
   async function payWithWallet() {
     if (!order) return;
@@ -185,7 +199,6 @@ export function EscrowBuyButton({
         preflightCommitment: "confirmed",
         maxRetries: 3,
       });
-      setTxSig(signature);
       await connection.confirmTransaction(
         { signature, blockhash, lastValidBlockHeight },
         "confirmed",
@@ -278,41 +291,6 @@ export function EscrowBuyButton({
               : "Finishing up…"
             : `Pay ${order.amountLabel} with wallet`}
         </button>
-        <details className="rounded border border-white/8 bg-zinc-950/40 p-1.5">
-          <summary className="cursor-pointer text-xs text-zinc-500">I sent manually</summary>
-          <div className="mt-2 space-y-2">
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">Deposit address</span>
-              <code className="break-all rounded border border-white/10 bg-zinc-900/80 p-1.5 text-xs text-zinc-200">
-                {order.depositAddress}
-              </code>
-              <button
-                type="button"
-                onClick={() => {
-                  void navigator.clipboard.writeText(order.depositAddress);
-                }}
-                className="self-start rounded border border-white/12 px-2 py-0.5 text-xs text-zinc-300 hover:border-white/25"
-              >
-                Copy address
-              </button>
-            </div>
-            <label className="block text-xs font-medium uppercase tracking-wider text-zinc-500">Payment tx signature</label>
-            <input
-              value={txSig}
-              onChange={(e) => setTxSig(e.target.value)}
-              placeholder="Transaction signature"
-              className="w-full rounded border border-white/10 bg-zinc-900/80 px-2 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600"
-            />
-            <button
-              type="button"
-              onClick={() => void confirm()}
-              disabled={confirming}
-              className="w-full rounded-md border border-white/20 bg-zinc-100/10 px-2.5 py-1.5 text-sm font-medium text-white disabled:opacity-60"
-            >
-              {confirming ? "Verifying…" : "Confirm & settle"}
-            </button>
-          </div>
-        </details>
         {message && <p className="text-sm text-amber-200/90">{message}</p>}
       </div>
     );
@@ -338,11 +316,11 @@ export function EscrowBuyButton({
       )}
       <button
         type="button"
-        onClick={buy}
-        disabled={loading}
+        onClick={() => void onStartClick()}
+        disabled={loading || connecting}
         className="w-full rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-black disabled:opacity-60"
       >
-        {loading ? "Preparing…" : ctaLabel}
+        {loading ? "Preparing…" : connecting ? "Connecting…" : ctaLabel}
       </button>
       {message && <p className="text-sm text-zinc-500">{message}</p>}
     </div>

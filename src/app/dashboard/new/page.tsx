@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default async function NewProjectPage() {
   const session = await auth();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard/new");
-  if (!session.user.wallet) redirect("/dashboard");
+  if (!session.user.wallet) redirect("/dashboard?connectWallet=1");
 
   return (
     <div className="app-container py-4 sm:py-5">

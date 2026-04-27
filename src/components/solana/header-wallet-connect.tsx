@@ -2,7 +2,6 @@
 
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { resultToPanelMessage, runPhantomConnectFlow } from "@/lib/solana-phantom-connect";
@@ -20,19 +19,25 @@ function formatNativeSol(lamports: number): string {
  * Buy / listing APIs require `User.wallet` in the database (session), not only a browser connection.
  * When the user has connected Phantom but never opened Dashboard "Save", sync their address here.
  */
-export function HeaderWalletConnect() {
-  const { data: session, status, update } = useSession();
+type HeaderWalletConnectProps = {
+  isAuthenticated: boolean;
+  userId: string | null;
+  savedWallet: string | null;
+};
+
+export function HeaderWalletConnect({ isAuthenticated, userId, savedWallet }: HeaderWalletConnectProps) {
   const { connection } = useConnection();
-  const { connect, wallet, select, connected, connecting, publicKey } = useWallet();
+  const { connect, wallet, wallets, select, connected, connecting, publicKey } = useWallet();
   const [hint, setHint] = useState<string | null>(null);
   const [savingProfileWallet, setSavingProfileWallet] = useState(false);
+  const [profileWallet, setProfileWallet] = useState<string | null>(savedWallet);
   const [balanceLamports, setBalanceLamports] = useState<number | null>(null);
   const [balanceError, setBalanceError] = useState(false);
 
   useEffect(() => {
-    if (status !== "authenticated" || !session?.user?.id) return;
+    if (!isAuthenticated || !userId) return;
     if (!connected || !publicKey) return;
-    if (session.user.wallet) return;
+    if (profileWallet) return;
 
     let cancelled = false;
     setSavingProfileWallet(true);
@@ -45,7 +50,7 @@ export function HeaderWalletConnect() {
           body: JSON.stringify({ wallet: addr }),
         });
         if (!r.ok || cancelled) return;
-        await update();
+        setProfileWallet(addr);
       } catch {
         /* allow manual Save on dashboard */
       } finally {
@@ -56,7 +61,7 @@ export function HeaderWalletConnect() {
     return () => {
       cancelled = true;
     };
-  }, [status, session?.user?.id, session?.user?.wallet, connected, publicKey, update]);
+  }, [isAuthenticated, userId, profileWallet, connected, publicKey]);
 
   useEffect(() => {
     if (!connected || !publicKey) {
@@ -91,16 +96,12 @@ export function HeaderWalletConnect() {
 
   const onConnect = useCallback(async () => {
     setHint(null);
-    const r = await runPhantomConnectFlow({ wallet, select, connect });
+    const r = await runPhantomConnectFlow({ wallet, wallets, select, connect });
     const m = resultToPanelMessage(r);
     if (m) setHint(m);
-  }, [wallet, select, connect]);
+  }, [wallet, wallets, select, connect]);
 
-  if (status === "loading") {
-    return <span className="h-7 w-16 shrink-0 animate-pulse rounded-md bg-zinc-800/80" aria-hidden />;
-  }
-
-  if (status !== "authenticated" || !session) {
+  if (!isAuthenticated) {
     return null;
   }
 
@@ -108,22 +109,23 @@ export function HeaderWalletConnect() {
     return (
       <div className="flex min-w-0 max-w-full items-center gap-2 sm:gap-2.5">
         <span
-          className="shrink-0 tabular-nums text-sm font-medium text-zinc-300"
+          className="shrink-0 rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 tabular-nums text-[11px] font-medium text-zinc-300 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm"
           title="Native SOL balance (wallet)"
         >
-          {balanceError ? "—" : balanceLamports === null ? "…" : `${formatNativeSol(balanceLamports)} SOL`}
+          {balanceError ? "—" : balanceLamports === null ? "…" : formatNativeSol(balanceLamports)}
+          <span className="hidden sm:inline"> SOL</span>
         </span>
         {savingProfileWallet ? (
           <span
-            className="shrink-0 text-xs text-amber-200/80 sm:text-sm"
+            className="hidden shrink-0 text-xs text-amber-200/80 sm:inline sm:text-sm"
             title="Saving address to your profile (required for escrow checkout)"
           >
             Saving…
           </span>
-        ) : !session.user.wallet ? (
+        ) : !profileWallet ? (
           <Link
             href="/dashboard"
-            className="shrink-0 text-xs text-amber-200/80 underline decoration-white/20 sm:text-sm"
+            className="hidden shrink-0 text-xs text-amber-200/80 underline decoration-white/20 sm:inline sm:text-sm"
             title="Open dashboard to save your wallet to your profile"
           >
             Save to profile
@@ -140,7 +142,7 @@ export function HeaderWalletConnect() {
         onClick={() => void onConnect()}
         disabled={connecting}
         title={hint ?? "Connect Phantom"}
-        className="rounded-md border border-emerald-500/25 bg-emerald-950/35 px-2 py-1.5 text-sm font-medium text-emerald-200/90 transition hover:border-emerald-500/45 hover:bg-emerald-950/50 disabled:opacity-50 sm:px-2.5"
+        className="rounded-md border border-emerald-500/25 bg-emerald-950/35 px-2 py-1.5 text-xs font-medium text-emerald-200/90 transition hover:border-emerald-500/45 hover:bg-emerald-950/50 disabled:opacity-50 sm:px-2.5 sm:text-sm"
       >
         {connecting ? (
           "…"

@@ -5,6 +5,7 @@ declare module "next-auth" {
     user: {
       id: string;
       wallet: string | null;
+      blueCheckmark: boolean;
     } & DefaultSession["user"];
   }
 }

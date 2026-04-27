@@ -34,12 +34,27 @@ async function waitUntilWalletReady(
  * Phantom connect flow (shared by dashboard and header). Avoid calling `connect()` before the adapter is ready.
  */
 export async function runPhantomConnectFlow(
-  ctx: Pick<WalletContextState, "wallet" | "select" | "connect">,
+  ctx: Pick<WalletContextState, "wallet" | "wallets" | "select" | "connect">,
 ): Promise<PhantomConnectResult> {
-  const { wallet, select, connect } = ctx;
+  const { wallet, wallets, select, connect } = ctx;
+  const preferred = ["Phantom", "Solflare"] as const;
 
   if (!wallet) {
-    select("Phantom" as WalletName);
+    const target =
+      wallets.find((w) => preferred.includes(w.adapter.name as (typeof preferred)[number])) ??
+      wallets.find(
+        (w) =>
+          w.adapter.readyState === WalletReadyState.Installed ||
+          w.adapter.readyState === WalletReadyState.Loadable,
+      ) ??
+      wallets[0];
+    if (!target) {
+      return {
+        kind: "not_ready",
+        message: "No supported wallet adapter found.",
+      };
+    }
+    select(target.adapter.name as WalletName);
     return { kind: "selected_phantom" };
   }
 

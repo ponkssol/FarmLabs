@@ -32,6 +32,15 @@ function isLikelyDevOrConsoleNoise(text: string): boolean {
   return /[\w./-]+\.tsx:\d+/i.test(text) || /solana-provider|registerDefaultProvider|removed from your app|Phantom was registered/i.test(text);
 }
 
+function pickRandom<T>(items: T[], n: number): T[] {
+  const arr = [...items];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0, n);
+}
+
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -58,6 +67,7 @@ export default async function ProjectPage({ params }: Props) {
           name: true,
           image: true,
           wallet: true,
+          blueCheckmark: true,
           xHandle: true,
           accounts: {
             where: { provider: "twitter" },
@@ -188,6 +198,77 @@ export default async function ProjectPage({ params }: Props) {
       },
     }),
   ]);
+  const relatedByCategoryPool = p.category
+    ? await prisma.project.findMany({
+        where: {
+          published: true,
+          id: { not: p.id },
+          category: p.category,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 30,
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          shortPitch: true,
+          accessType: true,
+          groupType: true,
+          priceAmount: true,
+          priceCurrency: true,
+          communityImage: true,
+          user: {
+            select: {
+              name: true,
+              xHandle: true,
+              accounts: {
+                where: { provider: "twitter" },
+                take: 1,
+                select: { providerAccountId: true },
+              },
+            },
+          },
+        },
+      })
+    : [];
+  const relatedByCategory = pickRandom(relatedByCategoryPool, 5);
+  const relatedFallback =
+    relatedByCategory.length < 5
+      ? await prisma.project.findMany({
+          where: {
+            published: true,
+            id: { notIn: [p.id, ...relatedByCategory.map((x) => x.id)] },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 30,
+          select: {
+            id: true,
+            slug: true,
+            title: true,
+            shortPitch: true,
+            accessType: true,
+            groupType: true,
+            priceAmount: true,
+            priceCurrency: true,
+            communityImage: true,
+            user: {
+              select: {
+                name: true,
+                xHandle: true,
+                accounts: {
+                  where: { provider: "twitter" },
+                  take: 1,
+                  select: { providerAccountId: true },
+                },
+              },
+            },
+          },
+        })
+      : [];
+  const recommendedItems = [
+    ...relatedByCategory,
+    ...pickRandom(relatedFallback, 5 - relatedByCategory.length),
+  ];
 
   const communityReviewItems = reviewRows.map((r) => {
     const buyer = r.order.buyer;
@@ -297,11 +378,23 @@ export default async function ProjectPage({ params }: Props) {
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium text-zinc-200">
-                    <XUsername
-                      name={p.user.name || "Operator"}
-                      xHandle={p.user.xHandle}
-                      xUserId={p.user.accounts?.[0]?.providerAccountId}
-                    />
+                    <span className="inline-flex min-w-0 max-w-full items-center">
+                      <XUsername
+                        name={p.user.name || "Operator"}
+                        xHandle={p.user.xHandle}
+                        xUserId={p.user.accounts?.[0]?.providerAccountId}
+                        className="truncate"
+                      />
+                      {p.user.blueCheckmark ? (
+                        <Image
+                          src="/verified-badge.png"
+                          alt="Verified"
+                          width={12}
+                          height={12}
+                          className="ml-1 h-3 w-3 shrink-0"
+                        />
+                      ) : null}
+                    </span>
                   </p>
                 </div>
               </div>
@@ -457,6 +550,7 @@ export default async function ProjectPage({ params }: Props) {
               </div>
             </section>
           )}
+
         </div>
 
         <aside className="min-w-0 lg:col-span-4">
@@ -594,6 +688,64 @@ export default async function ProjectPage({ params }: Props) {
           </div>
         </aside>
       </div>
+      {recommendedItems.length > 0 && (
+        <section className="mt-4 overflow-hidden rounded-2xl border border-white/[0.06] bg-gradient-to-b from-zinc-900/35 to-zinc-950/65 p-3 ring-1 ring-inset ring-white/[0.03] sm:p-3.5">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h2 className="text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500 sm:text-[11px]">
+                Recommended listings
+              </h2>
+              <p className="mt-0.5 text-[11px] text-zinc-600 sm:text-xs">Similar and recent communities you may like</p>
+            </div>
+            <Link href="/explore" className="text-[11px] text-zinc-500 transition hover:text-zinc-300 sm:text-xs">
+              View all
+            </Link>
+          </div>
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {recommendedItems.map((item) => {
+              const itemShortPitch =
+                item.accessType === "PAID" && item.shortPitch
+                  ? redactVipSocialLinks(item.shortPitch)
+                  : item.shortPitch;
+              return (
+                <Link
+                  key={item.id}
+                  href={`/p/${item.slug}`}
+                  className="group rounded-xl border border-white/10 bg-zinc-950/60 p-2.5 transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-zinc-900/65"
+                >
+                  <div className="flex items-start gap-2.5">
+                    {item.communityImage ? (
+                      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-white/10">
+                        <Image src={item.communityImage} alt="" fill unoptimized className="object-cover" />
+                      </div>
+                    ) : (
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-zinc-900 text-sm font-semibold text-zinc-400">
+                        {(item.title || "?").charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-zinc-100 transition group-hover:text-white">
+                        {item.title}
+                      </p>
+                      <p className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-zinc-500">{itemShortPitch}</p>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-2 border-t border-white/10 pt-1.5">
+                    <span className="rounded-full border border-white/10 px-1.5 py-0.5 text-[10px] text-zinc-400">
+                      {item.groupType === "PUBLIC" ? "Public" : "Private"}
+                    </span>
+                    <span className="text-[11px] font-medium text-zinc-300">
+                      {item.accessType === "PAID"
+                        ? `VIP${item.priceAmount ? ` · ${formatEscrowAmountLabel(item.priceAmount, resolvePriceCurrency(item.priceCurrency))}` : ""}`
+                        : "Open"}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </article>
   );
 }

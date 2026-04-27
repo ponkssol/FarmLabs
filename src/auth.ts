@@ -88,15 +88,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           handle = data?.username?.trim() ?? undefined;
         }
         if (handle) {
+          console.info("[auth][x] handle resolved:", handle);
           if (!isXHandleInAllowlist(handle)) {
+            console.warn("[auth][x] handle rejected by allowlist:", handle);
             return false;
           }
+          console.info("[auth][x] handle allowed by allowlist:", handle);
           await prisma.user.update({
             where: { id: user.id },
             data: { xHandle: handle },
           });
         } else {
+          console.warn("[auth][x] no handle resolved from X profile/token");
           if (!isXHandleInAllowlist(null)) {
+            console.warn("[auth][x] login rejected because allowlist requires a handle");
             return false;
           }
         }
@@ -109,6 +114,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user) {
         session.user.id = user.id;
         session.user.wallet = (user as { wallet?: string | null }).wallet ?? null;
+        session.user.blueCheckmark = (user as { blueCheckmark?: boolean | null }).blueCheckmark ?? false;
       }
       return session;
     },

@@ -9,9 +9,10 @@ type Props = {
   hasSession: boolean;
   image: string | null;
   name: string | null;
+  verified?: boolean;
 };
 
-export function SignInOut({ hasSession, image, name }: Props) {
+export function SignInOut({ hasSession, image, name, verified = false }: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +54,7 @@ export function SignInOut({ hasSession, image, name }: Props) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex max-w-full items-center gap-2 rounded-md border border-transparent py-1 pl-1 pr-2 transition hover:border-white/10 hover:bg-white/5"
+        className="flex max-w-full items-center gap-1.5 rounded-md border border-transparent py-1 pl-1 pr-1 transition hover:border-white/10 hover:bg-white/5 sm:gap-2 sm:pr-2"
         aria-expanded={open}
         aria-haspopup="menu"
         title={display}
@@ -74,11 +75,20 @@ export function SignInOut({ hasSession, image, name }: Props) {
             {display.charAt(0).toUpperCase() || "?"}
           </div>
         )}
-        <span className="max-w-[7rem] truncate text-left text-xs text-zinc-400 sm:max-w-[9rem] sm:text-sm">
-          {display}
+        <span className="hidden max-w-[7rem] items-center text-left text-xs text-zinc-400 sm:inline-flex sm:max-w-[9rem] sm:text-sm">
+          <span className="truncate">{display}</span>
+          {verified ? (
+            <Image
+              src="/verified-badge.png"
+              alt="Verified"
+              width={12}
+              height={12}
+              className="ml-1 h-3 w-3 shrink-0"
+            />
+          ) : null}
         </span>
         <svg
-          className={`h-3.5 w-3.5 shrink-0 text-zinc-500 transition sm:h-4 sm:w-4 ${open ? "rotate-180" : ""}`}
+          className={`h-3.5 w-3.5 shrink-0 text-zinc-500 transition ${open ? "rotate-180" : ""}`}
           viewBox="0 0 24 24"
           fill="currentColor"
           aria-hidden

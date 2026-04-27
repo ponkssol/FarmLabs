@@ -39,15 +39,15 @@ export default async function AuthErrorPage({ searchParams }: P) {
     <div className="app-container py-16 sm:py-24">
       <div className="mx-auto max-w-md rounded-xl border border-white/10 bg-zinc-950/60 p-6 sm:p-8">
         {error && error !== "Default" && (
-          <p className="text-sm uppercase tracking-[0.2em] text-zinc-500">Error: {error}</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Error: {error}</p>
         )}
-        <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">{block.title}</h1>
-        <ul className="mt-4 list-disc space-y-3 pl-4 text-sm leading-relaxed text-zinc-400">
+        <h1 className="mt-1 text-lg font-semibold tracking-tight text-white">{block.title}</h1>
+        <ul className="mt-3 list-disc space-y-2 pl-4 text-xs leading-relaxed text-zinc-400 sm:text-sm">
           {block.lines.map((line, i) => (
             <li key={i}>{line}</li>
           ))}
         </ul>
-        <p className="mt-6 text-sm text-zinc-500">
+        <p className="mt-5 text-xs text-zinc-500 sm:text-sm">
           <Link href="/login" className="text-sky-400 underline">
             Back to sign in
           </Link>

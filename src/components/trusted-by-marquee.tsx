@@ -35,7 +35,7 @@ export function TrustedByMarquee() {
   return (
     <div className="border-y border-white/10 bg-white/[0.02] py-2">
       <p className="text-center text-sm uppercase tracking-[0.22em] text-zinc-500">Trusted by degen call operators</p>
-      <div className="trusted-marquee-wrap relative mt-2 cursor-grab active:cursor-grabbing overflow-hidden">
+      <div className="trusted-marquee-wrap relative mt-2 overflow-hidden">
         <div
           className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-[#09090b] to-transparent sm:w-16"
           aria-hidden
@@ -44,11 +44,14 @@ export function TrustedByMarquee() {
           className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-[#09090b] to-transparent sm:w-16"
           aria-hidden
         />
-        <div className="trusted-marquee-track flex w-max items-center gap-2 sm:gap-2.5">
-          <div className="flex items-center gap-2 sm:gap-2.5">
+        <div className="trusted-marquee-track flex w-max items-center">
+          <div className="flex items-center gap-2 pr-2 sm:gap-2.5 sm:pr-2.5">
             <MarqueeGroup />
           </div>
-          <div className="flex items-center gap-2 sm:gap-2.5" aria-hidden>
+          <div className="flex items-center gap-2 pr-2 sm:gap-2.5 sm:pr-2.5" aria-hidden>
+            <MarqueeGroup />
+          </div>
+          <div className="flex items-center gap-2 pr-2 sm:gap-2.5 sm:pr-2.5" aria-hidden>
             <MarqueeGroup />
           </div>
         </div>

@@ -23,7 +23,7 @@ const empty: ProjectForm = {
   groupType: "PUBLIC",
   accessType: "FREE",
   priceAmount: undefined,
-  priceCurrency: "USDC",
+  priceCurrency: "SOL",
   category: "",
   rules: "",
   deliveryPolicy: "",
@@ -67,7 +67,7 @@ export function ProjectForm({ mode, project }: Props) {
           groupType: (project.groupType as "PUBLIC" | "PRIVATE") ?? "PUBLIC",
           accessType: (project.accessType as "FREE" | "PAID") ?? "FREE",
           priceAmount: project.priceAmount ?? undefined,
-          priceCurrency: (project.priceCurrency === "SOL" ? "SOL" : "USDC") as ProjectForm["priceCurrency"],
+          priceCurrency: "SOL" as ProjectForm["priceCurrency"],
           category: project.category ?? "",
           rules: project.rules,
           deliveryPolicy: project.deliveryPolicy,
@@ -390,7 +390,6 @@ export function ProjectForm({ mode, project }: Props) {
                   value={values.priceCurrency}
                   onChange={(e) => set("priceCurrency", e.target.value as ProjectForm["priceCurrency"])}
                 >
-                  <option value="USDC">USDC</option>
                   <option value="SOL">SOL</option>
                 </select>
               </div>
@@ -406,7 +405,6 @@ export function ProjectForm({ mode, project }: Props) {
                 value={values.priceCurrency}
                 onChange={(e) => set("priceCurrency", e.target.value as ProjectForm["priceCurrency"])}
               >
-                <option value="USDC">USDC</option>
                 <option value="SOL">SOL</option>
               </select>
             </div>

@@ -92,7 +92,7 @@ export const projectFormSchema = z.object({
     (v) => (v === "" || v === undefined || v === null ? undefined : v),
     z.coerce.number().min(0.000_001).max(1_000_000_000).optional(),
   ),
-  priceCurrency: priceCurrencySchema.default("USDC"),
+  priceCurrency: priceCurrencySchema.default("SOL"),
   category: z.string().max(80).optional().or(z.literal("")),
   rules: z.string().min(10).max(20_000),
   deliveryPolicy: z.string().min(10).max(20_000),
@@ -166,7 +166,7 @@ export function normalizeProjectForm(input: ProjectForm) {
   const isPublic = input.groupType === "PUBLIC";
   const access = isPublic ? "FREE" : input.accessType;
   const isPaid = access === "PAID" && !isPublic;
-  const currency: "USDC" | "SOL" = input.priceCurrency === "SOL" ? "SOL" : "USDC";
+  const currency: "USDC" | "SOL" = "SOL";
   const detailImages = (input.detailImages ?? []).filter(Boolean).slice(0, 3);
   const rawOpts = (input.priceOptions ?? []).filter((o) => o.label?.trim().length > 0);
   const priceOptions = rawOpts.map((o, i) => ({

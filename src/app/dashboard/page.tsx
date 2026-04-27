@@ -1,6 +1,7 @@
 ﻿import { SyncXHandleButton } from "@/components/sync-x-handle-button";
 import { EscrowReviewForm } from "@/components/dashboard/escrow-review-form";
 import { SellerReviewReply } from "@/components/dashboard/seller-review-reply";
+import { ConnectWalletCta } from "@/components/dashboard/connect-wallet-cta";
 import { WalletLinkPanel } from "@/components/solana/wallet-link-panel";
 import { auth } from "@/auth";
 import { formatEscrowAmountLabel, resolvePriceCurrency } from "@/lib/listing-price";
@@ -90,7 +91,7 @@ function parseActivity(s: string | undefined): ActivityTab {
 }
 
 type Props = {
-  searchParams: Promise<{ status?: ListingFilter; activity?: string }>;
+  searchParams: Promise<{ status?: ListingFilter; activity?: string; connectWallet?: string }>;
 };
 
 function SectionCard({
@@ -119,11 +120,11 @@ function SectionCard({
 }
 
 const tableTh =
-  "whitespace-nowrap px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 first:pl-2 last:pr-2 sm:px-3 sm:text-sm sm:first:pl-3 sm:last:pr-3";
+  "whitespace-nowrap px-2 py-2 text-left text-[10px] font-medium uppercase tracking-wider text-zinc-500 first:pl-2 last:pr-2 sm:px-3 sm:text-xs sm:first:pl-3 sm:last:pr-3";
 const tableTd =
-  "border-b border-white/[0.06] px-2 py-2 align-top text-xs text-zinc-300 first:pl-2 last:pr-2 sm:px-3 sm:py-2.5 sm:first:pl-3 sm:last:pr-3";
+  "border-b border-white/[0.06] px-2 py-2 align-top text-[11px] text-zinc-300 first:pl-2 last:pr-2 sm:px-3 sm:py-2.5 sm:text-xs sm:first:pl-3 sm:last:pr-3";
 const tableTdSub =
-  "border-b border-white/[0.06] bg-zinc-950/30 px-2 py-2 first:pl-2 last:pr-2 sm:px-3 sm:py-2.5 sm:first:pl-3 sm:last:pr-3";
+  "border-b border-white/[0.06] bg-zinc-950/30 px-2 py-2 text-[11px] first:pl-2 last:pr-2 sm:px-3 sm:py-2.5 sm:text-xs sm:first:pl-3 sm:last:pr-3";
 
 /**
  * Activity panels (purchases, sales, reviews, reports) — same card chrome as “Your community listings”
@@ -171,7 +172,7 @@ function ActivityBlock({
 }
 
 export default async function DashboardPage({ searchParams }: Props) {
-  const { status = "ALL", activity: activityParam } = await searchParams;
+  const { status = "ALL", activity: activityParam, connectWallet } = await searchParams;
   const activity = parseActivity(activityParam);
   const session = await auth();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
@@ -357,13 +358,18 @@ export default async function DashboardPage({ searchParams }: Props) {
   })();
 
   return (
-    <div className="app-container py-4 sm:py-5">
+    <div className="app-main-container py-4 sm:py-5">
       <div className="mb-3.5 flex flex-col gap-0.5 sm:mb-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-lg font-semibold tracking-tight text-white sm:text-xl">Dashboard</h1>
           <p className="mt-1 text-sm leading-relaxed text-zinc-500">
             Listings, escrow, table views, seller analytics, and visitor flags.
           </p>
+          {connectWallet === "1" ? (
+            <p className="mt-1 text-xs text-amber-200/85 sm:text-sm">
+              Connect and save your wallet first to create a new listing.
+            </p>
+          ) : null}
         </div>
         {hasWallet ? (
           <Link
@@ -373,50 +379,50 @@ export default async function DashboardPage({ searchParams }: Props) {
             + New listing
           </Link>
         ) : (
-          <p className="text-sm text-amber-200/85">Connect a wallet to create a listing.</p>
+          <ConnectWalletCta />
         )}
       </div>
 
       <div className="mb-3.5 grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-2.5 md:grid-cols-3 xl:grid-cols-5">
-        <div className="rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-950/40 to-zinc-950/60 p-2.5 sm:p-3">
-          <p className="text-xs font-medium uppercase tracking-wider text-emerald-200/80 sm:text-sm sm:tracking-widest">
+        <div className="rounded-xl border border-white/10 bg-gradient-to-br from-zinc-900/70 to-zinc-950/80 p-2.5 sm:p-3">
+          <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:text-[10px]">
             Listings
           </p>
-          <p className="mt-1 text-lg font-semibold tabular-nums text-white sm:text-xl">{totalProjects}</p>
-          <p className="mt-1 text-xs leading-tight text-zinc-500">
+          <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-100 sm:text-base">{totalProjects}</p>
+          <p className="mt-0.5 text-[9px] leading-tight text-zinc-500 sm:text-[10px]">
             Public {publicCount} · private {privateCount}
           </p>
         </div>
-        <div className="rounded-xl border border-sky-500/20 bg-gradient-to-br from-sky-950/35 to-zinc-950/60 p-2.5 sm:p-3">
-          <p className="text-xs font-medium uppercase tracking-wider text-sky-200/80 sm:text-sm sm:tracking-widest">
+        <div className="rounded-xl border border-white/10 bg-gradient-to-br from-zinc-900/70 to-zinc-950/80 p-2.5 sm:p-3">
+          <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:text-[10px]">
             Escrow (buys)
           </p>
-          <p className="mt-1 text-lg font-semibold tabular-nums text-white sm:text-xl">{buyerOrders.length}</p>
-          <p className="mt-1 text-xs text-zinc-500">As buyer</p>
+          <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-100 sm:text-base">{buyerOrders.length}</p>
+          <p className="mt-0.5 text-[9px] text-zinc-500 sm:text-[10px]">As buyer</p>
         </div>
-        <div className="rounded-xl border border-cyan-500/20 bg-gradient-to-br from-cyan-950/30 to-zinc-950/60 p-2.5 sm:p-3">
-          <p className="text-xs font-medium uppercase tracking-wider text-cyan-200/80 sm:text-sm sm:tracking-widest">
+        <div className="rounded-xl border border-white/10 bg-gradient-to-br from-zinc-900/70 to-zinc-950/80 p-2.5 sm:p-3">
+          <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:text-[10px]">
             Active access
           </p>
-          <p className="mt-1 text-lg font-semibold tabular-nums text-white sm:text-xl">{activeMemberships}</p>
-          <p className="mt-1 text-xs text-zinc-500">Communities · not expired</p>
+          <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-100 sm:text-base">{activeMemberships}</p>
+          <p className="mt-0.5 text-[9px] text-zinc-500 sm:text-[10px]">Communities · not expired</p>
         </div>
-        <div className="rounded-xl border border-violet-500/20 bg-gradient-to-br from-violet-950/35 to-zinc-950/60 p-2.5 sm:p-3">
-          <p className="text-xs font-medium uppercase tracking-wider text-violet-200/80 sm:text-sm sm:tracking-widest">
+        <div className="rounded-xl border border-white/10 bg-gradient-to-br from-zinc-900/70 to-zinc-950/80 p-2.5 sm:p-3">
+          <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:text-[10px]">
             Reviews in
           </p>
-          <p className="mt-1 text-lg font-semibold tabular-nums text-white sm:text-xl">
+          <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-100 sm:text-base">
             {reviewAsSellerCount > 0 ? avgIncoming.toFixed(1) : "—"}
-            {reviewAsSellerCount > 0 && <span className="ml-0.5 text-sm font-normal text-zinc-500">/5</span>}
+            {reviewAsSellerCount > 0 && <span className="ml-0.5 text-[10px] font-normal text-zinc-500">/5</span>}
           </p>
-          <p className="mt-1 text-xs text-zinc-500">{reviewAsSellerCount} from buyers</p>
+          <p className="mt-0.5 text-[9px] text-zinc-500 sm:text-[10px]">{reviewAsSellerCount} from buyers</p>
         </div>
-        <div className="rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-950/35 to-zinc-950/60 p-2.5 sm:p-3">
-          <p className="text-xs font-medium uppercase tracking-wider text-amber-200/80 sm:text-sm sm:tracking-widest">
+        <div className="rounded-xl border border-white/10 bg-gradient-to-br from-zinc-900/70 to-zinc-950/80 p-2.5 sm:p-3">
+          <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:text-[10px]">
             Flags
           </p>
-          <p className="mt-1 text-lg font-semibold tabular-nums text-white sm:text-xl">{incomingReports.length}</p>
-          <p className="mt-1 text-xs leading-tight text-zinc-500">
+          <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-100 sm:text-base">{incomingReports.length}</p>
+          <p className="mt-0.5 text-[9px] leading-tight text-zinc-500 sm:text-[10px]">
             {incomingReports.length === 0
               ? "Visitor reports only"
               : `${openReportCount} open · ${incomingReports.length} total`}
@@ -557,17 +563,17 @@ export default async function DashboardPage({ searchParams }: Props) {
                               </td>
                               <td className={tableTd}>
                                 {acc === "active" && (
-                                  <span className="inline-block rounded border border-emerald-500/25 bg-emerald-500/10 px-1.5 py-0.5 text-sm font-medium uppercase text-emerald-200/90">
+                                  <span className="inline-block rounded border border-emerald-500/25 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase leading-none text-emerald-200/90 sm:text-xs">
                                     Active
                                   </span>
                                 )}
                                 {acc === "expired" && (
-                                  <span className="inline-block rounded border border-zinc-600/40 bg-zinc-800/60 px-1.5 py-0.5 text-sm font-medium uppercase text-zinc-400">
+                                  <span className="inline-block rounded border border-zinc-600/40 bg-zinc-800/60 px-1.5 py-0.5 text-[10px] font-medium uppercase leading-none text-zinc-400 sm:text-xs">
                                     Expired
                                   </span>
                                 )}
                                 {acc === "pending" && (
-                                  <span className="inline-block max-w-[100px] truncate text-sm text-amber-200/90" title={o.status}>
+                                  <span className="inline-block max-w-[100px] truncate text-xs text-amber-200/90" title={o.status}>
                                     {o.status}
                                   </span>
                                 )}
@@ -578,12 +584,12 @@ export default async function DashboardPage({ searchParams }: Props) {
                               <td className={`${tableTd} whitespace-nowrap text-zinc-500`}>
                                 {new Date(o.createdAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "2-digit" })}
                               </td>
-                              <td className={`${tableTd} max-w-[140px] text-sm text-zinc-400`} suppressHydrationWarning>
+                              <td className={`${tableTd} max-w-[140px] text-xs text-zinc-400`} suppressHydrationWarning>
                                 {accessLine}
                               </td>
                               <td className={tableTd}>
                                 {showInvites ? (
-                                  <div className="flex flex-wrap gap-x-2 gap-y-1 text-sm">
+                                  <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs">
                                     {tg ? (
                                       <a
                                         href={tg}
@@ -606,7 +612,7 @@ export default async function DashboardPage({ searchParams }: Props) {
                                     ) : null}
                                   </div>
                                 ) : acc === "active" && !tg && !dc && UNLOCKED_ESCROW_STATUSES.has(o.status) ? (
-                                  <p className="text-sm leading-snug text-amber-200/80">
+                                  <p className="text-xs leading-snug text-amber-200/80">
                                     None stored ·{" "}
                                     <Link href={`/p/${o.project.slug}`} className="text-sky-400/90 underline">
                                       try listing
@@ -748,41 +754,41 @@ export default async function DashboardPage({ searchParams }: Props) {
               ) : (
                 <div className="space-y-4">
                   {sellerAnalytics.completedCount === 0 && (
-                    <p className="text-sm leading-relaxed text-zinc-500">
+                    <p className="text-xs leading-relaxed text-zinc-500">
                       No <strong className="font-medium text-zinc-400">completed</strong> escrow (settled) yet — gross &amp; per-listing sales may be 0. In-flight orders are in the status table when you have any.
                     </p>
                   )}
 
-                  <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-                    <div className="rounded-lg border border-violet-500/15 bg-violet-950/20 px-2.5 py-2 sm:px-3 sm:py-2.5">
-                      <p className="text-sm font-medium uppercase tracking-wide text-violet-200/80">Page views (all)</p>
-                      <p className="mt-0.5 text-lg font-semibold tabular-nums text-white sm:text-xl">
+                  <div className="grid grid-cols-2 gap-1.5 lg:grid-cols-4">
+                    <div className="rounded-lg border border-violet-500/15 bg-violet-950/20 px-2 py-1.5 sm:px-2.5 sm:py-2">
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-violet-200/80 sm:text-xs">Page views (all)</p>
+                      <p className="mt-0.5 text-sm font-semibold tabular-nums text-white sm:text-base">
                         {sellerAnalytics.totalPageViews}
                       </p>
-                      <p className="mt-0.5 text-sm text-zinc-500">Public listing loads</p>
+                      <p className="mt-0.5 text-[10px] text-zinc-500 sm:text-xs">Public listing loads</p>
                     </div>
-                    <div className="rounded-lg border border-white/8 bg-zinc-900/40 px-2.5 py-2 sm:px-3 sm:py-2.5">
-                      <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">Completed sales</p>
-                      <p className="mt-0.5 text-lg font-semibold tabular-nums text-white sm:text-xl">
+                    <div className="rounded-lg border border-white/8 bg-zinc-900/40 px-2 py-1.5 sm:px-2.5 sm:py-2">
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 sm:text-xs">Completed sales</p>
+                      <p className="mt-0.5 text-sm font-semibold tabular-nums text-white sm:text-base">
                         {sellerAnalytics.completedCount}
                       </p>
-                      <p className="mt-0.5 text-sm text-zinc-600">Escrow settled</p>
+                      <p className="mt-0.5 text-[10px] text-zinc-600 sm:text-xs">Escrow settled</p>
                     </div>
-                    <div className="rounded-lg border border-sky-500/15 bg-sky-950/20 px-2.5 py-2 sm:px-3 sm:py-2.5">
-                      <p className="text-sm font-medium uppercase tracking-wide text-sky-200/80">Gross (SOL)</p>
-                      <p className="mt-0.5 text-base font-semibold tabular-nums text-sky-100/95 sm:text-lg">
+                    <div className="rounded-lg border border-sky-500/15 bg-sky-950/20 px-2 py-1.5 sm:px-2.5 sm:py-2">
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-sky-200/80 sm:text-xs">Gross (SOL)</p>
+                      <p className="mt-0.5 text-sm font-semibold tabular-nums text-sky-100/95 sm:text-base">
                         {formatEscrowAmountLabel(sellerAnalytics.solTotal, "SOL")}
                       </p>
-                      <p className="mt-0.5 text-sm text-zinc-500">{sellerAnalytics.solOrders} order{sellerAnalytics.solOrders === 1 ? "" : "s"}</p>
+                      <p className="mt-0.5 text-[10px] text-zinc-500 sm:text-xs">{sellerAnalytics.solOrders} order{sellerAnalytics.solOrders === 1 ? "" : "s"}</p>
                     </div>
-                    <div className="rounded-lg border border-emerald-500/15 bg-emerald-950/20 px-2.5 py-2 sm:px-3 sm:py-2.5">
-                      <p className="text-sm font-medium uppercase tracking-wide text-emerald-200/80">Gross (USDC)</p>
-                      <p className="mt-0.5 text-base font-semibold tabular-nums text-emerald-100/95 sm:text-lg">
+                    <div className="rounded-lg border border-emerald-500/15 bg-emerald-950/20 px-2 py-1.5 sm:px-2.5 sm:py-2">
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-emerald-200/80 sm:text-xs">Gross (USDC)</p>
+                      <p className="mt-0.5 text-sm font-semibold tabular-nums text-emerald-100/95 sm:text-base">
                         {sellerAnalytics.usdcTotal > 0
                           ? formatEscrowAmountLabel(sellerAnalytics.usdcTotal, "USDC")
                           : "—"}
                       </p>
-                      <p className="mt-0.5 text-sm text-zinc-500">
+                      <p className="mt-0.5 text-[10px] text-zinc-500 sm:text-xs">
                         {sellerAnalytics.usdcOrders} order{sellerAnalytics.usdcOrders === 1 ? "" : "s"}
                       </p>
                     </div>
@@ -791,9 +797,9 @@ export default async function DashboardPage({ searchParams }: Props) {
                   {sellerAnalytics.topByViews.length > 0 && (
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div>
-                        <p className="mb-1.5 text-sm font-medium uppercase tracking-wide text-violet-300/90">Top by views</p>
+                        <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-violet-300/90">Top by views</p>
                         <div className="overflow-x-auto rounded-lg border border-violet-500/10">
-                          <table className="w-full min-w-[220px] border-collapse text-left text-xs">
+                          <table className="w-full min-w-[220px] border-collapse text-left text-[11px]">
                             <thead>
                               <tr className="border-b border-violet-500/15 bg-violet-950/30">
                                 <th className={tableTh}>#</th>
@@ -818,9 +824,9 @@ export default async function DashboardPage({ searchParams }: Props) {
                         </div>
                       </div>
                       <div>
-                        <p className="mb-1.5 text-sm font-medium uppercase tracking-wide text-amber-200/85">Top by sales</p>
+                        <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-amber-200/85">Top by sales</p>
                         <div className="overflow-x-auto rounded-lg border border-amber-500/10">
-                          <table className="w-full min-w-[220px] border-collapse text-left text-xs">
+                          <table className="w-full min-w-[220px] border-collapse text-left text-[11px]">
                             <thead>
                               <tr className="border-b border-amber-500/15 bg-amber-950/20">
                                 <th className={tableTh}>#</th>
@@ -846,7 +852,7 @@ export default async function DashboardPage({ searchParams }: Props) {
                           </table>
                         </div>
                         {sellerAnalytics.topBySales.every((r) => r.completedSales === 0) && (
-                          <p className="mt-1 text-sm text-zinc-600">No completed sales to rank — table empty until escrow settles.</p>
+                          <p className="mt-1 text-xs text-zinc-600">No completed sales to rank — table empty until escrow settles.</p>
                         )}
                       </div>
                     </div>
@@ -854,9 +860,9 @@ export default async function DashboardPage({ searchParams }: Props) {
 
                   {sellerAnalytics.byStatus.length > 0 && (
                     <div>
-                      <p className="mb-1.5 text-sm font-medium uppercase tracking-wide text-zinc-500">Orders by status</p>
+                      <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-zinc-500">Orders by status</p>
                       <div className="overflow-x-auto rounded-lg border border-white/8">
-                        <table className="w-full min-w-[280px] border-collapse text-left text-xs">
+                        <table className="w-full min-w-[280px] border-collapse text-left text-[11px]">
                           <thead>
                             <tr className="border-b border-white/10 bg-zinc-900/60">
                               <th className={tableTh}>Status</th>
@@ -878,10 +884,10 @@ export default async function DashboardPage({ searchParams }: Props) {
 
                   {sellerAnalytics.listingReport.length > 0 && (
                     <div>
-                      <p className="mb-1.5 text-sm font-medium uppercase tracking-wide text-zinc-500">Full listing report</p>
-                      <p className="mb-1.5 text-sm text-zinc-600">Rows sorted by most views. Views count only public page loads; your own visits are excluded.</p>
+                      <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-zinc-500">Full listing report</p>
+                      <p className="mb-1.5 text-xs text-zinc-600">Rows sorted by most views. Views count only public page loads; your own visits are excluded.</p>
                       <div className="overflow-x-auto rounded-lg border border-white/8">
-                        <table className="w-full min-w-[640px] border-collapse text-left text-xs">
+                        <table className="w-full min-w-[640px] border-collapse text-left text-[11px]">
                           <thead>
                             <tr className="border-b border-white/10 bg-zinc-900/60">
                               <th className={tableTh}>Listing</th>
@@ -1105,7 +1111,20 @@ export default async function DashboardPage({ searchParams }: Props) {
                 <div className="h-11 w-11 rounded-xl border border-white/10 bg-zinc-800" />
               )}
               <div>
-                <p className="text-xs font-semibold text-white sm:text-sm">{session.user.name || "Creator"}</p>
+                <p className="text-xs font-semibold text-white sm:text-sm">
+                  <span className="inline-flex items-center">
+                    <span>{session.user.name || "Creator"}</span>
+                    {session.user.blueCheckmark ? (
+                      <Image
+                        src="/verified-badge.png"
+                        alt="Verified"
+                        width={12}
+                        height={12}
+                        className="ml-1 h-3 w-3 shrink-0"
+                      />
+                    ) : null}
+                  </span>
+                </p>
                 <p className="text-xs text-zinc-500 sm:text-sm">Operator</p>
               </div>
             </div>

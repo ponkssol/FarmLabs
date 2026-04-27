@@ -50,16 +50,26 @@ export function ProjectCard({ project }: { project: T }) {
         ) : (
           <div className="h-4 w-4 rounded-full border border-white/10 bg-zinc-800" />
         )}
-        <span className="min-w-0 leading-snug">
-          by{" "}
-          <XUsername
-            name={project.user.name || "Anonymous creator"}
-            xHandle={project.user.xHandle}
-            xUserId={project.user.accounts?.[0]?.providerAccountId}
-            className="text-zinc-400"
-            asNestedInLink
-          />
-          {project.user.wallet && <span className="ml-1.5">· wallet verified</span>}
+        <span className="min-w-0">
+          <span className="inline-flex min-w-0 items-center gap-1 leading-none">
+            <span className="text-zinc-500">by</span>
+            <XUsername
+              name={project.user.name || "Anonymous creator"}
+              xHandle={project.user.xHandle}
+              xUserId={project.user.accounts?.[0]?.providerAccountId}
+              className="truncate text-zinc-400"
+              asNestedInLink
+            />
+            {project.user.wallet ? (
+              <Image
+                src="/verified-badge.png"
+                alt="Verified"
+                width={12}
+                height={12}
+                className="h-3 w-3 shrink-0"
+              />
+            ) : null}
+          </span>
         </span>
       </div>
     </Link>

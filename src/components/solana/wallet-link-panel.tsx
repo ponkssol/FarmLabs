@@ -14,7 +14,7 @@ type PanelProps = {
 };
 
 export function WalletLinkPanel({ compact = false, inProfile = false }: PanelProps) {
-  const { publicKey, connect, disconnect, connected, connecting, wallet, select } = useWallet();
+  const { publicKey, connect, disconnect, connected, connecting, wallet, wallets, select } = useWallet();
   const { data: session, update, status } = useSession();
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -65,10 +65,10 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
 
   const onConnect = useCallback(async () => {
     setMessage(null);
-    const r = await runPhantomConnectFlow({ wallet, select, connect });
+    const r = await runPhantomConnectFlow({ wallet, wallets, select, connect });
     const m = resultToPanelMessage(r);
     if (m) setMessage(m);
-  }, [wallet, select, connect]);
+  }, [wallet, wallets, select, connect]);
 
   if (status === "unauthenticated" || !session) return null;
 

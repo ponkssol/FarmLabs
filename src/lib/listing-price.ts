@@ -3,7 +3,7 @@ import type { Project } from "@prisma/client";
 export function resolvePriceCurrency(
   c: string | null | undefined,
 ): "USDC" | "SOL" {
-  return c === "SOL" ? "SOL" : "USDC";
+  return c === "USDC" ? "USDC" : "SOL";
 }
 
 function formatAmountLine(amount: number, cur: "USDC" | "SOL"): string {
