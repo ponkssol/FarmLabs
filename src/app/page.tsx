@@ -223,8 +223,8 @@ export default async function Home() {
               </ul>
             </article>
 
-            <article className="rounded-xl border border-emerald-400/20 bg-emerald-950/10 p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-300/80">Solution</p>
+            <article className="rounded-xl border border-white/12 bg-zinc-900/50 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">Solution</p>
               <ul className="mt-2 space-y-1 text-xs leading-relaxed text-zinc-200 sm:text-sm">
                 <li>Create listings with clear type, access, and pricing tiers.</li>
                 <li>Use wallet checkout flow for cleaner purchase experience.</li>
@@ -260,7 +260,7 @@ export default async function Home() {
           <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             <article className="home-feature-card rounded-xl border border-white/10 bg-zinc-900/50 p-3">
               <div className="home-feature-icon-wrap">
-                <svg viewBox="0 0 24 24" className="home-feature-icon home-feature-icon-orbit h-4 w-4 text-emerald-300" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <svg viewBox="0 0 24 24" className="home-feature-icon home-feature-icon-orbit h-4 w-4 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
                   <path d="M12 3v18M3 12h18" />
                   <circle cx="12" cy="12" r="8" />
                 </svg>
@@ -271,7 +271,7 @@ export default async function Home() {
 
             <article className="home-feature-card rounded-xl border border-white/10 bg-zinc-900/50 p-3">
               <div className="home-feature-icon-wrap">
-                <svg viewBox="0 0 24 24" className="home-feature-icon home-feature-icon-pulse h-4 w-4 text-cyan-300" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <svg viewBox="0 0 24 24" className="home-feature-icon home-feature-icon-pulse h-4 w-4 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
                   <path d="M3 12h4l2-4 3 8 2-4h7" />
                 </svg>
               </div>
@@ -281,7 +281,7 @@ export default async function Home() {
 
             <article className="home-feature-card rounded-xl border border-white/10 bg-zinc-900/50 p-3">
               <div className="home-feature-icon-wrap">
-                <svg viewBox="0 0 24 24" className="home-feature-icon home-feature-icon-float h-4 w-4 text-violet-300" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <svg viewBox="0 0 24 24" className="home-feature-icon home-feature-icon-float h-4 w-4 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
                   <path d="M12 3l7 4v5c0 5-3.2 7.8-7 9-3.8-1.2-7-4-7-9V7l7-4z" />
                   <path d="M9.2 12.1l1.9 1.9 3.8-3.8" />
                 </svg>
@@ -292,7 +292,7 @@ export default async function Home() {
 
             <article className="home-feature-card rounded-xl border border-white/10 bg-zinc-900/50 p-3">
               <div className="home-feature-icon-wrap">
-                <svg viewBox="0 0 24 24" className="home-feature-icon home-feature-icon-glow h-4 w-4 text-amber-300" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <svg viewBox="0 0 24 24" className="home-feature-icon home-feature-icon-glow h-4 w-4 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
                   <rect x="4" y="5" width="16" height="14" rx="2" />
                   <path d="M8 11h8M8 15h5" />
                 </svg>
@@ -320,7 +320,7 @@ export default async function Home() {
 
           <div className="mt-3 grid gap-2 sm:grid-cols-3">
             <article className="rounded-xl border border-white/10 bg-zinc-900/50 p-3">
-              <div className="inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-emerald-300/30 bg-emerald-400/10 px-1.5 text-[10px] font-semibold text-emerald-200">
+              <div className="inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-white/20 bg-white/5 px-1.5 text-[10px] font-semibold text-zinc-200">
                 1
               </div>
               <p className="mt-2 text-xs font-semibold text-zinc-100 sm:text-sm">Create your listing</p>
@@ -330,7 +330,7 @@ export default async function Home() {
             </article>
 
             <article className="rounded-xl border border-white/10 bg-zinc-900/50 p-3">
-              <div className="inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-400/10 px-1.5 text-[10px] font-semibold text-cyan-200">
+              <div className="inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-white/20 bg-white/5 px-1.5 text-[10px] font-semibold text-zinc-200">
                 2
               </div>
               <p className="mt-2 text-xs font-semibold text-zinc-100 sm:text-sm">Buyers join with wallet</p>
@@ -340,7 +340,7 @@ export default async function Home() {
             </article>
 
             <article className="rounded-xl border border-white/10 bg-zinc-900/50 p-3">
-              <div className="inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-violet-300/30 bg-violet-400/10 px-1.5 text-[10px] font-semibold text-violet-200">
+              <div className="inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-white/20 bg-white/5 px-1.5 text-[10px] font-semibold text-zinc-200">
                 3
               </div>
               <p className="mt-2 text-xs font-semibold text-zinc-100 sm:text-sm">Manage and scale</p>
