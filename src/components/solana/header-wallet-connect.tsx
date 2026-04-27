@@ -1,10 +1,20 @@
 "use client";
 
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { resultToPanelMessage, runPhantomConnectFlow } from "@/lib/solana-phantom-connect";
+
+function formatNativeSol(lamports: number): string {
+  const sol = lamports / LAMPORTS_PER_SOL;
+  if (sol === 0) return "0";
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: sol < 1 ? 5 : 4,
+  }).format(sol);
+}
 
 /**
  * Buy / listing APIs require `User.wallet` in the database (session), not only a browser connection.
@@ -12,9 +22,12 @@ import { resultToPanelMessage, runPhantomConnectFlow } from "@/lib/solana-phanto
  */
 export function HeaderWalletConnect() {
   const { data: session, status, update } = useSession();
+  const { connection } = useConnection();
   const { connect, wallet, select, connected, connecting, publicKey } = useWallet();
   const [hint, setHint] = useState<string | null>(null);
   const [savingProfileWallet, setSavingProfileWallet] = useState(false);
+  const [balanceLamports, setBalanceLamports] = useState<number | null>(null);
+  const [balanceError, setBalanceError] = useState(false);
 
   useEffect(() => {
     if (status !== "authenticated" || !session?.user?.id) return;
@@ -45,6 +58,37 @@ export function HeaderWalletConnect() {
     };
   }, [status, session?.user?.id, session?.user?.wallet, connected, publicKey, update]);
 
+  useEffect(() => {
+    if (!connected || !publicKey) {
+      setBalanceLamports(null);
+      setBalanceError(false);
+      return;
+    }
+    let cancelled = false;
+    const fetchBalance = () => {
+      void connection
+        .getBalance(publicKey, { commitment: "confirmed" })
+        .then((lamports) => {
+          if (!cancelled) {
+            setBalanceLamports(lamports);
+            setBalanceError(false);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setBalanceLamports(null);
+            setBalanceError(true);
+          }
+        });
+    };
+    fetchBalance();
+    const t = setInterval(fetchBalance, 20_000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, [connection, publicKey, connected]);
+
   const onConnect = useCallback(async () => {
     setHint(null);
     const r = await runPhantomConnectFlow({ wallet, select, connect });
@@ -61,15 +105,13 @@ export function HeaderWalletConnect() {
   }
 
   if (connected && publicKey) {
-    const s = publicKey.toBase58();
-    const short = s.length > 10 ? `${s.slice(0, 4)}…${s.slice(-4)}` : s;
     return (
       <div className="flex min-w-0 max-w-full items-center gap-2 sm:gap-2.5">
         <span
-          className="max-w-[100px] shrink truncate font-mono text-sm text-zinc-400 sm:max-w-[140px] sm:text-sm"
-          title={s}
+          className="shrink-0 tabular-nums text-sm font-medium text-zinc-300"
+          title="Native SOL balance (wallet)"
         >
-          {short}
+          {balanceError ? "—" : balanceLamports === null ? "…" : `${formatNativeSol(balanceLamports)} SOL`}
         </span>
         {savingProfileWallet ? (
           <span
@@ -82,18 +124,11 @@ export function HeaderWalletConnect() {
           <Link
             href="/dashboard"
             className="shrink-0 text-xs text-amber-200/80 underline decoration-white/20 sm:text-sm"
-            title="Auto-save failed: open dashboard and save to profile"
+            title="Open dashboard to save your wallet to your profile"
           >
             Save to profile
           </Link>
-        ) : (
-          <Link
-            href="/dashboard"
-            className="shrink-0 text-xs text-zinc-500 transition hover:text-zinc-300 sm:text-sm"
-          >
-            Dashboard
-          </Link>
-        )}
+        ) : null}
       </div>
     );
   }
