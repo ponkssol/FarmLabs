@@ -14,6 +14,21 @@ const BY_TYPE: Record<string, string> = {
   "image/gif": ".gif",
 };
 
+function toUploadErrorMessage(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error);
+  const msg = raw.toLowerCase();
+  if (msg.includes("invalid token") || msg.includes("token")) {
+    return "BLOB_READ_WRITE_TOKEN tidak valid atau tidak punya akses ke Blob store ini.";
+  }
+  if (msg.includes("not found") || msg.includes("store")) {
+    return "Blob store tidak ditemukan untuk token ini. Pastikan token berasal dari project/team yang sama.";
+  }
+  if (msg.includes("unauthorized") || msg.includes("forbidden")) {
+    return "Akses ke Blob ditolak. Cek scope token (read-write) dan environment Vercel.";
+  }
+  return "Upload gagal ke Blob. Cek token, Blob store, dan Vercel project linkage.";
+}
+
 /**
  * One optional image per review: buyer only, before review is created for this order.
  */
@@ -92,7 +107,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("[upload-review] failed:", error);
     return NextResponse.json(
-      { error: "Upload failed. Check BLOB_READ_WRITE_TOKEN configuration." },
+      { error: toUploadErrorMessage(error) },
       { status: 500 },
     );
   }
