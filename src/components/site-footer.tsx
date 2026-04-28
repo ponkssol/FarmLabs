@@ -127,9 +127,15 @@ export async function SiteFooter() {
                     <path d="M20.3 4.4A18 18 0 0 0 15.9 3l-.2.4c-.1.3-.3.7-.4 1.1a16.8 16.8 0 0 0-5.1 0c-.1-.4-.3-.8-.4-1.1L9.6 3a18 18 0 0 0-4.4 1.4A18.8 18.8 0 0 0 2 17.8c1.9 1.4 3.7 2.3 5.6 2.9.5-.7.9-1.5 1.2-2.3l-.7-.2c-.3-.1-.5-.2-.8-.4l.2-.2c3.4 1.6 7 1.6 10.4 0l.2.2c-.2.2-.5.3-.8.4l-.7.2c.3.8.7 1.6 1.2 2.3 1.9-.6 3.7-1.5 5.6-2.9a18.8 18.8 0 0 0-3.2-13.4ZM9 15.5c-1 0-1.7-.9-1.7-2s.8-2 1.7-2c1 0 1.8.9 1.7 2 0 1.1-.8 2-1.7 2Zm6 0c-1 0-1.7-.9-1.7-2s.8-2 1.7-2c1 0 1.8.9 1.7 2 0 1.1-.8 2-1.7 2Z" />
                   </svg>
                 </span>
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-zinc-900/60 text-[11px] font-semibold transition hover:border-white/20 hover:text-zinc-300">
+                <Link
+                  href="https://x.com/farmlabs_co"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="FarmLabs on X"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-zinc-900/60 text-[11px] font-semibold transition hover:border-white/20 hover:text-zinc-300"
+                >
                   X
-                </span>
+                </Link>
               </div>
             </div>
           </div>

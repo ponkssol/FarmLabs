@@ -4,12 +4,13 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Docs - FarmLabs",
   description:
-    "Complete documentation for FarmLabs: system flow, listing setup, monetization strategy, buyer steps, and payment flow.",
+    "Complete documentation for FarmLabs: about project, vision mission, system flow, listing setup, monetization strategy, buyer steps, and payment flow.",
 };
 
 export default function DocsPage() {
   const navItems = [
     { id: "overview", label: "Overview" },
+    { id: "about", label: "About FarmLabs" },
     { id: "system-flow", label: "System Flow" },
     { id: "operator-setup", label: "Operator Setup" },
     { id: "field-guide", label: "Field Guide" },
@@ -74,6 +75,47 @@ export default function DocsPage() {
                 >
                   <div className="signal-dot mx-auto mb-1 h-2 w-2 rounded-full bg-emerald-400" />
                   {label}
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article id="about" className="doc-card rounded-xl border border-white/10 bg-zinc-950/60 p-4">
+            <h2 className="text-sm font-semibold text-zinc-100 sm:text-base">About FarmLabs</h2>
+            <p className="mt-2 text-xs leading-relaxed text-zinc-300 sm:text-sm">
+              FarmLabs is a Web3 platform designed to help creators, operators, and communities launch service listings
+              professionally. We focus on an end-to-end flow: from offer publication and buyer discovery to wallet
+              checkout and member access management.
+            </p>
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <div className="doc-subcard rounded-lg border border-white/10 bg-zinc-900/60 p-3">
+                <p className="text-xs font-medium text-zinc-100 sm:text-sm">Vision</p>
+                <p className="mt-1 text-[11px] leading-relaxed text-zinc-400 sm:text-xs">
+                  To become the most trusted, simple, and scalable Web3 community marketplace infrastructure for
+                  value-driven monetization.
+                </p>
+              </div>
+              <div className="doc-subcard rounded-lg border border-white/10 bg-zinc-900/60 p-3">
+                <p className="text-xs font-medium text-zinc-100 sm:text-sm">Mission</p>
+                <ul className="mt-1 list-disc space-y-1 pl-4 text-[11px] text-zinc-400 sm:text-xs">
+                  <li>Simplify listing creation and operator onboarding.</li>
+                  <li>Connect buyers and operators through transparent transactions.</li>
+                  <li>Provide clear and measurable community access control.</li>
+                  <li>Enable sustainable creator growth through practical monetization.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              {[
+                { title: "Transparency", desc: "Clear transaction flow and payment status." },
+                { title: "Trust", desc: "More credible listings with structured information." },
+                { title: "Fast Execution", desc: "From publishing to buyer access in one flow." },
+              ].map((item) => (
+                <div key={item.title} className="rounded-lg border border-white/10 bg-zinc-900/70 p-3">
+                  <p className="text-xs font-medium text-zinc-100 sm:text-sm">{item.title}</p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-zinc-400 sm:text-xs">{item.desc}</p>
                 </div>
               ))}
             </div>
