@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { put } from "@vercel/blob";
 import { randomUUID } from "crypto";
 import { mkdir, writeFile } from "fs/promises";
 import { join } from "path";
@@ -64,6 +65,17 @@ export async function POST(request: NextRequest) {
   }
   const buf = Buffer.from(await file.arrayBuffer());
   const name = `${randomUUID()}${ext}`;
+  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  if (blobToken) {
+    const blob = await put(`reviews/${name}`, buf, {
+      access: "public",
+      token: blobToken,
+      contentType: file.type,
+    });
+    return NextResponse.json({ url: blob.url } as const);
+  }
+
+  // Local dev fallback when Blob token is not configured.
   const dir = join(process.cwd(), "public", "uploads", "reviews");
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, name), buf);

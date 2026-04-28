@@ -20,6 +20,11 @@ export const metadata: Metadata = {
   title: { default: "FarmLabs", template: "%s - FarmLabs" },
   description:
     "Pump.fun pre-launch directory with X, Telegram, Discord communities and launch plans.",
+  icons: {
+    icon: "/favicon.jpg",
+    shortcut: "/favicon.jpg",
+    apple: "/favicon.jpg",
+  },
 };
 
 export const viewport: Viewport = {
