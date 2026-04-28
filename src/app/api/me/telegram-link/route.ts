@@ -41,7 +41,7 @@ export async function POST() {
       const id = randomUUID();
       await prisma.$executeRawUnsafe(
         `INSERT INTO "TelegramLinkToken" ("id", "token", "userId", "expiresAt", "createdAt")
-         VALUES (?, ?, ?, ?, datetime('now'))`,
+         VALUES ($1, $2, $3, $4, NOW())`,
         id,
         token,
         session.user.id,

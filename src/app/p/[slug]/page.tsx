@@ -88,7 +88,7 @@ export default async function ProjectPage({ params }: Props) {
     /** Raw SQL: works if Prisma Client is stale (e.g. `viewCount` not in DMMF) or generate failed (EPERM on Windows). */
     void prisma
       .$executeRawUnsafe(
-        `UPDATE "Project" SET "viewCount" = COALESCE("viewCount", 0) + 1 WHERE "id" = ?`,
+        `UPDATE "Project" SET "viewCount" = COALESCE("viewCount", 0) + 1 WHERE "id" = $1`,
         p.id,
       )
       .catch(() => {});

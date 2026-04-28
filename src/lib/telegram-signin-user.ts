@@ -30,18 +30,18 @@ export async function findOrCreateUserForTelegramWidget(
     const newId = randomUUID();
     await prisma.$executeRawUnsafe(
       `INSERT INTO "User" ("id", "name", "image", "telegramUserId", "createdAt", "updatedAt")
-       VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
+       VALUES ($1, $2, $3, $4, NOW(), NOW())
        ON CONFLICT("telegramUserId") DO UPDATE SET
          "name" = excluded."name",
          "image" = excluded."image",
-         "updatedAt" = datetime('now')`,
+         "updatedAt" = NOW()`,
       newId,
       name,
       img,
       tgid,
     );
     const row = await prisma.$queryRawUnsafe<[{ id: string; name: string | null; image: string | null }]>(
-      `SELECT "id", "name", "image" FROM "User" WHERE "telegramUserId" = ?`,
+      `SELECT "id", "name", "image" FROM "User" WHERE "telegramUserId" = $1`,
       tgid,
     );
     const o = row[0];

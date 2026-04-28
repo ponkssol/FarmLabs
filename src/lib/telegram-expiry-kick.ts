@@ -41,7 +41,7 @@ export async function collectTelegramExpiryKicks(
       if (ok) continue;
       const userRows = await prisma.$queryRawUnsafe<
         Array<{ id: string; telegramUserId: string | null }>
-      >(`SELECT "id", "telegramUserId" FROM "User" WHERE "id" = ?`, buyerId);
+      >(`SELECT "id", "telegramUserId" FROM "User" WHERE "id" = $1`, buyerId);
       const user = userRows[0];
       const tg = user?.telegramUserId;
       if (user && tg) {

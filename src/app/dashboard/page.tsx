@@ -184,7 +184,7 @@ export default async function DashboardPage({ searchParams }: Props) {
     /** Raw: works when Prisma client is stale (e.g. after failed `prisma generate` on Windows). */
     prisma
       .$queryRawUnsafe<Array<{ xHandle: string | null }>>(
-        `SELECT "xHandle" FROM "User" WHERE "id" = ?`,
+        `SELECT "xHandle" FROM "User" WHERE "id" = $1`,
         userId,
       )
       .then((rows) => rows[0] ?? null),
@@ -316,7 +316,7 @@ export default async function DashboardPage({ searchParams }: Props) {
         published: number | boolean;
       }>
     >(
-      `SELECT "id", "title", "slug", "viewCount", "published" FROM "Project" WHERE "userId" = ? ORDER BY "viewCount" DESC`,
+      `SELECT "id", "title", "slug", "viewCount", "published" FROM "Project" WHERE "userId" = $1 ORDER BY "viewCount" DESC`,
       userId,
     );
     const totalPageViews = allProjects.reduce((acc, pr) => acc + (pr.viewCount ?? 0), 0);
