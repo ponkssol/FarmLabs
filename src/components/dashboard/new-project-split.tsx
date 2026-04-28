@@ -5,7 +5,6 @@ import { PriceOptionsField } from "@/components/price-options-field";
 import { ProjectDetailImagesField } from "@/components/project-detail-images-field";
 import { TELEGRAM_GROUP_BOT_UI, TELEGRAM_GROUP_ID_FORM_UI } from "@/lib/feature-flags";
 import { normalizeProjectForm, projectFormSchema, type ProjectForm } from "@/lib/project-schema";
-import { uploadCommunityLogoFile } from "@/lib/upload-community-client";
 import { resultToPanelMessage, runPhantomConnectFlow } from "@/lib/solana-phantom-connect";
 import { useWallet } from "@solana/wallet-adapter-react";
 import Image from "next/image";
@@ -69,7 +68,8 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
   const { connected, connect, connecting, wallet: selectedWallet, wallets, select } = useWallet();
   const [values, setValues] = useState<ProjectForm>(initialValues);
   const [submitting, setSubmitting] = useState(false);
-  const [logoUploading, setLogoUploading] = useState(false);
+  const [communityImageFile, setCommunityImageFile] = useState<File | null>(null);
+  const [communityImagePreview, setCommunityImagePreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const links = useMemo(
@@ -94,6 +94,7 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
   const showPrice = values.groupType === "PRIVATE" && values.accessType === "PAID";
   const hasAccessTiers = showPrice && (values.priceOptions?.length ?? 0) > 0;
   const previewPrice = formatPreviewPrice(values);
+  const communityImageSrc = communityImagePreview ?? values.communityImage ?? "";
   const titleInitial = useMemo(
     () => (values.title.trim().charAt(0) || "C").toUpperCase(),
     [values.title],
@@ -120,11 +121,18 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
 
     try {
       const payload = normalizeProjectForm(parsed.data);
-      const res = await fetch("/api/projects", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = communityImageFile
+        ? await (async () => {
+            const fd = new FormData();
+            fd.set("payload", JSON.stringify(payload));
+            fd.set("communityImageFile", communityImageFile);
+            return fetch("/api/projects", { method: "POST", body: fd });
+          })()
+        : await fetch("/api/projects", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
 
       const body = (await res.json().catch(() => ({}))) as { id?: string; error?: unknown };
       if (!res.ok) {
@@ -228,10 +236,10 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
               <label className={label}>Community logo</label>
               <p className="mb-1 text-xs text-zinc-600 sm:text-sm">PNG, JPEG, WebP, or GIF — max 2MB. Shown on explore cards.</p>
               <div className="flex flex-wrap items-center gap-2">
-                {values.communityImage ? (
+                {communityImageSrc ? (
                   <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-white/10">
                     <Image
-                      src={values.communityImage}
+                      src={communityImageSrc}
                       alt=""
                       width={44}
                       height={44}
@@ -243,34 +251,30 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
                 <input
                   type="file"
                   accept="image/png,image/jpeg,image/webp,image/gif"
-                  disabled={logoUploading}
                   onChange={async (e) => {
                     const f = e.target.files?.[0];
                     e.currentTarget.value = "";
                     if (!f) return;
-                    setLogoUploading(true);
                     setError(null);
-                    try {
-                      const url = await uploadCommunityLogoFile(f);
-                      set("communityImage", url);
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : "Upload failed");
-                    } finally {
-                      setLogoUploading(false);
-                    }
+                    setCommunityImageFile(f);
+                    setCommunityImagePreview(URL.createObjectURL(f));
+                    set("communityImage", "");
                   }}
                   className="w-full min-w-0 text-xs text-zinc-500 file:me-1.5 file:rounded file:border-0 file:bg-zinc-800 file:px-1.5 file:py-1 file:text-zinc-200"
                 />
-                {values.communityImage ? (
+                {communityImageSrc ? (
                   <button
                     type="button"
-                    onClick={() => set("communityImage", "")}
+                    onClick={() => {
+                      setCommunityImageFile(null);
+                      setCommunityImagePreview(null);
+                      set("communityImage", "");
+                    }}
                     className="shrink-0 rounded border border-white/15 px-1.5 py-1 text-xs text-zinc-500 hover:text-zinc-300"
                   >
                     Remove
                   </button>
                 ) : null}
-                {logoUploading ? <span className="text-xs text-zinc-500">…</span> : null}
               </div>
             </div>
             <ProjectDetailImagesField
@@ -570,9 +574,9 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
                 </div>
 
                 <div className="mt-3 flex items-start gap-2.5">
-                  {values.communityImage ? (
+                  {communityImageSrc ? (
                     <Image
-                      src={values.communityImage}
+                      src={communityImageSrc}
                       width={40}
                       height={40}
                       unoptimized

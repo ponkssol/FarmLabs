@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redactVipSocialLinks } from "@/lib/redact-vip-text";
 import { normalizeProjectForm, projectFormSchema } from "@/lib/project-schema";
 import { replaceProjectPriceOptionsTx } from "@/lib/project-price-options-db";
+import { storeImageFile } from "@/lib/server-image-upload";
 import { uniqueProjectSlug } from "@/lib/slug";
 import { isPaidVipListing, shouldMaskVipLinks } from "@/lib/vip-link-access";
 import { NextRequest, NextResponse } from "next/server";
@@ -76,7 +77,28 @@ export async function PATCH(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const json = await request.json();
+  const contentType = request.headers.get("content-type") ?? "";
+  let json: unknown;
+  if (contentType.includes("multipart/form-data")) {
+    const form = await request.formData();
+    const payload = form.get("payload");
+    if (typeof payload !== "string") {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+    let parsedPayload: Record<string, unknown>;
+    try {
+      parsedPayload = JSON.parse(payload) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+    const communityImageFile = form.get("communityImageFile");
+    if (communityImageFile instanceof File) {
+      parsedPayload.communityImage = await storeImageFile(communityImageFile, "communities");
+    }
+    json = parsedPayload;
+  } else {
+    json = await request.json();
+  }
   const out = projectFormSchema.safeParse(json);
   if (!out.success) {
     return NextResponse.json({ error: out.error.flatten() }, { status: 400 });

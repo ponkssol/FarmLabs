@@ -13,7 +13,6 @@ import {
   ProjectTelegramGroupSetup,
   type TelegramVipSyncPayload,
 } from "@/components/project-telegram-group-setup";
-import { uploadCommunityLogoFile } from "@/lib/upload-community-client";
 import Image from "next/image";
 
 const empty: ProjectForm = {
@@ -92,7 +91,9 @@ export function ProjectForm({ mode, project }: Props) {
       : {}),
   }));
   const [submitting, setSubmitting] = useState(false);
-  const [logoUploading, setLogoUploading] = useState(false);
+  const [communityImageFile, setCommunityImageFile] = useState<File | null>(null);
+  const [communityImagePreview, setCommunityImagePreview] = useState<string | null>(null);
+  const communityImageSrc = communityImagePreview ?? values.communityImage ?? "";
   const [error, setError] = useState<string | null>(null);
 
   const fieldLabel: Record<string, string> = {
@@ -155,11 +156,18 @@ export function ProjectForm({ mode, project }: Props) {
 
     try {
       if (mode === "create") {
-        const r = await fetch("/api/projects", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
+        const r = communityImageFile
+          ? await (async () => {
+              const fd = new FormData();
+              fd.set("payload", JSON.stringify(body));
+              fd.set("communityImageFile", communityImageFile);
+              return fetch("/api/projects", { method: "POST", body: fd });
+            })()
+          : await fetch("/api/projects", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            });
         const created = (await r.json().catch(() => ({}))) as { id?: string; error?: unknown };
         if (!r.ok) {
           throw new Error(
@@ -176,11 +184,18 @@ export function ProjectForm({ mode, project }: Props) {
       }
 
       if (!project) return;
-      const r = await fetch(`/api/projects/${project.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      const r = communityImageFile
+        ? await (async () => {
+            const fd = new FormData();
+            fd.set("payload", JSON.stringify(body));
+            fd.set("communityImageFile", communityImageFile);
+            return fetch(`/api/projects/${project.id}`, { method: "PATCH", body: fd });
+          })()
+        : await fetch(`/api/projects/${project.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
       if (!r.ok) throw new Error("Failed to update project");
       router.refresh();
     } catch (x) {
@@ -238,10 +253,10 @@ export function ProjectForm({ mode, project }: Props) {
               PNG, JPEG, WebP, or GIF — max 2MB. Shown on directory cards.
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2.5">
-              {values.communityImage ? (
+              {communityImageSrc ? (
                 <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-zinc-900">
                   <Image
-                    src={values.communityImage}
+                    src={communityImageSrc}
                     alt="Community"
                     width={48}
                     height={48}
@@ -258,34 +273,30 @@ export function ProjectForm({ mode, project }: Props) {
                 <input
                   type="file"
                   accept="image/png,image/jpeg,image/webp,image/gif"
-                  disabled={logoUploading}
                   onChange={async (e) => {
                     const f = e.target.files?.[0];
                     e.currentTarget.value = "";
                     if (!f) return;
-                    setLogoUploading(true);
                     setError(null);
-                    try {
-                      const url = await uploadCommunityLogoFile(f);
-                      set("communityImage", url);
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : "Upload failed");
-                    } finally {
-                      setLogoUploading(false);
-                    }
+                    setCommunityImageFile(f);
+                    setCommunityImagePreview(URL.createObjectURL(f));
+                    set("communityImage", "");
                   }}
                   className="w-full max-w-xs text-xs text-zinc-400 file:me-1.5 file:rounded file:border-0 file:bg-zinc-800 file:px-1.5 file:py-1 file:text-xs file:text-zinc-200"
                 />
-                {values.communityImage ? (
+                {communityImageSrc ? (
                   <button
                     type="button"
-                    onClick={() => set("communityImage", "")}
+                    onClick={() => {
+                      setCommunityImageFile(null);
+                      setCommunityImagePreview(null);
+                      set("communityImage", "");
+                    }}
                     className="rounded border border-white/15 px-2 py-1 text-sm text-zinc-400 transition hover:border-white/30 hover:text-zinc-200"
                   >
                     Remove logo
                   </button>
                 ) : null}
-                {logoUploading ? <span className="text-xs text-zinc-500">Uploading…</span> : null}
               </div>
             </div>
           </div>

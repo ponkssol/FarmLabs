@@ -18,15 +18,15 @@ function toUploadErrorMessage(error: unknown): string {
   const raw = error instanceof Error ? error.message : String(error);
   const msg = raw.toLowerCase();
   if (msg.includes("invalid token") || msg.includes("token")) {
-    return "BLOB_READ_WRITE_TOKEN tidak valid atau tidak punya akses ke Blob store ini.";
+    return "BLOB_READ_WRITE_TOKEN is invalid or does not have access to this Blob store.";
   }
   if (msg.includes("not found") || msg.includes("store")) {
-    return "Blob store tidak ditemukan untuk token ini. Pastikan token berasal dari project/team yang sama.";
+    return "Blob store was not found for this token. Ensure the token belongs to the same Vercel project/team.";
   }
   if (msg.includes("unauthorized") || msg.includes("forbidden")) {
-    return "Akses ke Blob ditolak. Cek scope token (read-write) dan environment Vercel.";
+    return "Blob access was denied. Check token scope (read-write) and Vercel environment.";
   }
-  return "Upload gagal ke Blob. Cek token, Blob store, dan Vercel project linkage.";
+  return "Blob upload failed. Check token, Blob store, and Vercel project linkage.";
 }
 
 /**
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     }
     const buf = Buffer.from(await file.arrayBuffer());
     const name = `${randomUUID()}${ext}`;
-    const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN?.trim();
     if (blobToken) {
       const blob = await put(`reviews/${name}`, buf, {
         access: "public",
