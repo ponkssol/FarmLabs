@@ -1,7 +1,7 @@
-import { put } from "@vercel/blob";
 import { randomUUID } from "crypto";
 import { mkdir, writeFile } from "fs/promises";
 import { join } from "path";
+import { putWithStoreAccessMatch } from "@/lib/vercel-blob-put";
 
 const MAX_BYTES = 2 * 1024 * 1024;
 const BY_TYPE: Record<string, string> = {
@@ -26,11 +26,7 @@ export async function storeImageFile(
   const name = `${randomUUID()}${ext}`;
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN?.trim();
   if (blobToken) {
-    const blob = await put(`${folder}/${name}`, buf, {
-      access: "public",
-      token: blobToken,
-      contentType: file.type,
-    });
+    const blob = await putWithStoreAccessMatch(`${folder}/${name}`, buf, file.type, blobToken);
     return blob.url;
   }
   if (process.env.VERCEL) {

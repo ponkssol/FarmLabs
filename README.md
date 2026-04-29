@@ -25,7 +25,7 @@ Supported platforms for listing links: Telegram, Discord, and X Community.
   - Set all auth + database environment variables on your host.
   - Set `AUTH_URL` to your production domain (e.g. `https://www.farmlabs.space`).
   - **`DATABASE_URL`**: add the Postgres URL Vercel Postgres / Neon / Supabase gives you. If listings fail with 5xx, verify the string in Vercel **Settings → Environment Variables** and that `npx prisma db push` (or a migration) has been applied to that **same** database.
-  - **Image uploads (community logo)**: on Vercel, filesystem is read-only. Set **`BLOB_READ_WRITE_TOKEN`** from a Vercel Blob store, or create/edit listings **without** uploading a new file (only URL fields).
+  - **Image uploads (community logo)**: on Vercel, filesystem is read-only. Set **`BLOB_READ_WRITE_TOKEN`** from the Blob store connected to this project. If the store is **Private**, uploads use `access: 'private'` (the app retries automatically). For images that must load in `<img>` on public pages (explore cards, etc.), a **Public** Blob store is recommended. Optional: **`BLOB_PUT_ACCESS`** = `public` or `private` to force the SDK `put` access and skip auto-retry.
 - **X OAuth callback**
   - Add the production callback:
     - `https://your-domain.com/api/auth/callback/twitter`

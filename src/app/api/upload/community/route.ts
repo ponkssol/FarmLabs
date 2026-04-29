@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { put } from "@vercel/blob";
+import { putWithStoreAccessMatch } from "@/lib/vercel-blob-put";
 import { randomUUID } from "crypto";
 import { mkdir, writeFile } from "fs/promises";
 import { join } from "path";
@@ -47,11 +47,7 @@ export async function POST(request: NextRequest) {
     const name = `${randomUUID()}${ext}`;
     const blobToken = process.env.BLOB_READ_WRITE_TOKEN?.trim();
     if (blobToken) {
-      const blob = await put(`communities/${name}`, buf, {
-        access: "public",
-        token: blobToken,
-        contentType: file.type,
-      });
+      const blob = await putWithStoreAccessMatch(`communities/${name}`, buf, file.type, blobToken);
       return NextResponse.json({ url: blob.url } as const);
     }
 
