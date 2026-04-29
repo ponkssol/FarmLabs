@@ -154,6 +154,11 @@ export default async function ProjectPage({ params }: Props) {
       : null;
   const showSidebarInviteLinks = hasBoughtAccess && Boolean(effectiveTg || effectiveDc);
   const showPaidNoLinksNote = hasBoughtAccess && !effectiveTg && !effectiveDc;
+  /** VIP checkout box already shows Open Telegram/Discord; avoid duplicating a second link card. */
+  const communityLinksInEscrowCard = canEscrow && showSidebarInviteLinks;
+  const showSidebarCommunityLinkCard =
+    (links.length > 0 || (maskVipLinks && isPaidVipListing(p) && hasLinkOffers)) &&
+    !communityLinksInEscrowCard;
   const detailImages = parseDetailImagesJson(p.detailImages);
 
   const [reviewAgg, reviewRows] = await Promise.all([
@@ -402,11 +407,7 @@ export default async function ProjectPage({ params }: Props) {
           </header>
 
           {(() => {
-            const showDescriptionTab = Boolean(
-              p.description?.trim() ||
-                links.length > 0 ||
-                (maskVipLinks && isPaidVipListing(p) && hasLinkOffers),
-            );
+            const showDescriptionTab = Boolean(p.description?.trim());
             const hasRules = Boolean(p.rules?.trim());
             const hasAccess = Boolean(p.deliveryPolicy?.trim());
             const tabs: ListingTabSpec[] = [];
@@ -428,72 +429,6 @@ export default async function ProjectPage({ params }: Props) {
                         </div>
                       </div>
                     ) : null}
-                    {(links.length > 0 || (maskVipLinks && isPaidVipListing(p) && hasLinkOffers)) && (
-                      <div
-                        className={p.description?.trim() ? "mt-3 border-t border-white/[0.06] pt-3" : ""}
-                      >
-                        {maskVipLinks ? (
-                          <div className="space-y-1.5">
-                            <p className="text-[10px] leading-relaxed text-amber-200/90 sm:text-[11px]">
-                              Join to unlock Telegram &amp; Discord — links show here after purchase.
-                            </p>
-                            <div className="flex flex-wrap gap-1">
-                              {[
-                                ...(offersTelegram
-                                  ? [{ label: "Telegram" as const, href: null as string | null }]
-                                  : []),
-                                ...(offersDiscord
-                                  ? [{ label: "Discord" as const, href: null as string | null }]
-                                  : []),
-                              ].map((l) => (
-                                <span
-                                  key={l.label}
-                                  className="inline-flex items-center gap-0.5 rounded-full border border-amber-500/25 bg-amber-950/20 px-2 py-0.5 text-[10px] text-amber-200/90 sm:text-[11px]"
-                                  title="After you join"
-                                >
-                                  {l.label}
-                                  <span className="text-amber-200/50">· locked</span>
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="space-y-1.5">
-                            <div className="flex flex-wrap gap-1.5">
-                              {links.map((l) => (
-                                <a
-                                  key={l.label}
-                                  href={l.href!}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center rounded-full border border-white/10 bg-zinc-950/50 px-2.5 py-1 text-[10px] font-medium text-zinc-200 transition hover:border-white/20 hover:text-white sm:text-[11px]"
-                                >
-                                  {l.label}
-                                </a>
-                              ))}
-                            </div>
-                            {accessRow?.accessExpiresAt ? (
-                              <p className="text-[10px] text-zinc-500 sm:text-[11px]" suppressHydrationWarning>
-                                Access active until{" "}
-                                {new Date(accessRow.accessExpiresAt).toLocaleString("en-US", {
-                                  dateStyle: "medium",
-                                  timeStyle: "short",
-                                })}
-                                {accessRow.priceOptionLabel ? ` · ${accessRow.priceOptionLabel}` : ""}
-                              </p>
-                            ) : null}
-                            {accessRow?.grantedDiscordRoleId ? (
-                              <p className="text-[10px] leading-relaxed text-zinc-500 sm:text-[11px]">
-                                Discord role ID for this purchase (for the server bot):{" "}
-                                <code className="rounded border border-white/10 bg-zinc-900/80 px-1 py-0.5 text-[10px] text-zinc-400 sm:text-[11px]">
-                                  {accessRow.grantedDiscordRoleId}
-                                </code>
-                              </p>
-                            ) : null}
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 ),
               });
@@ -670,6 +605,78 @@ export default async function ProjectPage({ params }: Props) {
                   : "No checkout for this listing type."}
               </div>
             )}
+
+            {showSidebarCommunityLinkCard ? (
+              <div className="relative overflow-hidden rounded-2xl border border-cyan-400/25 bg-gradient-to-b from-cyan-950/35 via-zinc-900/40 to-zinc-950/50 px-4 py-3 shadow-[0_0_32px_-10px_rgba(34,211,238,0.35)] ring-1 ring-cyan-400/20 ring-inset sm:px-4 sm:py-3.5">
+                <div
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.07] via-transparent to-cyan-400/[0.04]"
+                  aria-hidden
+                />
+                <h3 className="relative text-[10px] font-medium uppercase tracking-wider text-cyan-100/90 drop-shadow-[0_0_10px_rgba(34,211,238,0.45)] sm:text-[11px]">
+                  Community links
+                </h3>
+                {maskVipLinks ? (
+                  <div className="relative mt-2.5 space-y-1.5">
+                    <p className="text-[10px] leading-relaxed text-amber-200/90 sm:text-[11px]">
+                      Join to unlock Telegram &amp; Discord — links show here after purchase.
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {[
+                        ...(offersTelegram
+                          ? [{ label: "Telegram" as const, href: null as string | null }]
+                          : []),
+                        ...(offersDiscord
+                          ? [{ label: "Discord" as const, href: null as string | null }]
+                          : []),
+                      ].map((l) => (
+                        <span
+                          key={l.label}
+                          className="inline-flex items-center gap-0.5 rounded-full border border-amber-400/30 bg-amber-950/25 px-2 py-0.5 text-[10px] text-amber-100/95 shadow-[0_0_14px_-3px_rgba(251,191,36,0.35)] sm:text-[11px]"
+                          title="After you join"
+                        >
+                          {l.label}
+                          <span className="text-amber-200/50">· locked</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative mt-2.5 space-y-1.5">
+                    <div className="flex flex-wrap gap-1.5">
+                      {links.map((l) => (
+                        <a
+                          key={l.label}
+                          href={l.href!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center rounded-full border border-cyan-400/35 bg-gradient-to-b from-zinc-800/90 to-zinc-950/95 px-2.5 py-1 text-[10px] font-medium text-cyan-50 shadow-[0_0_16px_-4px_rgba(34,211,238,0.4)] transition hover:border-cyan-300/55 hover:shadow-[0_0_22px_-2px_rgba(34,211,238,0.55)] hover:brightness-110 sm:text-[11px]"
+                        >
+                          {l.label}
+                        </a>
+                      ))}
+                    </div>
+                    {accessRow?.accessExpiresAt ? (
+                      <p className="text-[10px] text-zinc-500 sm:text-[11px]" suppressHydrationWarning>
+                        Access active until{" "}
+                        {new Date(accessRow.accessExpiresAt).toLocaleString("en-US", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                        {accessRow.priceOptionLabel ? ` · ${accessRow.priceOptionLabel}` : ""}
+                      </p>
+                    ) : null}
+                    {accessRow?.grantedDiscordRoleId ? (
+                      <p className="text-[10px] leading-relaxed text-zinc-500 sm:text-[11px]">
+                        Discord role ID for this purchase (for the server bot):{" "}
+                        <code className="rounded border border-white/10 bg-zinc-900/80 px-1 py-0.5 text-[10px] text-zinc-400 sm:text-[11px]">
+                          {accessRow.grantedDiscordRoleId}
+                        </code>
+                      </p>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            ) : null}
 
             <div className="flex flex-col gap-2">
               <Link
