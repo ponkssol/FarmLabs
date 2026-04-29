@@ -117,19 +117,37 @@ export async function SiteFooter() {
                 </Link>
               )}
               <div className="mt-3 flex items-center gap-2 text-zinc-500">
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-zinc-900/60 transition hover:border-white/20 hover:text-zinc-300">
+                <Link
+                  href="https://t.me/farmlabs_co"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="FarmLabs on Telegram"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-zinc-900/60 transition hover:border-white/20 hover:text-zinc-300"
+                >
                   <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
                     <path d="M21.4 4.6c-.3-.2-.8-.3-1.2-.1L3.1 11.2c-.5.2-.8.7-.8 1.2 0 .5.3 1 .8 1.1l4.5 1.5 1.7 5.2c.1.4.5.7 1 .8h.1c.4 0 .8-.2 1.1-.5l2.5-2.7 4.3 3.2c.2.2.5.2.8.2.2 0 .3 0 .5-.1.4-.2.7-.6.8-1l2.3-14c.1-.6-.2-1.1-.7-1.4Zm-3.6 4.2-7.3 6.7-.3 2.9-1-3.2-3.1-1 11.7-4.6Z" />
                   </svg>
-                </span>
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-zinc-900/60 transition hover:border-white/20 hover:text-zinc-300">
+                </Link>
+                <Link
+                  href="https://discord.gg/x2Qm4nHpkf"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="FarmLabs on Discord"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-zinc-900/60 transition hover:border-white/20 hover:text-zinc-300"
+                >
                   <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
                     <path d="M20.3 4.4A18 18 0 0 0 15.9 3l-.2.4c-.1.3-.3.7-.4 1.1a16.8 16.8 0 0 0-5.1 0c-.1-.4-.3-.8-.4-1.1L9.6 3a18 18 0 0 0-4.4 1.4A18.8 18.8 0 0 0 2 17.8c1.9 1.4 3.7 2.3 5.6 2.9.5-.7.9-1.5 1.2-2.3l-.7-.2c-.3-.1-.5-.2-.8-.4l.2-.2c3.4 1.6 7 1.6 10.4 0l.2.2c-.2.2-.5.3-.8.4l-.7.2c.3.8.7 1.6 1.2 2.3 1.9-.6 3.7-1.5 5.6-2.9a18.8 18.8 0 0 0-3.2-13.4ZM9 15.5c-1 0-1.7-.9-1.7-2s.8-2 1.7-2c1 0 1.8.9 1.7 2 0 1.1-.8 2-1.7 2Zm6 0c-1 0-1.7-.9-1.7-2s.8-2 1.7-2c1 0 1.8.9 1.7 2 0 1.1-.8 2-1.7 2Z" />
                   </svg>
-                </span>
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-zinc-900/60 text-[11px] font-semibold transition hover:border-white/20 hover:text-zinc-300">
+                </Link>
+                <Link
+                  href="https://x.com/farmlabs_co"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="FarmLabs on X"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-zinc-900/60 text-[11px] font-semibold transition hover:border-white/20 hover:text-zinc-300"
+                >
                   X
-                </span>
+                </Link>
               </div>
             </div>
           </div>
