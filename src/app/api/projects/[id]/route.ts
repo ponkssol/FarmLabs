@@ -6,6 +6,7 @@ import { replaceProjectPriceOptionsTx } from "@/lib/project-price-options-db";
 import { storeImageFile } from "@/lib/server-image-upload";
 import { uniqueProjectSlug } from "@/lib/slug";
 import { isPaidVipListing, shouldMaskVipLinks } from "@/lib/vip-link-access";
+import { handleProjectApiError } from "@/lib/handle-project-api-error";
 import { NextRequest, NextResponse } from "next/server";
 
 type Params = { id: string };
@@ -77,82 +78,90 @@ export async function PATCH(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const contentType = request.headers.get("content-type") ?? "";
-  let json: unknown;
-  if (contentType.includes("multipart/form-data")) {
-    const form = await request.formData();
-    const payload = form.get("payload");
-    if (typeof payload !== "string") {
-      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  try {
+    const contentType = request.headers.get("content-type") ?? "";
+    let json: unknown;
+    if (contentType.includes("multipart/form-data")) {
+      const form = await request.formData();
+      const payload = form.get("payload");
+      if (typeof payload !== "string") {
+        return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+      }
+      let parsedPayload: Record<string, unknown>;
+      try {
+        parsedPayload = JSON.parse(payload) as Record<string, unknown>;
+      } catch {
+        return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+      }
+      const communityImageFile = form.get("communityImageFile");
+      if (communityImageFile instanceof File) {
+        parsedPayload.communityImage = await storeImageFile(communityImageFile, "communities");
+      }
+      json = parsedPayload;
+    } else {
+      try {
+        json = await request.json();
+      } catch {
+        return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+      }
     }
-    let parsedPayload: Record<string, unknown>;
-    try {
-      parsedPayload = JSON.parse(payload) as Record<string, unknown>;
-    } catch {
-      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    const out = projectFormSchema.safeParse(json);
+    if (!out.success) {
+      return NextResponse.json({ error: out.error.flatten() }, { status: 400 });
     }
-    const communityImageFile = form.get("communityImageFile");
-    if (communityImageFile instanceof File) {
-      parsedPayload.communityImage = await storeImageFile(communityImageFile, "communities");
+    const data = normalizeProjectForm(out.data);
+    const nextGroupId = (data.telegramGroupChatId ?? "").trim() || null;
+    const groupIdChanged = nextGroupId !== (existing.telegramGroupChatId ?? null);
+
+    let slug = existing.slug;
+    if (data.title !== existing.title) {
+      slug = await uniqueProjectSlug(data.title);
     }
-    json = parsedPayload;
-  } else {
-    json = await request.json();
-  }
-  const out = projectFormSchema.safeParse(json);
-  if (!out.success) {
-    return NextResponse.json({ error: out.error.flatten() }, { status: 400 });
-  }
-  const data = normalizeProjectForm(out.data);
-  const nextGroupId = (data.telegramGroupChatId ?? "").trim() || null;
-  const groupIdChanged = nextGroupId !== (existing.telegramGroupChatId ?? null);
 
-  let slug = existing.slug;
-  if (data.title !== existing.title) {
-    slug = await uniqueProjectSlug(data.title);
-  }
+    const paid = data.groupType === "PRIVATE" && data.accessType === "PAID";
+    /** Full tier rows (incl. telegramUrl / discordUrl) — must not strip fields or they are wiped on save. */
+    const priceOptsForTx = (data.priceOptions ?? []).map((o, i) => ({
+      ...o,
+      sortOrder: o.sortOrder ?? i,
+    }));
 
-  const paid = data.groupType === "PRIVATE" && data.accessType === "PAID";
-  /** Full tier rows (incl. telegramUrl / discordUrl) — must not strip fields or they are wiped on save. */
-  const priceOptsForTx = (data.priceOptions ?? []).map((o, i) => ({
-    ...o,
-    sortOrder: o.sortOrder ?? i,
-  }));
-
-  const project = await prisma.$transaction(async (tx) => {
-    const p = await tx.project.update({
-      where: { id },
-      data: {
-        title: data.title,
-        shortPitch: data.shortPitch,
-        description: data.description,
-        groupType: data.groupType,
-        accessType: data.accessType,
-        priceAmount: paid ? data.priceAmount ?? null : null,
-        priceCurrency: paid ? data.priceCurrency ?? null : null,
-        category: data.category ?? null,
-        rules: data.rules,
-        deliveryPolicy: data.deliveryPolicy,
-        communityImage: data.communityImage ?? null,
-        detailImages: data.detailImages.length > 0 ? JSON.stringify(data.detailImages) : null,
-        telegram: data.telegram ?? null,
-        discord: data.discord,
-        telegramGroupChatId: nextGroupId,
-        // Bot sets title when it connects a group; clear if group id is cleared or replaced manually
-        telegramGroupTitle:
-          !nextGroupId
-            ? null
-            : groupIdChanged
+    const project = await prisma.$transaction(async (tx) => {
+      const p = await tx.project.update({
+        where: { id },
+        data: {
+          title: data.title,
+          shortPitch: data.shortPitch,
+          description: data.description,
+          groupType: data.groupType,
+          accessType: data.accessType,
+          priceAmount: paid ? data.priceAmount ?? null : null,
+          priceCurrency: paid ? data.priceCurrency ?? null : null,
+          category: data.category ?? null,
+          rules: data.rules,
+          deliveryPolicy: data.deliveryPolicy,
+          communityImage: data.communityImage ?? null,
+          detailImages: data.detailImages.length > 0 ? JSON.stringify(data.detailImages) : null,
+          telegram: data.telegram ?? null,
+          discord: data.discord,
+          telegramGroupChatId: nextGroupId,
+          // Bot sets title when it connects a group; clear if group id is cleared or replaced manually
+          telegramGroupTitle:
+            !nextGroupId
               ? null
-              : existing.telegramGroupTitle,
-        published: data.published ?? existing.published,
-        slug,
-      },
+              : groupIdChanged
+                ? null
+                : existing.telegramGroupTitle,
+          published: data.published ?? existing.published,
+          slug,
+        },
+      });
+      await replaceProjectPriceOptionsTx(tx, p.id, priceOptsForTx);
+      return p;
     });
-    await replaceProjectPriceOptionsTx(tx, p.id, priceOptsForTx);
-    return p;
-  });
-  return NextResponse.json(project);
+    return NextResponse.json(project);
+  } catch (e) {
+    return handleProjectApiError(e, "PATCH /api/projects/[id]");
+  }
 }
 
 export async function DELETE(

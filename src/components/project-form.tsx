@@ -168,11 +168,17 @@ export function ProjectForm({ mode, project }: Props) {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(body),
             });
-        const created = (await r.json().catch(() => ({}))) as { id?: string; error?: unknown };
+        const created = (await r.json().catch(() => ({}))) as {
+          id?: string;
+          error?: unknown;
+          details?: string;
+        };
         if (!r.ok) {
-          throw new Error(
-            typeof created.error === "string" ? created.error : "Failed to create project",
-          );
+          const msg =
+            typeof created.error === "string"
+              ? created.error
+              : "Failed to create project";
+          throw new Error(created.details ? `${msg} (${created.details})` : msg);
         }
         if (created.id) {
           await router.push(`/dashboard/edit/${created.id}`);

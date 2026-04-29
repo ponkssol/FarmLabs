@@ -134,9 +134,14 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
             body: JSON.stringify(payload),
           });
 
-      const body = (await res.json().catch(() => ({}))) as { id?: string; error?: unknown };
+      const body = (await res.json().catch(() => ({}))) as {
+        id?: string;
+        error?: unknown;
+        details?: string;
+      };
       if (!res.ok) {
-        throw new Error(typeof body.error === "string" ? body.error : "Failed to create project");
+        const msg = typeof body.error === "string" ? body.error : "Failed to create project";
+        throw new Error(body.details ? `${msg} (${body.details})` : msg);
       }
       router.push("/dashboard");
       router.refresh();
