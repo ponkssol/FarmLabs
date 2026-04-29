@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { Project } from "@prisma/client";
 import { projectFormSchema, type ProjectForm, normalizeProjectForm } from "@/lib/project-schema";
 import { parseDetailImagesJson } from "@/lib/project-detail-images";
+import { uploadCommunityLogoFile } from "@/lib/upload-community-client";
 import { TELEGRAM_GROUP_BOT_UI, TELEGRAM_GROUP_ID_FORM_UI } from "@/lib/feature-flags";
 import { DecimalPriceInput } from "@/components/decimal-price-input";
 import { PriceOptionsField } from "@/components/price-options-field";
@@ -152,33 +153,23 @@ export function ProjectForm({ mode, project }: Props) {
       return;
     }
 
-    const body = normalizeProjectForm(parsed.data);
-
     try {
+      let body = normalizeProjectForm(parsed.data);
+      if (communityImageFile) {
+        const imageUrl = await uploadCommunityLogoFile(communityImageFile);
+        body = { ...body, communityImage: imageUrl };
+      }
       if (mode === "create") {
-        const r = communityImageFile
-          ? await (async () => {
-              const fd = new FormData();
-              fd.set("payload", JSON.stringify(body));
-              fd.set("communityImageFile", communityImageFile);
-              return fetch("/api/projects", { method: "POST", body: fd });
-            })()
-          : await fetch("/api/projects", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(body),
-            });
-        const created = (await r.json().catch(() => ({}))) as {
-          id?: string;
-          error?: unknown;
-          details?: string;
-        };
+        const r = await fetch("/api/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const created = (await r.json().catch(() => ({}))) as { id?: string; error?: unknown };
         if (!r.ok) {
-          const msg =
-            typeof created.error === "string"
-              ? created.error
-              : "Failed to create project";
-          throw new Error(created.details ? `${msg} (${created.details})` : msg);
+          throw new Error(
+            typeof created.error === "string" ? created.error : "Failed to create project",
+          );
         }
         if (created.id) {
           await router.push(`/dashboard/edit/${created.id}`);
@@ -190,19 +181,17 @@ export function ProjectForm({ mode, project }: Props) {
       }
 
       if (!project) return;
-      const r = communityImageFile
-        ? await (async () => {
-            const fd = new FormData();
-            fd.set("payload", JSON.stringify(body));
-            fd.set("communityImageFile", communityImageFile);
-            return fetch(`/api/projects/${project.id}`, { method: "PATCH", body: fd });
-          })()
-        : await fetch(`/api/projects/${project.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          });
-      if (!r.ok) throw new Error("Failed to update project");
+      const r = await fetch(`/api/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const upd = (await r.json().catch(() => ({}))) as { error?: unknown };
+      if (!r.ok) {
+        throw new Error(
+          typeof upd.error === "string" ? upd.error : "Failed to update project",
+        );
+      }
       router.refresh();
     } catch (x) {
       setError(x instanceof Error ? x.message : "Error");

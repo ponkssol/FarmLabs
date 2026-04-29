@@ -5,6 +5,7 @@ import { PriceOptionsField } from "@/components/price-options-field";
 import { ProjectDetailImagesField } from "@/components/project-detail-images-field";
 import { TELEGRAM_GROUP_BOT_UI, TELEGRAM_GROUP_ID_FORM_UI } from "@/lib/feature-flags";
 import { normalizeProjectForm, projectFormSchema, type ProjectForm } from "@/lib/project-schema";
+import { uploadCommunityLogoFile } from "@/lib/upload-community-client";
 import { resultToPanelMessage, runPhantomConnectFlow } from "@/lib/solana-phantom-connect";
 import { useWallet } from "@solana/wallet-adapter-react";
 import Image from "next/image";
@@ -120,28 +121,22 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
     }
 
     try {
-      const payload = normalizeProjectForm(parsed.data);
-      const res = communityImageFile
-        ? await (async () => {
-            const fd = new FormData();
-            fd.set("payload", JSON.stringify(payload));
-            fd.set("communityImageFile", communityImageFile);
-            return fetch("/api/projects", { method: "POST", body: fd });
-          })()
-        : await fetch("/api/projects", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
+      let payload = normalizeProjectForm(parsed.data);
+      if (communityImageFile) {
+        const imageUrl = await uploadCommunityLogoFile(communityImageFile);
+        payload = { ...payload, communityImage: imageUrl };
+      }
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-      const body = (await res.json().catch(() => ({}))) as {
-        id?: string;
-        error?: unknown;
-        details?: string;
-      };
+      const body = (await res.json().catch(() => ({}))) as { id?: string; error?: unknown };
       if (!res.ok) {
-        const msg = typeof body.error === "string" ? body.error : "Failed to create project";
-        throw new Error(body.details ? `${msg} (${body.details})` : msg);
+        throw new Error(
+          typeof body.error === "string" ? body.error : "Failed to create project",
+        );
       }
       router.push("/dashboard");
       router.refresh();

@@ -14,20 +14,7 @@ const BY_TYPE: Record<string, string> = {
   "image/gif": ".gif",
 };
 
-function toUploadErrorMessage(error: unknown): string {
-  const raw = error instanceof Error ? error.message : String(error);
-  const msg = raw.toLowerCase();
-  if (msg.includes("invalid token") || msg.includes("token")) {
-    return "BLOB_READ_WRITE_TOKEN is invalid or does not have access to this Blob store.";
-  }
-  if (msg.includes("not found") || msg.includes("store")) {
-    return "Blob store was not found for this token. Ensure the token belongs to the same Vercel project/team.";
-  }
-  if (msg.includes("unauthorized") || msg.includes("forbidden")) {
-    return "Blob access was denied. Check token scope (read-write) and Vercel environment.";
-  }
-  return "Blob upload failed. Check token, Blob store, and Vercel project linkage.";
-}
+const UPLOAD_FAILED = "Failed to upload. Please try again." as const;
 
 /**
  * One optional image per review: buyer only, before review is created for this order.
@@ -93,10 +80,7 @@ export async function POST(request: NextRequest) {
 
     // In Vercel production, filesystem writes are not persistent/reliable.
     if (process.env.VERCEL) {
-      return NextResponse.json(
-        { error: "Upload storage is not configured. Set BLOB_READ_WRITE_TOKEN in Vercel env." },
-        { status: 503 },
-      );
+      return NextResponse.json({ error: UPLOAD_FAILED }, { status: 503 });
     }
 
     // Local dev fallback when Blob token is not configured.
@@ -106,9 +90,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: `/uploads/reviews/${name}` } as const);
   } catch (error) {
     console.error("[upload-review] failed:", error);
-    return NextResponse.json(
-      { error: toUploadErrorMessage(error) },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: UPLOAD_FAILED }, { status: 500 });
   }
 }
