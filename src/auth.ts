@@ -53,9 +53,17 @@ const providers = [
   }),
 ];
 
+const authSecret =
+  process.env.AUTH_SECRET ??
+  process.env.NEXTAUTH_SECRET ??
+  (process.env.NODE_ENV === "development"
+    ? "dev-only-auth-secret-change-in-production"
+    : undefined);
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   trustHost: true,
+  secret: authSecret,
   session: { strategy: "database" },
   pages: { signIn: "/login", error: "/auth/error" },
   providers,

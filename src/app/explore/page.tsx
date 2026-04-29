@@ -32,14 +32,24 @@ type Props = {
     sort?: SortKey;
     minPrice?: string;
     maxPrice?: string;
+    page?: string;
   }>;
 };
+
+const PAGE_SIZE = 24;
 
 /** Safe for Prisma queries: reject NaN/Infinity (invalid where clauses). */
 function parseOptionalPrice(s: string | undefined): number | undefined {
   if (s == null || s === "") return undefined;
   const n = Number(s);
   return Number.isFinite(n) ? n : undefined;
+}
+
+function parsePage(s: string | undefined): number {
+  if (!s) return 1;
+  const n = Number(s);
+  if (!Number.isInteger(n) || n < 1) return 1;
+  return n;
 }
 
 export default async function ExplorePage({ searchParams }: Props) {
@@ -51,6 +61,7 @@ export default async function ExplorePage({ searchParams }: Props) {
     sort = "newest",
     minPrice,
     maxPrice,
+    page,
   } = await searchParams;
 
   const min = parseOptionalPrice(minPrice);
@@ -116,6 +127,11 @@ export default async function ExplorePage({ searchParams }: Props) {
     ...priceFilter,
   };
 
+  const total = await prisma.project.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const currentPage = Math.min(parsePage(page), totalPages);
+  const skip = (currentPage - 1) * PAGE_SIZE;
+
   const hasActiveFilters =
     Boolean(query) ||
     platform !== "ALL" ||
@@ -125,34 +141,32 @@ export default async function ExplorePage({ searchParams }: Props) {
     min != null ||
     max != null;
 
-  const [rawItems, total] = await Promise.all([
-    prisma.project.findMany({
-      where,
-      orderBy,
-      take: 48,
-      include: {
-        user: {
-          select: {
-            name: true,
-            image: true,
-            wallet: true,
-            blueCheckmark: true,
-            xHandle: true,
-            accounts: {
-              where: { provider: "twitter" },
-              take: 1,
-              select: { providerAccountId: true },
-            },
+  const rawItems = await prisma.project.findMany({
+    where,
+    orderBy,
+    skip,
+    take: PAGE_SIZE,
+    include: {
+      user: {
+        select: {
+          name: true,
+          image: true,
+          wallet: true,
+          blueCheckmark: true,
+          xHandle: true,
+          accounts: {
+            where: { provider: "twitter" },
+            take: 1,
+            select: { providerAccountId: true },
           },
         },
-        priceOptions: {
-          orderBy: { sortOrder: "asc" },
-          select: { priceAmount: true, id: true, label: true, telegramUrl: true, discordUrl: true },
-        },
       },
-    }),
-    prisma.project.count({ where }),
-  ]);
+      priceOptions: {
+        orderBy: { sortOrder: "asc" },
+        select: { priceAmount: true, id: true, label: true, telegramUrl: true, discordUrl: true },
+      },
+    },
+  });
 
   const session = await auth();
   const viewerId = session?.user?.id;
@@ -174,6 +188,23 @@ export default async function ExplorePage({ searchParams }: Props) {
   const groupInitial = (title: string) => title.trim().charAt(0).toUpperCase() || "C";
   const userInitial = (name: string | null | undefined) =>
     (name?.trim() || "?").charAt(0).toUpperCase() || "?";
+  const startPage = Math.max(1, currentPage - 2);
+  const endPage = Math.min(totalPages, startPage + 4);
+  const visibleStart = Math.max(1, endPage - 4);
+  const visiblePages = Array.from({ length: endPage - visibleStart + 1 }, (_, i) => visibleStart + i);
+  const buildPageHref = (targetPage: number) => {
+    const params = new URLSearchParams();
+    if (q?.trim()) params.set("q", q.trim());
+    if (platform !== "ALL") params.set("platform", platform);
+    if (type !== "ALL") params.set("type", type);
+    if (access !== "ALL") params.set("access", access);
+    if (sort !== "newest") params.set("sort", sort);
+    if (minPrice?.trim()) params.set("minPrice", minPrice.trim());
+    if (maxPrice?.trim()) params.set("maxPrice", maxPrice.trim());
+    if (targetPage > 1) params.set("page", String(targetPage));
+    const queryString = params.toString();
+    return queryString ? `/explore?${queryString}` : "/explore";
+  };
 
   return (
     <div className="app-main-container py-4 sm:py-5">
@@ -325,6 +356,49 @@ export default async function ExplorePage({ searchParams }: Props) {
           </div>
         )}
       </section>
+      {totalPages > 1 ? (
+        <nav className="mt-3 flex items-center justify-center gap-1.5" aria-label="Explore pagination">
+          <Link
+            href={buildPageHref(Math.max(1, currentPage - 1))}
+            scroll={false}
+            aria-disabled={currentPage === 1}
+            className={`inline-flex h-8 items-center justify-center rounded-md border px-3 text-xs font-medium transition-colors ${
+              currentPage === 1
+                ? "pointer-events-none cursor-not-allowed border-white/5 text-zinc-600"
+                : "border-white/15 text-zinc-300 hover:border-white/30 hover:bg-zinc-900/70"
+            }`}
+          >
+            Prev
+          </Link>
+          {visiblePages.map((p) => (
+            <Link
+              key={p}
+              href={buildPageHref(p)}
+              scroll={false}
+              aria-current={p === currentPage ? "page" : undefined}
+              className={`inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-xs font-semibold tabular-nums transition-colors ${
+                p === currentPage
+                  ? "border-white/30 bg-zinc-100 text-zinc-900"
+                  : "border-white/15 text-zinc-300 hover:border-white/30 hover:bg-zinc-900/70"
+              }`}
+            >
+              {p}
+            </Link>
+          ))}
+          <Link
+            href={buildPageHref(Math.min(totalPages, currentPage + 1))}
+            scroll={false}
+            aria-disabled={currentPage === totalPages}
+            className={`inline-flex h-8 items-center justify-center rounded-md border px-3 text-xs font-medium transition-colors ${
+              currentPage === totalPages
+                ? "pointer-events-none cursor-not-allowed border-white/5 text-zinc-600"
+                : "border-white/15 text-zinc-300 hover:border-white/30 hover:bg-zinc-900/70"
+            }`}
+          >
+            Next
+          </Link>
+        </nav>
+      ) : null}
     </div>
   );
 }
