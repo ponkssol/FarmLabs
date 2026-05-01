@@ -22,7 +22,25 @@ function MarqueeGroup() {
           className="h-6 w-auto object-contain object-center opacity-95"
         />
       </LogoBox>
-      {["ALPHA DAO", "SOL CREW", "DEGEN HUB", "MINT CLUB", "ONCHAIN X"].map((label) => (
+      <LogoBox key="alpha-dao">
+        <Image
+          src="/trusted/alpha-dao.png"
+          alt="ALPHA DAO"
+          width={160}
+          height={42}
+          className="h-7 w-auto rounded-sm object-contain object-center opacity-95"
+        />
+      </LogoBox>
+      <LogoBox key="sol-crew">
+        <Image
+          src="/trusted/sol-crew.png"
+          alt="SOL CREW"
+          width={160}
+          height={42}
+          className="h-7 w-auto rounded-sm object-contain object-center opacity-95"
+        />
+      </LogoBox>
+      {["DEGEN HUB", "MINT CLUB", "ONCHAIN X"].map((label) => (
         <LogoBox key={label}>
           <span className="text-center text-xs font-medium tracking-wide text-zinc-200 sm:text-sm">{label}</span>
         </LogoBox>
