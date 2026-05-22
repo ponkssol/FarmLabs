@@ -1,0 +1,17 @@
+flowchart TD
+  Start([Trader / user]) --> Land[Lands on the marketplace website]
+  Land --> Browse[Browse community & KOL listings]
+  Browse --> Pick[Select a community]
+  Pick --> Tier{Access type?}
+
+  Tier -->|Public / discovery| Public[Public join info or link]
+  Public --> Group1([Enter Telegram group])
+
+  Tier -->|VIP / paid / private| Pay[Complete payment]
+  Pay --> Confirm{Payment OK?}
+  Confirm -->|No| Pay
+  Confirm -->|Yes| Link[Receive invite / access link]
+  Link --> Group2([Enter Telegram group])
+
+  Group1 --> Use[Use discussion & signals for trading]
+  Group2 --> Use
