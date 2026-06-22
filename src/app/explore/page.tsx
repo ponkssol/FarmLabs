@@ -1,4 +1,5 @@
 ﻿import { auth } from "@/auth";
+import { CreatorAvatar } from "@/components/creator-avatar";
 import { PlatformIcons } from "@/components/platform-icons";
 import { XUsername } from "@/components/x-username";
 import { ListingPriceLabel } from "@/components/listing-price-label";
@@ -186,8 +187,6 @@ export default async function ExplorePage({ searchParams }: Props) {
   );
 
   const groupInitial = (title: string) => title.trim().charAt(0).toUpperCase() || "C";
-  const userInitial = (name: string | null | undefined) =>
-    (name?.trim() || "?").charAt(0).toUpperCase() || "?";
   const startPage = Math.max(1, currentPage - 2);
   const endPage = Math.min(totalPages, startPage + 4);
   const visibleStart = Math.max(1, endPage - 4);
@@ -289,22 +288,13 @@ export default async function ExplorePage({ searchParams }: Props) {
 
                   <div className="mt-1.5 flex min-w-0 items-center justify-between gap-1.5 border-t border-white/10 pt-1.5 text-[9px] leading-tight sm:text-[10px] sm:gap-2">
                     <div className="flex min-w-0 flex-1 items-center gap-1">
-                      {p.user.image ? (
-                        <Image
-                          src={p.user.image}
-                          alt={p.user.name || "Creator"}
-                          width={14}
-                          height={14}
-                          className="h-3.5 w-3.5 shrink-0 rounded-full border border-white/10 object-cover"
-                        />
-                      ) : (
-                        <div
-                          className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-zinc-800 text-[8px] font-semibold leading-none text-zinc-300"
-                          aria-hidden
-                        >
-                          {userInitial(p.user.name)}
-                        </div>
-                      )}
+                      <CreatorAvatar
+                        src={p.user.image}
+                        alt={p.user.name || "Creator"}
+                        width={14}
+                        height={14}
+                        className="h-3.5 w-3.5 shrink-0 rounded-full border border-white/10 object-cover"
+                      />
                       <div className="min-w-0 flex flex-1 items-center text-zinc-400">
                         <span className="inline-flex min-w-0 max-w-full items-center leading-none">
                           <XUsername

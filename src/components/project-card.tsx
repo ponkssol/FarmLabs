@@ -1,4 +1,5 @@
-﻿import { XUsername } from "@/components/x-username";
+﻿import { CreatorAvatar } from "@/components/creator-avatar";
+import { XUsername } from "@/components/x-username";
 import type { Project, User } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
@@ -39,17 +40,13 @@ export function ProjectCard({ project }: { project: T }) {
       </p>
 
       <div className="mt-2 flex items-center gap-1.5 border-t border-white/10 pt-1.5 text-xs text-zinc-500">
-        {project.user.image ? (
-          <Image
-            src={project.user.image}
-            width={16}
-            height={16}
-            className="h-4 w-4 rounded-full border border-white/10 object-cover"
-            alt={project.user.name || "Creator"}
-          />
-        ) : (
-          <div className="h-4 w-4 rounded-full border border-white/10 bg-zinc-800" />
-        )}
+        <CreatorAvatar
+          src={project.user.image}
+          width={16}
+          height={16}
+          className="h-4 w-4 shrink-0 rounded-full border border-white/10 object-cover"
+          alt={project.user.name || "Creator"}
+        />
         <span className="min-w-0">
           <span className="inline-flex min-w-0 items-center gap-1 leading-none">
             <span className="text-zinc-500">by</span>
