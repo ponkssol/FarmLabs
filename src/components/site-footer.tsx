@@ -2,6 +2,9 @@
 import Image from "next/image";
 import Link from "next/link";
 
+const ca = "xxxxxxxxxxxxpump";
+const pumpFunCoinUrl = `https://pump.fun/coin/${ca}`;
+
 function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <Link
@@ -96,7 +99,27 @@ export async function SiteFooter() {
           </div>
 
           <div className="sm:col-span-2 sm:flex sm:items-start sm:justify-end lg:col-span-4">
-            <div className="w-full max-w-sm rounded-xl border border-white/[0.07] bg-zinc-900/50 p-4 sm:p-4">
+            <div className="flex w-full max-w-sm flex-col gap-3">
+              <div className="rounded-xl border border-white/[0.07] bg-zinc-900/50 p-4 sm:p-4">
+                <h2 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500 sm:text-xs">
+                  Contract address
+                </h2>
+                <Link
+                  href={pumpFunCoinUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group mt-2 block rounded-lg border border-white/10 bg-black/30 px-3 py-2.5 transition hover:border-emerald-400/40 hover:bg-emerald-950/20"
+                  title="View on pump.fun"
+                >
+                  <span className="block truncate font-mono text-[11px] text-zinc-300 transition group-hover:text-emerald-200 sm:text-xs">
+                    {ca}
+                  </span>
+                  <span className="mt-1 inline-flex items-center text-[10px] font-medium text-zinc-500 transition group-hover:text-emerald-300/90 sm:text-xs">
+                    View on pump.fun →
+                  </span>
+                </Link>
+              </div>
+              <div className="rounded-xl border border-white/[0.07] bg-zinc-900/50 p-4 sm:p-4">
               <h2 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500 sm:text-xs">Get started</h2>
               <p className="mt-2 text-xs leading-relaxed text-zinc-500 sm:text-sm">
                 Create a listing in minutes, set access tiers, and manage your buyers from one place.
@@ -148,6 +171,7 @@ export async function SiteFooter() {
                 >
                   X
                 </Link>
+              </div>
               </div>
             </div>
           </div>
