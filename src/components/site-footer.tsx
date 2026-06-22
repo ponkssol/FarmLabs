@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const ca = "xxxxxxxxxxxxpump";
+const ca = "5j5fXGDsngwLNLWq3a4GP4PmmZbuNjxTb1daC3j5pump";
 const pumpFunCoinUrl = `https://pump.fun/coin/${ca}`;
 
 function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
