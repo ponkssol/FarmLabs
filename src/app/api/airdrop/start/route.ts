@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { rollAirdropAmount } from "@/lib/airdrop-config";
-import { prisma } from "@/lib/prisma";
+import { airdropPrisma } from "@/lib/prisma-airdrop";
 import { NextResponse } from "next/server";
 
 export async function POST() {
@@ -17,7 +17,7 @@ export async function POST() {
     );
   }
 
-  const existing = await prisma.airdropClaim.findUnique({
+  const existing = await airdropPrisma.airdropClaim.findUnique({
     where: { userId: session.user.id },
   });
   if (existing) {
@@ -31,7 +31,7 @@ export async function POST() {
   }
 
   const amount = rollAirdropAmount();
-  const claim = await prisma.airdropClaim.create({
+  const claim = await airdropPrisma.airdropClaim.create({
     data: {
       userId: session.user.id,
       wallet,

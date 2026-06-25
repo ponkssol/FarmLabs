@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { sendAirdropTokens } from "@/lib/airdrop-solana";
-import { prisma } from "@/lib/prisma";
+import { airdropPrisma } from "@/lib/prisma-airdrop";
 import { PublicKey } from "@solana/web3.js";
 import { NextResponse } from "next/server";
 
@@ -18,7 +18,7 @@ export async function POST() {
     );
   }
 
-  const claim = await prisma.airdropClaim.findUnique({
+  const claim = await airdropPrisma.airdropClaim.findUnique({
     where: { userId: session.user.id },
   });
   if (!claim) {
@@ -42,7 +42,7 @@ export async function POST() {
       amount: claim.amount,
     });
 
-    const updated = await prisma.airdropClaim.update({
+    const updated = await airdropPrisma.airdropClaim.update({
       where: { id: claim.id },
       data: {
         status: "CLAIMED",

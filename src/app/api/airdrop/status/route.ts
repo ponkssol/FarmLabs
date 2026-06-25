@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { airdropPrisma } from "@/lib/prisma-airdrop";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -8,7 +8,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const claim = await prisma.airdropClaim.findUnique({
+  const claim = await airdropPrisma.airdropClaim.findUnique({
     where: { userId: session.user.id },
     select: {
       amount: true,

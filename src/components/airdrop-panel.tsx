@@ -63,15 +63,21 @@ export function AirdropPanel({ isAuthenticated, savedWallet }: Props) {
     setLoading(true);
     try {
       const res = await fetch("/api/airdrop/start", { method: "POST" });
-      const data = (await res.json()) as {
+      let data: {
         error?: string;
         amount?: number;
         status?: string;
         txSignature?: string | null;
         wallet?: string;
       };
+      try {
+        data = (await res.json()) as typeof data;
+      } catch {
+        setMessage(`Server error (${res.status}). Restart dev server and run: npx prisma db push`);
+        return;
+      }
       if (!res.ok) {
-        setMessage(data.error ?? "Could not start airdrop.");
+        setMessage(data.error ?? `Request failed (${res.status}).`);
         return;
       }
       if (data.amount != null && data.wallet && data.status) {
@@ -99,14 +105,20 @@ export function AirdropPanel({ isAuthenticated, savedWallet }: Props) {
     setLoading(true);
     try {
       const res = await fetch("/api/airdrop/claim", { method: "POST" });
-      const data = (await res.json()) as {
+      let data: {
         error?: string;
         amount?: number;
         status?: string;
         txSignature?: string | null;
       };
+      try {
+        data = (await res.json()) as typeof data;
+      } catch {
+        setMessage(`Server error (${res.status}). Check server logs.`);
+        return;
+      }
       if (!res.ok) {
-        setMessage(data.error ?? "Claim failed.");
+        setMessage(data.error ?? `Claim failed (${res.status}).`);
         return;
       }
       if (data.amount != null && claim) {

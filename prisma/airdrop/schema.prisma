@@ -1,0 +1,24 @@
+// FarmLabs airdrop — separate PostgreSQL database (AIRDROP_DATABASE_URL)
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/airdrop-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("AIRDROP_DATABASE_URL")
+}
+
+/// One-time FarmLabs token airdrop per user (userId references main app User.id, no FK).
+model AirdropClaim {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  wallet      String
+  /// Human-readable token amount earned (e.g. 847 FL)
+  amount      Float
+  /// PENDING | CLAIMED | FAILED
+  status      String    @default("PENDING")
+  txSignature String?
+  startedAt   DateTime  @default(now())
+  claimedAt   DateTime?
+}
