@@ -55,6 +55,7 @@ export function OperatorsSectionSearchable({ operators, className }: Props) {
       unfilteredTotal={operators.length}
       isFiltering={isFiltering}
       searchSlot={searchSlot}
+      linkToProfile
       className={className}
     />
   );

@@ -22,6 +22,7 @@ export default async function LeaderBoardPage() {
       include: {
         user: {
           select: {
+            id: true,
             name: true,
             image: true,
             xHandle: true,

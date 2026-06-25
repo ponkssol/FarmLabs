@@ -38,15 +38,26 @@ function RankChip({ rank }: { rank: number }) {
   );
 }
 
-function OperatorName({ user }: { user: LeaderboardOperator["user"] }) {
+function OperatorName({ user, linkToProfile }: { user: LeaderboardOperator["user"]; linkToProfile?: boolean }) {
+  const display = user.name || "Anonymous";
+
   return (
     <span className="inline-flex min-w-0 max-w-full items-center gap-1">
-      <XUsername
-        name={user.name || "Anonymous"}
-        xHandle={user.xHandle}
-        xUserId={user.accounts?.[0]?.providerAccountId}
-        className="truncate text-xs font-medium text-zinc-200 sm:text-sm"
-      />
+      {linkToProfile ? (
+        <Link
+          href={`/leaderboard/operators/${user.id}`}
+          className="truncate text-xs font-medium text-zinc-200 transition hover:text-sky-300 sm:text-sm"
+        >
+          {display}
+        </Link>
+      ) : (
+        <XUsername
+          name={display}
+          xHandle={user.xHandle}
+          xUserId={user.accounts?.[0]?.providerAccountId}
+          className="truncate text-xs font-medium text-zinc-200 sm:text-sm"
+        />
+      )}
       {user.blueCheckmark ? (
         <Image src="/verified-badge.png" alt="Verified" width={12} height={12} className="h-3 w-3 shrink-0" />
       ) : null}
@@ -58,10 +69,12 @@ function OperatorRow({
   row,
   rank,
   maxViews,
+  linkToProfile = false,
 }: {
   row: LeaderboardOperator;
   rank: number;
   maxViews: number;
+  linkToProfile?: boolean;
 }) {
   const pct = maxViews > 0 ? Math.max(3, Math.round((row.totalViews / maxViews) * 100)) : 0;
   const top3 = rank <= 3;
@@ -73,15 +86,27 @@ function OperatorRow({
       <div className="flex justify-center">
         <RankChip rank={rank} />
       </div>
-      <CreatorAvatar
-        src={row.user.image}
-        alt={row.user.name || "Operator"}
-        width={28}
-        height={28}
-        className="h-7 w-7 shrink-0 rounded-full border border-white/10 object-cover"
-      />
+      {linkToProfile ? (
+        <Link href={`/leaderboard/operators/${row.user.id}`} className="shrink-0 transition hover:opacity-90">
+          <CreatorAvatar
+            src={row.user.image}
+            alt={row.user.name || "Operator"}
+            width={28}
+            height={28}
+            className="h-7 w-7 rounded-full border border-white/10 object-cover"
+          />
+        </Link>
+      ) : (
+        <CreatorAvatar
+          src={row.user.image}
+          alt={row.user.name || "Operator"}
+          width={28}
+          height={28}
+          className="h-7 w-7 shrink-0 rounded-full border border-white/10 object-cover"
+        />
+      )}
       <div className="min-w-0">
-        <OperatorName user={row.user} />
+        <OperatorName user={row.user} linkToProfile={linkToProfile} />
         {row.topListing ? (
           <Link
             href={`/p/${row.topListing.slug}`}
@@ -119,6 +144,8 @@ type Props = {
   /** Original count before client-side search filter */
   unfilteredTotal?: number;
   isFiltering?: boolean;
+  /** Link operator name/avatar to public profile page */
+  linkToProfile?: boolean;
 };
 
 export function OperatorsSection({
@@ -130,6 +157,7 @@ export function OperatorsSection({
   searchSlot,
   unfilteredTotal,
   isFiltering = false,
+  linkToProfile = false,
 }: Props) {
   const total = fullCount ?? unfilteredTotal ?? operators.length;
   const isPreview = previewLimit != null;
@@ -188,7 +216,13 @@ export function OperatorsSection({
           </div>
           <div>
             {displayed.map((row, i) => (
-              <OperatorRow key={row.user.id} row={row} rank={i + 1} maxViews={maxViews} />
+              <OperatorRow
+                key={row.user.id}
+                row={row}
+                rank={i + 1}
+                maxViews={maxViews}
+                linkToProfile={linkToProfile}
+              />
             ))}
           </div>
         </div>

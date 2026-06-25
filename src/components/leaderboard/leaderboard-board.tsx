@@ -1,6 +1,5 @@
-import { CreatorAvatar } from "@/components/creator-avatar";
+import { ListingCreatorChip } from "@/components/leaderboard/listing-creator-chip";
 import { OperatorsSection } from "@/components/leaderboard/operators-section";
-import { XUsername } from "@/components/x-username";
 import type { LeaderboardOperator } from "@/lib/leaderboard-operators";
 import { Eye, LayoutGrid, Sparkles, Trophy, Users } from "lucide-react";
 import Image from "next/image";
@@ -13,6 +12,7 @@ export type LeaderboardListing = {
   viewCount: number;
   communityImage: string | null;
   user: {
+    id: string;
     name: string | null;
     image: string | null;
     xHandle: string | null;
@@ -59,56 +59,48 @@ function ListingsSection({ listings }: { listings: LeaderboardListing[] }) {
           </div>
           <div>
             {listings.map((listing, i) => (
-              <Link
+              <div
                 key={listing.id}
-                href={`/p/${listing.slug}`}
                 className="group grid grid-cols-[1.5rem_2rem_minmax(0,1fr)_auto] items-center gap-x-2.5 border-b border-white/5 px-3 py-2 transition last:border-0 hover:bg-white/[0.03] sm:grid-cols-[1.75rem_2.25rem_minmax(0,1fr)_3.5rem] sm:px-3.5"
               >
                 <span className="text-center text-xs font-semibold tabular-nums text-zinc-500 group-hover:text-zinc-300">
                   {i + 1}
                 </span>
-                {listing.communityImage ? (
-                  <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-md border border-white/10">
-                    <Image
-                      src={listing.communityImage}
-                      alt=""
-                      width={28}
-                      height={28}
-                      unoptimized
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-white/10 bg-zinc-900 text-xs font-semibold text-zinc-400">
-                    {listing.title.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                <Link href={`/p/${listing.slug}`} className="shrink-0">
+                  {listing.communityImage ? (
+                    <div className="relative h-7 w-7 overflow-hidden rounded-md border border-white/10">
+                      <Image
+                        src={listing.communityImage}
+                        alt=""
+                        width={28}
+                        height={28}
+                        unoptimized
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-zinc-900 text-xs font-semibold text-zinc-400">
+                      {listing.title.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </Link>
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-medium text-zinc-200 group-hover:text-white sm:text-sm">
+                  <Link
+                    href={`/p/${listing.slug}`}
+                    className="block truncate text-xs font-medium text-zinc-200 transition hover:text-white sm:text-sm"
+                  >
                     {listing.title}
-                  </p>
-                  <p className="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500">
-                    <CreatorAvatar
-                      src={listing.user.image}
-                      alt={listing.user.name || "Creator"}
-                      width={14}
-                      height={14}
-                      className="h-3.5 w-3.5 rounded-full border border-white/10 object-cover"
-                    />
-                    <XUsername
-                      name={listing.user.name || "Anonymous"}
-                      xHandle={listing.user.xHandle}
-                      xUserId={listing.user.accounts?.[0]?.providerAccountId}
-                      className="truncate"
-                      asNestedInLink
-                    />
-                  </p>
+                  </Link>
+                  <ListingCreatorChip user={listing.user} />
                 </div>
-                <span className="flex items-center justify-end gap-1 text-xs font-semibold tabular-nums text-emerald-400 sm:text-sm">
+                <Link
+                  href={`/p/${listing.slug}`}
+                  className="flex items-center justify-end gap-1 text-xs font-semibold tabular-nums text-emerald-400 transition hover:text-emerald-300 sm:text-sm"
+                >
                   <Eye className="h-3.5 w-3.5 opacity-70" strokeWidth={1.75} aria-hidden />
                   {formatViews(listing.viewCount)}
-                </span>
-              </Link>
+                </Link>
+              </div>
             ))}
           </div>
         </div>
@@ -155,6 +147,7 @@ export function LeaderboardBoard({
             fullCount={userTotal}
             viewAllHref="/leaderboard/operators"
             className="h-full"
+            linkToProfile
           />
         </div>
         <div className="min-w-0 flex-1 sm:max-h-[min(72vh,680px)]">
