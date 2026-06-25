@@ -1,10 +1,10 @@
+import { OperatorCommunitiesTable } from "@/components/leaderboard/operator-communities-table";
 import { CreatorAvatar } from "@/components/creator-avatar";
 import { XUsername } from "@/components/x-username";
 import { formatEscrowAmountLabel } from "@/lib/listing-price";
 import type { OperatorProfile } from "@/lib/operator-profile";
 import { Eye, LayoutGrid, ShoppingBag, TrendingUp, Wallet } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 
 function formatViews(n: number) {
   return n.toLocaleString("en-US");
@@ -13,28 +13,6 @@ function formatViews(n: number) {
 function shortenWallet(wallet: string) {
   if (wallet.length <= 12) return wallet;
   return `${wallet.slice(0, 4)}…${wallet.slice(-4)}`;
-}
-
-function EarningsCell({
-  sol,
-  usdc,
-}: {
-  sol: number;
-  usdc: number;
-}) {
-  if (sol <= 0 && usdc <= 0) {
-    return <span className="text-zinc-600">—</span>;
-  }
-  return (
-    <span className="text-zinc-300">
-      {sol > 0 ? (
-        <span className="mr-2 inline-block tabular-nums">{formatEscrowAmountLabel(sol, "SOL")}</span>
-      ) : null}
-      {usdc > 0 ? (
-        <span className="inline-block tabular-nums">{formatEscrowAmountLabel(usdc, "USDC")}</span>
-      ) : null}
-    </span>
-  );
 }
 
 type Props = {
@@ -140,63 +118,7 @@ export function OperatorProfilePanel({ profile }: Props) {
         {communities.length === 0 ? (
           <p className="px-3.5 py-10 text-center text-xs text-zinc-500">No published communities yet.</p>
         ) : (
-          <div className="lb-scroll overflow-x-auto">
-            <table className="w-full min-w-[640px] border-collapse text-left text-xs">
-              <thead>
-                <tr className="border-b border-white/10 bg-zinc-900/60 text-xs font-medium uppercase tracking-widest text-zinc-500">
-                  <th className="px-3.5 py-2.5 font-medium">Community</th>
-                  <th className="px-3.5 py-2.5 font-medium">Type</th>
-                  <th className="px-3.5 py-2.5 text-right font-medium">Views</th>
-                  <th className="px-3.5 py-2.5 text-right font-medium">Sales</th>
-                  <th className="px-3.5 py-2.5 text-right font-medium">Earnings</th>
-                </tr>
-              </thead>
-              <tbody>
-                {communities.map((c) => (
-                  <tr key={c.id} className="border-b border-white/[0.06] last:border-0">
-                    <td className="px-3.5 py-2.5">
-                      <Link
-                        href={`/p/${c.slug}`}
-                        className="group flex min-w-0 items-center gap-2.5"
-                      >
-                        {c.communityImage ? (
-                          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-md border border-white/10">
-                            <Image
-                              src={c.communityImage}
-                              alt=""
-                              width={32}
-                              height={32}
-                              unoptimized
-                              className="h-full w-full object-cover"
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-white/10 bg-zinc-900 text-xs font-semibold text-zinc-400">
-                            {c.title.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <span className="truncate font-medium text-zinc-200 group-hover:text-sky-300">
-                          {c.title}
-                        </span>
-                      </Link>
-                    </td>
-                    <td className="px-3.5 py-2.5 text-zinc-500">
-                      {c.groupType === "PUBLIC" ? "Public" : c.accessType === "PAID" ? "Paid VIP" : "Private"}
-                    </td>
-                    <td className="px-3.5 py-2.5 text-right tabular-nums text-zinc-400">
-                      {formatViews(c.viewCount)}
-                    </td>
-                    <td className="px-3.5 py-2.5 text-right tabular-nums text-zinc-400">
-                      {c.completedSales}
-                    </td>
-                    <td className="px-3.5 py-2.5 text-right">
-                      <EarningsCell sol={c.solEarnings} usdc={c.usdcEarnings} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <OperatorCommunitiesTable communities={communities} />
         )}
       </section>
     </div>

@@ -4,6 +4,17 @@ import { prisma } from "@/lib/prisma";
 
 const COMPLETED_STATUSES = ["SETTLED", "RELEASED", "FUNDED"] as const;
 
+export type OperatorSale = {
+  id: string;
+  amount: number;
+  currency: string;
+  netEarnings: number;
+  soldAt: string;
+  buyerPaymentSignature: string | null;
+  settlementSignature: string | null;
+  priceOptionLabel: string | null;
+};
+
 export type OperatorCommunity = {
   id: string;
   title: string;
@@ -17,6 +28,7 @@ export type OperatorCommunity = {
   usdcVolume: number;
   solEarnings: number;
   usdcEarnings: number;
+  sales: OperatorSale[];
 };
 
 export type OperatorProfile = {
@@ -49,6 +61,16 @@ function netAfterFees(gross: number, orderCount: number, currency: "SOL" | "USDC
   return Math.max(0, gross - orderCount * fee);
 }
 
+function saleNet(amount: number, currency: string): number {
+  if (currency === "SOL") return netAfterFees(amount, 1, "SOL");
+  if (currency === "USDC") return netAfterFees(amount, 1, "USDC");
+  return amount;
+}
+
+function saleTimestamp(releasedAt: Date | null, updatedAt: Date, createdAt: Date): string {
+  return (releasedAt ?? updatedAt ?? createdAt).toISOString();
+}
+
 export async function fetchOperatorProfile(userId: string): Promise<OperatorProfile | null> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -70,7 +92,7 @@ export async function fetchOperatorProfile(userId: string): Promise<OperatorProf
 
   const doneWhere = { sellerId: userId, status: { in: [...COMPLETED_STATUSES] } };
 
-  const [projects, salesByProject, solAgg, usdcAgg, completedCount, allOperators] = await Promise.all([
+  const [projects, salesByProject, completedOrders, solAgg, usdcAgg, completedCount, allOperators] = await Promise.all([
     prisma.project.findMany({
       where: { userId, published: true },
       orderBy: [{ viewCount: "desc" }, { createdAt: "desc" }],
@@ -89,6 +111,22 @@ export async function fetchOperatorProfile(userId: string): Promise<OperatorProf
       where: doneWhere,
       _sum: { amount: true },
       _count: { _all: true },
+    }),
+    prisma.escrowOrder.findMany({
+      where: doneWhere,
+      orderBy: [{ releasedAt: "desc" }, { updatedAt: "desc" }],
+      select: {
+        id: true,
+        projectId: true,
+        amount: true,
+        currency: true,
+        buyerPaymentSignature: true,
+        settlementSignature: true,
+        priceOptionLabel: true,
+        releasedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     }),
     prisma.escrowOrder.aggregate({
       where: { ...doneWhere, currency: "SOL" },
@@ -123,6 +161,22 @@ export async function fetchOperatorProfile(userId: string): Promise<OperatorProf
     byProject.set(row.projectId, cur);
   }
 
+  const salesByProjectId = new Map<string, OperatorSale[]>();
+  for (const order of completedOrders) {
+    const list = salesByProjectId.get(order.projectId) ?? [];
+    list.push({
+      id: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      netEarnings: saleNet(order.amount, order.currency),
+      soldAt: saleTimestamp(order.releasedAt, order.updatedAt, order.createdAt),
+      buyerPaymentSignature: order.buyerPaymentSignature,
+      settlementSignature: order.settlementSignature,
+      priceOptionLabel: order.priceOptionLabel,
+    });
+    salesByProjectId.set(order.projectId, list);
+  }
+
   const communities: OperatorCommunity[] = projects.map((p) => {
     const s = byProject.get(p.id) ?? { sol: 0, usdc: 0, solOrders: 0, usdcOrders: 0, orders: 0 };
     return {
@@ -138,6 +192,7 @@ export async function fetchOperatorProfile(userId: string): Promise<OperatorProf
       usdcVolume: s.usdc,
       solEarnings: netAfterFees(s.sol, s.solOrders, "SOL"),
       usdcEarnings: netAfterFees(s.usdc, s.usdcOrders, "USDC"),
+      sales: salesByProjectId.get(p.id) ?? [],
     };
   });
 
