@@ -37,6 +37,9 @@ export const metadata: Metadata = {
   title: { default: "FarmLabs", template: "%s - FarmLabs" },
   description:
     "Pump.fun pre-launch directory with X, Telegram, Discord communities and launch plans.",
+  verification: {
+    google: "gM6mauGKVNhaoELbp_PNCmET8Vsr_ciR02VxBY0W1gE",
+  },
   /**
    * Favicon: `public/favicon.jpg` only — use explicit <link> in root layout to avoid
    * duplicate rel="icon" from `app/icon.*` + default `favicon.ico` link in dev.
