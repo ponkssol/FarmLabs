@@ -114,6 +114,11 @@ type Props = {
   fullCount?: number;
   viewAllHref?: string;
   className?: string;
+  /** Search bar rendered below the section header (all-operators page) */
+  searchSlot?: React.ReactNode;
+  /** Original count before client-side search filter */
+  unfilteredTotal?: number;
+  isFiltering?: boolean;
 };
 
 export function OperatorsSection({
@@ -122,25 +127,35 @@ export function OperatorsSection({
   fullCount,
   viewAllHref = "/leaderboard/operators",
   className = "",
+  searchSlot,
+  unfilteredTotal,
+  isFiltering = false,
 }: Props) {
-  const total = fullCount ?? operators.length;
+  const total = fullCount ?? unfilteredTotal ?? operators.length;
   const isPreview = previewLimit != null;
   const displayed = isPreview ? operators.slice(0, previewLimit) : operators;
   const maxViews = displayed[0]?.totalViews ?? operators[0]?.totalViews ?? 1;
   const showViewAll = isPreview && total > previewLimit;
+  const sectionHeight = isPreview
+    ? "h-full min-h-0"
+    : "max-h-[min(calc(100dvh-14rem),680px)]";
+
+  const subtitle = isPreview
+    ? `Showing ${displayed.length} of ${total} users`
+    : isFiltering && unfilteredTotal != null
+      ? `${operators.length} of ${unfilteredTotal} users`
+      : `${total} users by views`;
 
   return (
-    <section className={`flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-white/10 bg-zinc-950/60 ${className}`}>
+    <section
+      className={`flex flex-col overflow-hidden rounded-lg border border-white/10 bg-zinc-950/60 ${sectionHeight} ${className}`}
+    >
       <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3.5 py-2.5">
         <div className="flex min-w-0 items-center gap-2">
           <Users className="h-4 w-4 shrink-0 text-sky-400" strokeWidth={1.75} aria-hidden />
           <div className="min-w-0">
             <h2 className="ui-form-section-title text-sm">Top operators</h2>
-            <p className="truncate text-xs text-zinc-500">
-              {isPreview
-                ? `Showing ${displayed.length} of ${total} users`
-                : `${total} users by views`}
-            </p>
+            <p className="truncate text-xs text-zinc-500">{subtitle}</p>
           </div>
         </div>
         {showViewAll ? (
@@ -154,12 +169,16 @@ export function OperatorsSection({
         ) : null}
       </div>
 
+      {searchSlot ? (
+        <div className="shrink-0 border-b border-white/10 px-3.5 py-2">{searchSlot}</div>
+      ) : null}
+
       {operators.length === 0 ? (
         <p className="px-3.5 py-10 text-center text-xs text-zinc-500">
-          No published listings yet.
+          {isFiltering ? "No operators match your search." : "No published listings yet."}
         </p>
       ) : (
-        <div className="lb-scroll min-h-0 flex-1 overflow-y-auto">
+        <div className="lb-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <div className="hidden grid-cols-[1.75rem_2.25rem_minmax(0,1fr)_4rem_3.5rem] gap-x-2.5 border-b border-white/5 px-3.5 py-2 text-xs font-medium uppercase tracking-widest text-zinc-500 sm:sticky sm:top-0 sm:z-10 sm:grid sm:bg-zinc-950/95 sm:backdrop-blur-sm">
             <span />
             <span />

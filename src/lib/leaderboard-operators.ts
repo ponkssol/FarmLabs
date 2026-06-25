@@ -140,3 +140,23 @@ export async function fetchAllLeaderboardOperators(): Promise<LeaderboardOperato
 export async function fetchRegisteredUserCount(): Promise<number> {
   return prisma.user.count();
 }
+
+/** Client-side filter for operator search (name, @handle, wallet, top listing). */
+export function filterLeaderboardOperators(
+  operators: LeaderboardOperator[],
+  query: string,
+): LeaderboardOperator[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return operators;
+
+  return operators.filter((row) => {
+    const name = row.user.name?.toLowerCase() ?? "";
+    const handle = row.user.xHandle?.toLowerCase() ?? "";
+    const wallet = row.user.wallet?.toLowerCase() ?? "";
+    const listing = row.topListing?.title.toLowerCase() ?? "";
+    const haystack = [name, handle, wallet, listing].filter(Boolean).join(" ");
+    if (haystack.includes(q)) return true;
+    if (handle && (`@${handle}`.includes(q) || handle.includes(q.replace(/^@/, "")))) return true;
+    return false;
+  });
+}

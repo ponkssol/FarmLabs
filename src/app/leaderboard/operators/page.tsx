@@ -1,4 +1,4 @@
-import { OperatorsSection } from "@/components/leaderboard/operators-section";
+import { OperatorsSectionSearchable } from "@/components/leaderboard/operators-section-searchable";
 import { fetchAllLeaderboardOperators } from "@/lib/leaderboard-operators";
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
@@ -13,7 +13,7 @@ export default async function AllOperatorsPage() {
   const operators = await fetchAllLeaderboardOperators();
 
   return (
-    <div className="app-main-container py-6 sm:py-8">
+    <div className="app-main-container pb-10 pt-6 sm:pb-12 sm:pt-8">
       <header className="mb-4 sm:mb-5">
         <Link
           href="/leaderboard"
@@ -29,9 +29,7 @@ export default async function AllOperatorsPage() {
         </p>
       </header>
 
-      <div className="sm:max-h-[min(80vh,720px)]">
-        <OperatorsSection operators={operators} className="h-full" />
-      </div>
+      <OperatorsSectionSearchable operators={operators} />
     </div>
   );
 }
