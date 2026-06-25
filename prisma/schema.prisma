@@ -31,6 +31,22 @@ model User {
   escrowBuys    EscrowOrder[] @relation("BuyerOrders")
   escrowSales   EscrowOrder[] @relation("SellerOrders")
   reportsFiled  ProjectReport[] @relation("ReportsFiled")
+  airdropClaim  AirdropClaim?
+}
+
+/// One-time FarmLabs token airdrop per user.
+model AirdropClaim {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet        String
+  /// Human-readable token amount earned (e.g. 847.5 FL)
+  amount        Float
+  /// PENDING | CLAIMED | FAILED
+  status        String   @default("PENDING")
+  txSignature   String?
+  startedAt     DateTime @default(now())
+  claimedAt     DateTime?
 }
 
 model Account {

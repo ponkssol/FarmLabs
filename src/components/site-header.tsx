@@ -1,7 +1,7 @@
 ﻿import { auth } from "@/auth";
 import Image from "next/image";
 import Link from "next/link";
-import { Compass, LayoutGrid, Trophy } from "lucide-react";
+import { Compass, Gift, LayoutGrid, Trophy } from "lucide-react";
 import { HeaderWalletConnect } from "./solana/header-wallet-connect";
 import { SignInOut } from "./sign-in-out";
 
@@ -33,6 +33,13 @@ export async function SiteHeader() {
             <Link href="/leaderboard" className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs text-zinc-400 transition hover:bg-white/5 hover:text-white">
               <Trophy className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
               Leader Board
+            </Link>
+            <span className="text-xs text-zinc-700" aria-hidden>
+              |
+            </span>
+            <Link href="/airdrop" className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs text-zinc-400 transition hover:bg-white/5 hover:text-white">
+              <Gift className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+              Airdrop
             </Link>
             {session && (
               <>
