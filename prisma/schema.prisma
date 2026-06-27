@@ -31,6 +31,7 @@ model User {
   escrowBuys    EscrowOrder[] @relation("BuyerOrders")
   escrowSales   EscrowOrder[] @relation("SellerOrders")
   reportsFiled  ProjectReport[] @relation("ReportsFiled")
+  airdropWaitlist AirdropWaitlist?
 }
 
 model Account {
@@ -244,5 +245,16 @@ model TelegramSetGroupSession {
 
   @@index([token])
   @@index([expiresAt])
+}
+
+/// FarmLabs airdrop early-access waitlist (one entry per user).
+model AirdropWaitlist {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet    String
+  xHandle   String?
+  name      String?
+  createdAt DateTime @default(now())
 }
 
