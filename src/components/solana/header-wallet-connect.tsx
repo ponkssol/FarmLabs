@@ -4,7 +4,12 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { resultToPanelMessage, runPhantomConnectFlow } from "@/lib/solana-phantom-connect";
+import {
+  resultToPanelMessage,
+  runPhantomConnectFlow,
+  shouldShowOpenInPhantom,
+} from "@/lib/solana-phantom-connect";
+import { WalletConnectExtras } from "@/components/solana/wallet-connect-extras";
 
 function formatNativeSol(lamports: number): string {
   const sol = lamports / LAMPORTS_PER_SOL;
@@ -29,6 +34,7 @@ export function HeaderWalletConnect({ isAuthenticated, userId, savedWallet }: He
   const { connection } = useConnection();
   const { connect, wallet, wallets, select, connected, connecting, publicKey } = useWallet();
   const [hint, setHint] = useState<string | null>(null);
+  const [phantomOpenUrl, setPhantomOpenUrl] = useState<string | null>(null);
   const [savingProfileWallet, setSavingProfileWallet] = useState(false);
   const [profileWallet, setProfileWallet] = useState<string | null>(savedWallet);
   const [balanceLamports, setBalanceLamports] = useState<number | null>(null);
@@ -96,9 +102,11 @@ export function HeaderWalletConnect({ isAuthenticated, userId, savedWallet }: He
 
   const onConnect = useCallback(async () => {
     setHint(null);
+    setPhantomOpenUrl(null);
     const r = await runPhantomConnectFlow({ wallet, wallets, select, connect });
     const m = resultToPanelMessage(r);
     if (m) setHint(m);
+    setPhantomOpenUrl(shouldShowOpenInPhantom(r));
   }, [wallet, wallets, select, connect]);
 
   if (!isAuthenticated) {
@@ -141,7 +149,6 @@ export function HeaderWalletConnect({ isAuthenticated, userId, savedWallet }: He
         type="button"
         onClick={() => void onConnect()}
         disabled={connecting}
-        title={hint ?? "Connect Phantom"}
         className="rounded-md border border-emerald-500/25 bg-emerald-950/35 px-2 py-1.5 text-xs font-medium text-emerald-200/90 transition hover:border-emerald-500/45 hover:bg-emerald-950/50 disabled:opacity-50 sm:px-2.5 sm:text-sm"
       >
         {connecting ? (
@@ -153,6 +160,7 @@ export function HeaderWalletConnect({ isAuthenticated, userId, savedWallet }: He
           </>
         )}
       </button>
+      <WalletConnectExtras hint={hint} phantomUrl={phantomOpenUrl} />
     </div>
   );
 }

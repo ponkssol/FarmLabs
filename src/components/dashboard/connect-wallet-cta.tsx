@@ -1,15 +1,18 @@
 "use client";
 
-import { resultToPanelMessage, runPhantomConnectFlow } from "@/lib/solana-phantom-connect";
+import { resultToPanelMessage, runPhantomConnectFlow, shouldShowOpenInPhantom } from "@/lib/solana-phantom-connect";
+import { WalletConnectExtras } from "@/components/solana/wallet-connect-extras";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useState } from "react";
 
 export function ConnectWalletCta() {
   const { connected, connect, connecting, wallet, wallets, select } = useWallet();
   const [hint, setHint] = useState<string | null>(null);
+  const [phantomOpenUrl, setPhantomOpenUrl] = useState<string | null>(null);
 
   async function onConnect() {
     setHint(null);
+    setPhantomOpenUrl(null);
     const result = await runPhantomConnectFlow({ wallet, wallets, select, connect });
     if (result.kind !== "connected") {
       setHint(
@@ -17,6 +20,7 @@ export function ConnectWalletCta() {
           selected: "Phantom selected. Click connect once more.",
         }) ?? "Failed to connect wallet.",
       );
+      setPhantomOpenUrl(shouldShowOpenInPhantom(result));
     }
   }
 
@@ -33,6 +37,7 @@ export function ConnectWalletCta() {
         {connecting ? "Connecting..." : "Connect wallet"}
       </button>
       {hint ? <p className="mt-1 max-w-md text-right text-xs text-amber-200/85">{hint}</p> : null}
+      <WalletConnectExtras hint={null} phantomUrl={phantomOpenUrl} />
     </div>
   );
 }

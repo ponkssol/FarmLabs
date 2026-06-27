@@ -3,7 +3,8 @@
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useSession } from "next-auth/react";
 import { useCallback, useState } from "react";
-import { resultToPanelMessage, runPhantomConnectFlow } from "@/lib/solana-phantom-connect";
+import { resultToPanelMessage, runPhantomConnectFlow, shouldShowOpenInPhantom } from "@/lib/solana-phantom-connect";
+import { WalletConnectExtras } from "@/components/solana/wallet-connect-extras";
 import { shortSolanaAddress } from "@/lib/wallet-display";
 
 type PanelProps = {
@@ -18,6 +19,7 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
   const { data: session, update, status } = useSession();
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [phantomOpenUrl, setPhantomOpenUrl] = useState<string | null>(null);
 
   const onSave = useCallback(async () => {
     if (!publicKey) return;
@@ -65,9 +67,11 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
 
   const onConnect = useCallback(async () => {
     setMessage(null);
+    setPhantomOpenUrl(null);
     const r = await runPhantomConnectFlow({ wallet, wallets, select, connect });
     const m = resultToPanelMessage(r);
     if (m) setMessage(m);
+    setPhantomOpenUrl(shouldShowOpenInPhantom(r));
   }, [wallet, wallets, select, connect]);
 
   if (status === "unauthenticated" || !session) return null;
@@ -229,6 +233,9 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
           {message}
         </p>
       )}
+      {!connected ? (
+        <WalletConnectExtras hint={null} phantomUrl={phantomOpenUrl} align="left" />
+      ) : null}
     </div>
   );
 }
