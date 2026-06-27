@@ -1,8 +1,10 @@
-import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import { Keypair, PublicKey, Transaction, type Connection } from "@solana/web3.js";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   createTransferInstruction,
   getAssociatedTokenAddressSync,
+  getMint,
+  TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import bs58 from "bs58";
@@ -127,6 +129,34 @@ export function airdropDevKeypairFromEnv(): Keypair {
   return Keypair.fromSecretKey(secret);
 }
 
+/** pump.fun mints use Token-2022; legacy SPL uses Tokenkeg... */
+async function resolveMintTokenProgram(connection: Connection, mint: PublicKey): Promise<PublicKey> {
+  const info = await connection.getAccountInfo(mint);
+  if (!info) {
+    throw new Error("Airdrop token mint not found on chain. Check FARMLABS_TOKEN_MINT.");
+  }
+  if (info.owner.equals(TOKEN_2022_PROGRAM_ID)) {
+    return TOKEN_2022_PROGRAM_ID;
+  }
+  if (info.owner.equals(TOKEN_PROGRAM_ID)) {
+    return TOKEN_PROGRAM_ID;
+  }
+  throw new Error(`Unsupported token program for mint: ${info.owner.toBase58()}`);
+}
+
+async function resolveAirdropDecimals(
+  connection: Connection,
+  mint: PublicKey,
+  tokenProgram: PublicKey,
+): Promise<number> {
+  try {
+    const mintInfo = await getMint(connection, mint, undefined, tokenProgram);
+    return mintInfo.decimals;
+  } catch {
+    return getAirdropTokenDecimals();
+  }
+}
+
 export async function sendAirdropTokens(params: {
   recipient: PublicKey;
   amount: number;
@@ -134,14 +164,20 @@ export async function sendAirdropTokens(params: {
   const connection = getSolanaConnection();
   const dev = airdropDevKeypairFromEnv();
   const mint = getAirdropTokenMint();
-  const decimals = getAirdropTokenDecimals();
+  const tokenProgram = await resolveMintTokenProgram(connection, mint);
+  const decimals = await resolveAirdropDecimals(connection, mint, tokenProgram);
   const raw = tokenAmountToRaw(params.amount, decimals);
   if (raw <= BigInt(0)) {
     throw new Error("Airdrop amount must be greater than zero.");
   }
 
-  const devAta = getAssociatedTokenAddressSync(mint, dev.publicKey);
-  const recipientAta = getAssociatedTokenAddressSync(mint, params.recipient);
+  const devAta = getAssociatedTokenAddressSync(mint, dev.publicKey, false, tokenProgram);
+  const recipientAta = getAssociatedTokenAddressSync(
+    mint,
+    params.recipient,
+    false,
+    tokenProgram,
+  );
 
   const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
 
@@ -151,8 +187,16 @@ export async function sendAirdropTokens(params: {
       recipientAta,
       params.recipient,
       mint,
+      tokenProgram,
     ),
-    createTransferInstruction(devAta, recipientAta, dev.publicKey, raw, [], TOKEN_PROGRAM_ID),
+    createTransferInstruction(
+      devAta,
+      recipientAta,
+      dev.publicKey,
+      raw,
+      [],
+      tokenProgram,
+    ),
   );
   tx.feePayer = dev.publicKey;
   tx.recentBlockhash = blockhash;
