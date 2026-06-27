@@ -189,7 +189,7 @@ export function AirdropWaitlistPanel({
   const canJoin = isAuthenticated && hasXAccount && Boolean(profileWallet) && !joined;
 
   return (
-    <section className="rounded-xl border border-white/10 bg-zinc-950/70 p-5 sm:p-6">
+    <section className="flex h-full flex-col rounded-xl border border-white/10 bg-zinc-950/70 p-5 sm:p-6">
       <div className="flex items-center gap-2">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-sky-500/25 bg-sky-500/10">
           <Users className="h-4 w-4 text-sky-400" strokeWidth={1.75} aria-hidden />
@@ -201,8 +201,7 @@ export function AirdropWaitlistPanel({
       </div>
 
       <p className="mt-3 text-xs leading-relaxed text-zinc-500 sm:text-sm">
-        Reserve your spot for the FarmLabs airdrop. After joining, your lucky box appears below for a {tokenSymbol}{" "}
-        token reward.
+        Reserve your spot for the FarmLabs airdrop. Sign in with X and connect your Solana wallet to join.
       </p>
 
       {joined ? (
@@ -219,7 +218,8 @@ export function AirdropWaitlistPanel({
               Joined {new Date(createdAt).toLocaleDateString(undefined, { dateStyle: "medium" })}
             </p>
           ) : null}
-          <p className="mt-3 text-xs text-emerald-300/80">Scroll down to open your lucky box ↓</p>
+          <p className="mt-3 text-xs text-emerald-300/80 lg:hidden">Open your lucky box below ↓</p>
+          <p className="mt-3 hidden text-xs text-emerald-300/80 lg:block">Open your lucky box on the right →</p>
         </div>
       ) : (
         <div className="mt-6">

@@ -3,6 +3,7 @@
 import { AirdropLuckyBox } from "@/components/airdrop-lucky-box";
 import { AirdropWaitlistPanel } from "@/components/airdrop-waitlist-panel";
 import type { LuckyBoxState } from "@/lib/airdrop-luckybox";
+import { Gift } from "lucide-react";
 import { useCallback, useState } from "react";
 
 type Props = {
@@ -16,6 +17,32 @@ type Props = {
   initialWallet: string | null;
   initialCreatedAt: string | null;
 };
+
+function LuckyBoxLocked({ tokenSymbol }: { tokenSymbol: string }) {
+  return (
+    <section className="flex h-full min-h-[320px] flex-col rounded-xl border border-dashed border-white/10 bg-zinc-950/40 p-5 sm:p-6">
+      <div className="flex items-center gap-2">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/5">
+          <Gift className="h-4 w-4 text-amber-400/50" strokeWidth={1.75} aria-hidden />
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-600 sm:text-xs">
+            Lucky box
+          </p>
+          <h2 className="text-base font-semibold text-zinc-400 sm:text-lg">Locked</h2>
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col items-center justify-center px-4 py-8 text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/10 bg-zinc-900/60">
+          <Gift className="h-9 w-9 text-zinc-600" strokeWidth={1.5} aria-hidden />
+        </div>
+        <p className="mt-4 max-w-[220px] text-sm leading-relaxed text-zinc-500">
+          Join the waitlist first to unlock your {tokenSymbol} lucky box reward.
+        </p>
+      </div>
+    </section>
+  );
+}
 
 export function AirdropPageContent({
   isAuthenticated,
@@ -44,7 +71,7 @@ export function AirdropPageContent({
   );
 
   return (
-    <div className="space-y-4">
+    <div className="grid gap-4 lg:grid-cols-2 lg:items-stretch lg:gap-5">
       <AirdropWaitlistPanel
         isAuthenticated={isAuthenticated}
         hasXAccount={hasXAccount}
@@ -58,8 +85,17 @@ export function AirdropPageContent({
       />
 
       {joined ? (
-        <AirdropLuckyBox luckyBox={luckyBox} tokenSymbol={tokenSymbol} onLuckyBoxChange={setLuckyBox} />
-      ) : null}
+        <AirdropLuckyBox
+          luckyBox={luckyBox}
+          tokenSymbol={tokenSymbol}
+          onLuckyBoxChange={setLuckyBox}
+          className="h-full"
+        />
+      ) : (
+        <div className="hidden lg:block">
+          <LuckyBoxLocked tokenSymbol={tokenSymbol} />
+        </div>
+      )}
     </div>
   );
 }

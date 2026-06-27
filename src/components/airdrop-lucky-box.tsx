@@ -8,6 +8,7 @@ type Props = {
   luckyBox: LuckyBoxState;
   tokenSymbol: string;
   onLuckyBoxChange: (next: LuckyBoxState) => void;
+  className?: string;
 };
 
 type OpenPhase = "closed" | "shaking" | "burst" | "rolling" | "revealed";
@@ -117,7 +118,7 @@ function LuckyBoxVisual({ phase }: { phase: OpenPhase }) {
   );
 }
 
-export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange }: Props) {
+export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange, className = "" }: Props) {
   const [box, setBox] = useState(luckyBox);
   const [loading, setLoading] = useState<"open" | "claim" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -238,7 +239,9 @@ export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange }: Pro
   const showReward = (isOpened || isClaimed || rolling || openPhase === "revealed") && displayAmount != null;
 
   return (
-    <div className="mt-0 rounded-xl border border-amber-500/20 bg-gradient-to-b from-amber-500/[0.07] to-zinc-950/40 p-4 sm:p-5">
+    <div
+      className={`flex flex-col rounded-xl border border-amber-500/20 bg-gradient-to-b from-amber-500/[0.07] to-zinc-950/40 p-5 sm:p-6 ${className}`}
+    >
       <div className="flex items-center gap-2">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10">
           <Gift className="h-4 w-4 text-amber-300" strokeWidth={1.75} aria-hidden />

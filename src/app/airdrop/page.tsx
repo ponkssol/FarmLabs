@@ -58,8 +58,16 @@ export default async function AirdropPage() {
       };
 
   return (
-    <div className="app-main-container py-8 sm:py-10">
-      <div className="mx-auto max-w-lg">
+    <div className="app-main-container py-6 sm:py-8">
+      <header className="mb-4 sm:mb-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 sm:text-xs">Airdrop</p>
+        <h1 className="mt-1 text-xl font-semibold tracking-tight text-white sm:text-2xl">Waitlist &amp; rewards</h1>
+        <p className="ui-form-hint mt-2 max-w-xl">
+          Join with X and your wallet, then open your lucky box for {getAirdropTokenSymbol()} tokens.
+        </p>
+      </header>
+
+      <div className="mx-auto max-w-4xl">
         <AirdropPageContent
           isAuthenticated={Boolean(session?.user)}
           hasXAccount={hasXAccount}
