@@ -1,28 +1,30 @@
 "use client";
 
-import {
-  createDefaultAddressSelector,
-  createDefaultAuthorizationResultCache,
-  createDefaultWalletNotFoundHandler,
-  SolanaMobileWalletAdapter,
-} from "@solana-mobile/wallet-adapter-mobile";
-import type { Adapter } from "@solana/wallet-adapter-base";
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
 import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
 import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
 import { Buffer } from "buffer";
 import { useEffect, useMemo, type ReactNode } from "react";
+import { isAndroidMobileWalletSupported } from "@/lib/mobile-wallet";
 import { DEFAULT_MAINNET_HTTP_RPC } from "@/lib/solana-rpc-defaults";
 
-const APP_ORIGIN =
-  process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-  process.env.AUTH_URL?.trim() ||
-  "https://www.farmlabs.space";
+const WALLET_STORAGE_KEY = "walletName";
 
 export function SolanaProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const g = globalThis as unknown as { Buffer?: typeof Buffer };
     if (!g.Buffer) g.Buffer = Buffer;
+
+    if (isAndroidMobileWalletSupported()) {
+      try {
+        const stored = localStorage.getItem(WALLET_STORAGE_KEY);
+        if (stored === "Phantom" || stored === "Solflare") {
+          localStorage.removeItem(WALLET_STORAGE_KEY);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
   }, []);
 
   const endpoint = useMemo(
@@ -30,29 +32,14 @@ export function SolanaProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const wallets = useMemo((): Adapter[] => {
-    const list: Adapter[] = [new PhantomWalletAdapter(), new SolflareWalletAdapter()];
-    if (typeof window !== "undefined") {
-      list.push(
-        new SolanaMobileWalletAdapter({
-          appIdentity: {
-            name: "FarmLabs",
-            uri: APP_ORIGIN,
-            icon: `${APP_ORIGIN.replace(/\/$/, "")}/favicon.jpg`,
-          },
-          authorizationResultCache: createDefaultAuthorizationResultCache(),
-          addressSelector: createDefaultAddressSelector(),
-          chain: "solana:mainnet",
-          onWalletNotFound: createDefaultWalletNotFoundHandler(),
-        }),
-      );
-    }
-    return list;
-  }, []);
+  const wallets = useMemo(
+    () => [new PhantomWalletAdapter(), new SolflareWalletAdapter()],
+    [],
+  );
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
+      <WalletProvider wallets={wallets} autoConnect localStorageKey={WALLET_STORAGE_KEY}>
         {children}
       </WalletProvider>
     </ConnectionProvider>

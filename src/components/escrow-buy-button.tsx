@@ -6,7 +6,7 @@ import { formatEscrowAmountLabel, resolvePriceCurrency } from "@/lib/listing-pri
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { solListingToLamports } from "@/lib/escrow-lamports";
-import { resultToPanelMessage, runPhantomConnectFlow } from "@/lib/solana-phantom-connect";
+import { useWalletConnect } from "@/hooks/use-wallet-connect";
 
 type PriceTier = { id: string; label: string; priceAmount: number };
 
@@ -36,7 +36,8 @@ export function EscrowBuyButton({
 }: Props) {
   const router = useRouter();
   const { connection } = useConnection();
-  const { publicKey, sendTransaction, connected, connect, connecting, wallet, wallets, select } = useWallet();
+  const { publicKey, sendTransaction, connected, connecting } = useWallet();
+  const { connectWallet } = useWalletConnect();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [step, setStep] = useState<"start" | "pay" | "done">("start");
@@ -66,14 +67,7 @@ export function EscrowBuyButton({
   async function onStartClick() {
     if (!connected) {
       setMessage(null);
-      const result = await runPhantomConnectFlow({ wallet, wallets, select, connect });
-      if (result.kind !== "connected") {
-        setMessage(
-          resultToPanelMessage(result, {
-            selected: "Phantom selected. Click connect once more.",
-          }) ?? "Failed to connect wallet.",
-        );
-      }
+      await connectWallet();
       return;
     }
     await buy();

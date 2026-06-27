@@ -1,11 +1,11 @@
 "use client";
 
+import { WalletConnectExtras } from "@/components/solana/wallet-connect-extras";
+import { useWalletConnect } from "@/hooks/use-wallet-connect";
+import { shortSolanaAddress } from "@/lib/wallet-display";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useSession } from "next-auth/react";
 import { useCallback, useState } from "react";
-import { resultToPanelMessage, runPhantomConnectFlow, shouldShowOpenInPhantom } from "@/lib/solana-phantom-connect";
-import { WalletConnectExtras } from "@/components/solana/wallet-connect-extras";
-import { shortSolanaAddress } from "@/lib/wallet-display";
 
 type PanelProps = {
   /** Tighter padding and type scale for embedded dashboard sidebar */
@@ -15,11 +15,11 @@ type PanelProps = {
 };
 
 export function WalletLinkPanel({ compact = false, inProfile = false }: PanelProps) {
-  const { publicKey, connect, disconnect, connected, connecting, wallet, wallets, select } = useWallet();
+  const { publicKey, disconnect, connected } = useWallet();
+  const { connectWallet, hint: connectHint, phantomOpenUrl, connecting } = useWalletConnect();
   const { data: session, update, status } = useSession();
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [phantomOpenUrl, setPhantomOpenUrl] = useState<string | null>(null);
 
   const onSave = useCallback(async () => {
     if (!publicKey) return;
@@ -67,12 +67,8 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
 
   const onConnect = useCallback(async () => {
     setMessage(null);
-    setPhantomOpenUrl(null);
-    const r = await runPhantomConnectFlow({ wallet, wallets, select, connect });
-    const m = resultToPanelMessage(r);
-    if (m) setMessage(m);
-    setPhantomOpenUrl(shouldShowOpenInPhantom(r));
-  }, [wallet, wallets, select, connect]);
+    await connectWallet();
+  }, [connectWallet]);
 
   if (status === "unauthenticated" || !session) return null;
 
@@ -220,7 +216,7 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
         )}
       </div>
 
-      {message && (
+      {(message || connectHint) && (
         <p
           className={
             inProfile
@@ -230,11 +226,11 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
                 : "mt-3 text-sm text-zinc-400"
           }
         >
-          {message}
+          {message || connectHint}
         </p>
       )}
       {!connected ? (
-        <WalletConnectExtras hint={null} phantomUrl={phantomOpenUrl} align="left" />
+        <WalletConnectExtras hint={connectHint} phantomUrl={phantomOpenUrl} align="left" />
       ) : null}
     </div>
   );

@@ -6,13 +6,13 @@ import {
 import type { WalletContextState } from "@solana/wallet-adapter-react";
 import {
   getPhantomInAppBrowserUrl,
-  isMobileBrowser,
+  isAndroidMobileWalletSupported,
+  isIOS,
   isPhantomInAppBrowser,
+  SolanaMobileWalletAdapterWalletName,
 } from "@/lib/mobile-wallet";
-import { SolanaMobileWalletAdapterWalletName } from "@solana-mobile/wallet-adapter-mobile";
 
 export type PhantomConnectResult =
-  | { kind: "selected_phantom" }
   | { kind: "connected" }
   | { kind: "not_ready"; message: string; openInPhantom?: boolean }
   | { kind: "open_in_phantom"; url: string }
@@ -37,71 +37,83 @@ async function waitUntilWalletReady(
   return rs === WalletReadyState.Installed || rs === WalletReadyState.Loadable;
 }
 
+function pickWallet(wallets: WalletContextState["wallets"]) {
+  if (isAndroidMobileWalletSupported()) {
+    return (
+      wallets.find((w) => w.adapter.name === SolanaMobileWalletAdapterWalletName) ?? wallets[0]
+    );
+  }
+  const preferred: WalletName[] = ["Phantom" as WalletName, "Solflare" as WalletName];
+  return (
+    wallets.find((w) => preferred.includes(w.adapter.name)) ??
+    wallets.find(
+      (w) =>
+        w.adapter.readyState === WalletReadyState.Installed ||
+        w.adapter.readyState === WalletReadyState.Loadable,
+    ) ??
+    wallets[0]
+  );
+}
+
+function iosFallback(): PhantomConnectResult {
+  return {
+    kind: "open_in_phantom",
+    url: getPhantomInAppBrowserUrl(),
+  };
+}
+
 /**
- * Phantom connect flow (shared by dashboard and header). Avoid calling `connect()` before the adapter is ready.
+ * One-tap wallet connect. On Android Chrome uses Mobile Wallet Adapter (opens Phantom/Solflare app directly).
  */
 export async function runPhantomConnectFlow(
   ctx: Pick<WalletContextState, "wallet" | "wallets" | "select" | "connect">,
 ): Promise<PhantomConnectResult> {
   const { wallet, wallets, select, connect } = ctx;
-  const preferred: WalletName[] = isMobileBrowser()
-    ? [SolanaMobileWalletAdapterWalletName, "Phantom" as WalletName, "Solflare" as WalletName]
-    : ["Phantom" as WalletName, "Solflare" as WalletName];
 
-  if (!wallet) {
-    const target =
-      wallets.find((w) => preferred.includes(w.adapter.name)) ??
-      wallets.find(
-        (w) =>
-          w.adapter.readyState === WalletReadyState.Installed ||
-          w.adapter.readyState === WalletReadyState.Loadable,
-      ) ??
-      wallets[0];
-    if (!target) {
-      return {
-        kind: "not_ready",
-        message: "No supported wallet adapter found.",
-      };
-    }
-    select(target.adapter.name as WalletName);
-    return { kind: "selected_phantom" };
+  if (wallets.length === 0) {
+    return { kind: "not_ready", message: "No wallet adapter available." };
   }
 
-  if (wallet.adapter.readyState === WalletReadyState.Unsupported) {
-    if (isMobileBrowser() && !isPhantomInAppBrowser()) {
-      return {
-        kind: "open_in_phantom",
-        url: getPhantomInAppBrowserUrl(),
-      };
+  const target = pickWallet(wallets);
+  if (!target) {
+    return { kind: "not_ready", message: "No supported wallet found." };
+  }
+
+  const usingMwa = target.adapter.name === SolanaMobileWalletAdapterWalletName;
+
+  if (!wallet || wallet.adapter.name !== target.adapter.name) {
+    select(target.adapter.name as WalletName);
+  }
+
+  const active = wallet?.adapter.name === target.adapter.name ? wallet : target;
+
+  if (active.adapter.readyState === WalletReadyState.Unsupported) {
+    if (isIOS() && !isPhantomInAppBrowser()) {
+      return iosFallback();
     }
     return {
       kind: "not_ready",
       message:
-        "Wallet is not available in this browser (e.g. in-app Twitter or Telegram). Open farmlabs.space in Safari or Chrome, or use Phantom's in-app browser.",
-      openInPhantom: isMobileBrowser(),
+        "Wallet not available in this browser. On Android use Chrome with Phantom installed. Avoid in-app browsers (Twitter, Telegram).",
+      openInPhantom: isIOS(),
     };
   }
 
-  const ready = await waitUntilWalletReady(wallet, 3000);
+  const ready = await waitUntilWalletReady(active, usingMwa ? 1500 : 3000);
   if (!ready) {
-    if (wallet.adapter.readyState === WalletReadyState.NotDetected) {
-      if (isMobileBrowser() && !isPhantomInAppBrowser()) {
-        return {
-          kind: "open_in_phantom",
-          url: getPhantomInAppBrowserUrl(),
-        };
-      }
+    if (isIOS() && !isPhantomInAppBrowser()) {
+      return iosFallback();
+    }
+    if (active.adapter.readyState === WalletReadyState.NotDetected) {
       return {
         kind: "not_ready",
-        message:
-          "Phantom not detected. On desktop, install the extension from phantom.com. On mobile, open this site in the Phantom app.",
-        openInPhantom: isMobileBrowser(),
+        message: isAndroidMobileWalletSupported()
+          ? "Install Phantom from the Play Store, then tap Connect again."
+          : "Install the Phantom extension on desktop, or use Chrome on Android with Phantom installed.",
+        openInPhantom: isIOS(),
       };
     }
-    return {
-      kind: "not_ready",
-      message: "Wallet not ready yet. Wait a moment, then try again.",
-    };
+    return { kind: "not_ready", message: "Wallet not ready yet. Try again in a moment." };
   }
 
   try {
@@ -109,28 +121,35 @@ export async function runPhantomConnectFlow(
     return { kind: "connected" };
   } catch (e) {
     if (e instanceof WalletNotReadyError) {
+      if (isIOS() && !isPhantomInAppBrowser()) {
+        return iosFallback();
+      }
       return {
         kind: "not_ready",
-        message: "Wallet not ready. Unlock Phantom, refresh the page, then try again.",
+        message: usingMwa
+          ? "Could not open your wallet app. Make sure Phantom is installed."
+          : "Wallet not ready. Unlock your wallet and try again.",
+        openInPhantom: isIOS(),
       };
     }
+    const msg = e instanceof Error ? e.message : "Failed to connect wallet.";
     return {
       kind: "error",
-      message: "Failed to connect wallet. Make sure Phantom is installed and unlocked.",
+      message: usingMwa
+        ? `Could not connect via mobile wallet: ${msg}`
+        : msg || "Failed to connect wallet.",
+      openInPhantom: isIOS(),
     };
   }
 }
 
-export function resultToPanelMessage(
-  r: PhantomConnectResult,
-  messages: { selected: string } = {
-    selected: "Phantom selected. Click “Connect wallet” again after a second.",
-  },
-): string | null {
+/** @deprecated alias */
+export const runWalletConnectFlow = runPhantomConnectFlow;
+
+export function resultToPanelMessage(r: PhantomConnectResult): string | null {
   if (r.kind === "open_in_phantom") {
-    return "On mobile, connect works inside the Phantom app. Tap “Open in Phantom” below.";
+    return "On iPhone, open FarmLabs inside the Phantom app to connect (Apple does not support direct wallet links from Safari).";
   }
-  if (r.kind === "selected_phantom") return messages.selected;
   if (r.kind === "not_ready") return r.message;
   if (r.kind === "error") return r.message;
   return null;

@@ -1,15 +1,11 @@
 "use client";
 
+import { WalletConnectExtras } from "@/components/solana/wallet-connect-extras";
+import { useWalletConnect } from "@/hooks/use-wallet-connect";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import {
-  resultToPanelMessage,
-  runPhantomConnectFlow,
-  shouldShowOpenInPhantom,
-} from "@/lib/solana-phantom-connect";
-import { WalletConnectExtras } from "@/components/solana/wallet-connect-extras";
+import { useEffect, useState } from "react";
 
 function formatNativeSol(lamports: number): string {
   const sol = lamports / LAMPORTS_PER_SOL;
@@ -32,9 +28,8 @@ type HeaderWalletConnectProps = {
 
 export function HeaderWalletConnect({ isAuthenticated, userId, savedWallet }: HeaderWalletConnectProps) {
   const { connection } = useConnection();
-  const { connect, wallet, wallets, select, connected, connecting, publicKey } = useWallet();
-  const [hint, setHint] = useState<string | null>(null);
-  const [phantomOpenUrl, setPhantomOpenUrl] = useState<string | null>(null);
+  const { connected, publicKey } = useWallet();
+  const { connectWallet, hint, phantomOpenUrl, connecting } = useWalletConnect();
   const [savingProfileWallet, setSavingProfileWallet] = useState(false);
   const [profileWallet, setProfileWallet] = useState<string | null>(savedWallet);
   const [balanceLamports, setBalanceLamports] = useState<number | null>(null);
@@ -100,15 +95,6 @@ export function HeaderWalletConnect({ isAuthenticated, userId, savedWallet }: He
     };
   }, [connection, publicKey, connected]);
 
-  const onConnect = useCallback(async () => {
-    setHint(null);
-    setPhantomOpenUrl(null);
-    const r = await runPhantomConnectFlow({ wallet, wallets, select, connect });
-    const m = resultToPanelMessage(r);
-    if (m) setHint(m);
-    setPhantomOpenUrl(shouldShowOpenInPhantom(r));
-  }, [wallet, wallets, select, connect]);
-
   if (!isAuthenticated) {
     return null;
   }
@@ -147,12 +133,12 @@ export function HeaderWalletConnect({ isAuthenticated, userId, savedWallet }: He
     <div className="flex shrink-0 flex-col items-end gap-0.5">
       <button
         type="button"
-        onClick={() => void onConnect()}
+        onClick={() => void connectWallet()}
         disabled={connecting}
         className="rounded-md border border-emerald-500/25 bg-emerald-950/35 px-2 py-1.5 text-xs font-medium text-emerald-200/90 transition hover:border-emerald-500/45 hover:bg-emerald-950/50 disabled:opacity-50 sm:px-2.5 sm:text-sm"
       >
         {connecting ? (
-          "…"
+          "Opening wallet…"
         ) : (
           <>
             <span className="sm:hidden">Wallet</span>

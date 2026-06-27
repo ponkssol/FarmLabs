@@ -6,7 +6,7 @@ import { ProjectDetailImagesField } from "@/components/project-detail-images-fie
 import { TELEGRAM_GROUP_BOT_UI, TELEGRAM_GROUP_ID_FORM_UI } from "@/lib/feature-flags";
 import { normalizeProjectForm, projectFormSchema, type ProjectForm } from "@/lib/project-schema";
 import { uploadCommunityLogoFile } from "@/lib/upload-community-client";
-import { resultToPanelMessage, runPhantomConnectFlow } from "@/lib/solana-phantom-connect";
+import { useWalletConnect } from "@/hooks/use-wallet-connect";
 import { useWallet } from "@solana/wallet-adapter-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -66,7 +66,8 @@ function formatPreviewPrice(v: ProjectForm) {
 
 export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
   const router = useRouter();
-  const { connected, connect, connecting, wallet: selectedWallet, wallets, select } = useWallet();
+  const { connected, connecting } = useWallet();
+  const { connectWallet } = useWalletConnect();
   const [values, setValues] = useState<ProjectForm>(initialValues);
   const [submitting, setSubmitting] = useState(false);
   const [communityImageFile, setCommunityImageFile] = useState<File | null>(null);
@@ -148,21 +149,8 @@ export function NewProjectSplit({ creatorName, creatorImage, wallet }: Props) {
   }
 
   async function onConnectWallet() {
-    const result = await runPhantomConnectFlow({
-      wallet: selectedWallet,
-      wallets,
-      select,
-      connect,
-    });
-    if (result.kind !== "connected") {
-      setError(
-        resultToPanelMessage(result, {
-          selected: "Phantom selected. Click connect once more.",
-        }) ?? "Failed to connect wallet.",
-      );
-      return;
-    }
     setError(null);
+    await connectWallet();
   }
 
   if (!connected) {

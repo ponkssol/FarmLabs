@@ -20,7 +20,7 @@ export function WalletConnectExtras({ hint, phantomUrl, align = "right" }: Props
           onClick={() => openPhantomInAppBrowser()}
           className="mt-1 text-[11px] font-medium text-sky-400 underline decoration-sky-400/30 underline-offset-2 hover:text-sky-300 sm:text-xs"
         >
-          Open in Phantom app
+          Open in Phantom (iOS)
         </button>
       ) : null}
     </div>
