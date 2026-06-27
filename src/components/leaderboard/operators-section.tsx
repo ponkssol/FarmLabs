@@ -46,7 +46,7 @@ function OperatorName({ user, linkToProfile }: { user: LeaderboardOperator["user
       {linkToProfile ? (
         <Link
           href={`/leaderboard/operators/${user.id}`}
-          className="truncate text-xs font-medium text-zinc-200 transition hover:text-sky-300 sm:text-sm"
+          className="truncate text-[13px] font-medium leading-tight text-zinc-200 transition hover:text-sky-300 sm:text-sm"
         >
           {display}
         </Link>
@@ -81,7 +81,7 @@ function OperatorRow({
 
   return (
     <div
-      className={`grid grid-cols-[1.5rem_2rem_minmax(0,1fr)_auto] items-center gap-x-2.5 border-b border-white/5 px-3 py-2 last:border-0 sm:grid-cols-[1.75rem_2.25rem_minmax(0,1fr)_4rem_3.5rem] sm:px-3.5 ${top3 ? "bg-white/[0.02]" : ""}`}
+      className={`grid grid-cols-[1.25rem_2rem_minmax(0,1fr)_3.25rem] items-center gap-x-2 border-b border-white/5 px-2.5 py-2.5 last:border-0 sm:grid-cols-[1.75rem_2.25rem_minmax(0,1fr)_4rem_3.5rem] sm:gap-x-2.5 sm:px-3.5 sm:py-2 ${top3 ? "bg-white/[0.02]" : ""}`}
     >
       <div className="flex justify-center">
         <RankChip rank={rank} />
@@ -105,18 +105,21 @@ function OperatorRow({
           className="h-7 w-7 shrink-0 rounded-full border border-white/10 object-cover"
         />
       )}
-      <div className="min-w-0">
+      <div className="min-w-0 overflow-hidden">
         <OperatorName user={row.user} linkToProfile={linkToProfile} />
         {row.topListing ? (
           <Link
             href={`/p/${row.topListing.slug}`}
-            className="mt-0.5 block truncate text-xs text-zinc-500 transition hover:text-zinc-300"
+            className="mt-0.5 block truncate text-[11px] leading-tight text-zinc-500 transition hover:text-zinc-300 sm:text-xs"
           >
             {row.topListing.title}
           </Link>
         ) : (
-          <p className="mt-0.5 text-xs text-zinc-600">No listings</p>
+          <p className="mt-0.5 text-[11px] text-zinc-600 sm:text-xs">No listings</p>
         )}
+        <p className="mt-0.5 text-[10px] tabular-nums text-zinc-600 sm:hidden">
+          {row.listingCount} listing{row.listingCount === 1 ? "" : "s"}
+        </p>
         <div className="mt-1.5 hidden h-0.5 max-w-[140px] overflow-hidden rounded-full bg-white/5 sm:block">
           <div className="h-full rounded-full bg-sky-500/60" style={{ width: `${pct}%` }} />
         </div>
@@ -124,7 +127,7 @@ function OperatorRow({
       <span className="hidden text-right text-xs tabular-nums text-zinc-500 sm:block">
         {row.listingCount}
       </span>
-      <span className="text-right text-xs font-semibold tabular-nums text-sky-400 sm:text-sm">
+      <span className="text-right text-[11px] font-semibold tabular-nums leading-none text-sky-400 sm:text-sm">
         {formatViews(row.totalViews)}
       </span>
     </div>
@@ -146,6 +149,8 @@ type Props = {
   isFiltering?: boolean;
   /** Link operator name/avatar to public profile page */
   linkToProfile?: boolean;
+  /** On mobile tab layout: slim header with subtitle + View all only */
+  compactMobileHeader?: boolean;
 };
 
 export function OperatorsSection({
@@ -158,6 +163,7 @@ export function OperatorsSection({
   unfilteredTotal,
   isFiltering = false,
   linkToProfile = false,
+  compactMobileHeader = false,
 }: Props) {
   const total = fullCount ?? unfilteredTotal ?? operators.length;
   const isPreview = previewLimit != null;
@@ -178,12 +184,31 @@ export function OperatorsSection({
     <section
       className={`flex flex-col overflow-hidden rounded-lg border border-white/10 bg-zinc-950/60 ${sectionHeight} ${className}`}
     >
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3.5 py-2.5">
+      {compactMobileHeader ? (
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 py-2 md:hidden">
+          <p className="min-w-0 truncate text-[11px] text-zinc-500">{subtitle}</p>
+          {showViewAll ? (
+            <Link
+              href={viewAllHref}
+              className="inline-flex h-7 shrink-0 items-center gap-1 rounded-md border border-white/10 px-2 text-[11px] font-medium text-zinc-400 transition hover:border-white/20 hover:text-white"
+            >
+              View all
+              <ArrowRight className="h-3 w-3" strokeWidth={2} aria-hidden />
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div
+        className={`shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 py-2.5 sm:px-3.5 ${
+          compactMobileHeader ? "hidden md:flex" : "flex"
+        }`}
+      >
         <div className="flex min-w-0 items-center gap-2">
           <Users className="h-4 w-4 shrink-0 text-sky-400" strokeWidth={1.75} aria-hidden />
           <div className="min-w-0">
             <h2 className="ui-form-section-title text-sm">Top operators</h2>
-            <p className="truncate text-xs text-zinc-500">{subtitle}</p>
+            <p className="truncate text-[11px] text-zinc-500 sm:text-xs">{subtitle}</p>
           </div>
         </div>
         {showViewAll ? (
