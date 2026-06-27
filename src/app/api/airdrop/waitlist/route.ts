@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { luckyBoxFromEntry } from "@/lib/airdrop-luckybox";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -19,7 +20,16 @@ export async function GET() {
   const [entry, hasXAccount] = await Promise.all([
     prisma.airdropWaitlist.findUnique({
       where: { userId: session.user.id },
-      select: { id: true, wallet: true, createdAt: true },
+      select: {
+        id: true,
+        wallet: true,
+        createdAt: true,
+        rewardStatus: true,
+        rewardAmount: true,
+        openedAt: true,
+        claimedAt: true,
+        txSignature: true,
+      },
     }),
     requireXAccount(session.user.id),
   ]);
@@ -31,7 +41,11 @@ export async function GET() {
     hasXAccount,
     hasWallet,
     entry: entry
-      ? { wallet: entry.wallet, createdAt: entry.createdAt.toISOString() }
+      ? {
+          wallet: entry.wallet,
+          createdAt: entry.createdAt.toISOString(),
+          luckyBox: luckyBoxFromEntry(entry),
+        }
       : null,
   });
 }
@@ -67,6 +81,7 @@ export async function POST() {
       alreadyJoined: true,
       createdAt: existing.createdAt.toISOString(),
       wallet: existing.wallet,
+      luckyBox: luckyBoxFromEntry(existing),
     });
   }
 
@@ -89,5 +104,6 @@ export async function POST() {
     alreadyJoined: false,
     createdAt: entry.createdAt.toISOString(),
     wallet: entry.wallet,
+    luckyBox: luckyBoxFromEntry(entry),
   });
 }

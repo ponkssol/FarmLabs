@@ -1,31 +1,54 @@
 "use client";
 
+import { AirdropLuckyBox } from "@/components/airdrop-lucky-box";
 import { WalletConnectExtras } from "@/components/solana/wallet-connect-extras";
 import { useWalletConnect } from "@/hooks/use-wallet-connect";
+import type { LuckyBoxState } from "@/lib/airdrop-luckybox";
 import { shortSolanaAddress } from "@/lib/wallet-display";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Check, Loader2, Users } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
+const DEFAULT_LUCKY_BOX: LuckyBoxState = {
+  status: "READY",
+  amount: null,
+  openedAt: null,
+  claimedAt: null,
+  txSignature: null,
+};
+
 type Props = {
   isAuthenticated: boolean;
   hasXAccount: boolean;
   savedWallet: string | null;
   userId: string | null;
+  tokenSymbol: string;
 };
 
 type WaitlistState = {
   joined: boolean;
   createdAt: string | null;
   wallet: string | null;
+  luckyBox: LuckyBoxState;
 };
 
-export function AirdropWaitlistPanel({ isAuthenticated, hasXAccount, savedWallet, userId }: Props) {
+export function AirdropWaitlistPanel({
+  isAuthenticated,
+  hasXAccount,
+  savedWallet,
+  userId,
+  tokenSymbol,
+}: Props) {
   const { connected, publicKey, connecting } = useWallet();
   const { connectWallet, hint, phantomOpenUrl, connecting: walletConnecting } = useWalletConnect();
   const [profileWallet, setProfileWallet] = useState<string | null>(savedWallet);
-  const [waitlist, setWaitlist] = useState<WaitlistState>({ joined: false, createdAt: null, wallet: null });
+  const [waitlist, setWaitlist] = useState<WaitlistState>({
+    joined: false,
+    createdAt: null,
+    wallet: null,
+    luckyBox: DEFAULT_LUCKY_BOX,
+  });
   const [booting, setBooting] = useState(true);
   const [loading, setLoading] = useState(false);
   const [savingWallet, setSavingWallet] = useState(false);
@@ -40,12 +63,17 @@ export function AirdropWaitlistPanel({ isAuthenticated, hasXAccount, savedWallet
       }
       const data = (await res.json()) as {
         joined?: boolean;
-        entry?: { createdAt: string; wallet: string } | null;
+        entry?: {
+          createdAt: string;
+          wallet: string;
+          luckyBox?: LuckyBoxState;
+        } | null;
       };
       setWaitlist({
         joined: Boolean(data.joined),
         createdAt: data.entry?.createdAt ?? null,
         wallet: data.entry?.wallet ?? null,
+        luckyBox: data.entry?.luckyBox ?? DEFAULT_LUCKY_BOX,
       });
     } catch {
       /* ignore */
@@ -157,8 +185,10 @@ export function AirdropWaitlistPanel({ isAuthenticated, hasXAccount, savedWallet
         joined: true,
         createdAt: data.createdAt ?? null,
         wallet: data.wallet ?? profileWallet,
+        luckyBox: DEFAULT_LUCKY_BOX,
       });
       setMessage(data.alreadyJoined ? "You are already on the waitlist." : "You joined the waitlist!");
+      void refresh();
     } catch {
       setMessage("Network error. Try again.");
     } finally {
@@ -182,7 +212,8 @@ export function AirdropWaitlistPanel({ isAuthenticated, hasXAccount, savedWallet
       </div>
 
       <p className="mt-3 text-xs leading-relaxed text-zinc-500 sm:text-sm">
-        Reserve your spot for the FarmLabs airdrop. You need an X account and a connected Solana wallet.
+        Reserve your spot for the FarmLabs airdrop. After joining, open your lucky box for a {tokenSymbol} token
+        reward.
       </p>
 
       {booting ? (
@@ -190,21 +221,22 @@ export function AirdropWaitlistPanel({ isAuthenticated, hasXAccount, savedWallet
           <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
         </div>
       ) : waitlist.joined ? (
-        <div className="mt-6 flex flex-1 flex-col">
-          <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-4 py-5 text-center">
-            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10">
-              <Check className="h-5 w-5 text-emerald-400" strokeWidth={2} aria-hidden />
+        <div className="mt-5 flex flex-1 flex-col">
+          <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-3 py-3 text-center sm:px-4 sm:py-4">
+            <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10">
+              <Check className="h-4 w-4 text-emerald-400" strokeWidth={2} aria-hidden />
             </div>
-            <p className="mt-3 text-sm font-semibold text-white">You&apos;re on the waitlist</p>
+            <p className="mt-2 text-sm font-semibold text-white">You&apos;re on the waitlist</p>
             {waitlist.wallet ? (
-              <p className="mt-1 font-mono text-xs text-zinc-500">{shortSolanaAddress(waitlist.wallet)}</p>
-            ) : null}
-            {waitlist.createdAt ? (
-              <p className="mt-2 text-[11px] text-zinc-600">
-                Joined {new Date(waitlist.createdAt).toLocaleDateString(undefined, { dateStyle: "medium" })}
-              </p>
+              <p className="mt-0.5 font-mono text-[11px] text-zinc-500">{shortSolanaAddress(waitlist.wallet)}</p>
             ) : null}
           </div>
+
+          <AirdropLuckyBox
+            luckyBox={waitlist.luckyBox}
+            tokenSymbol={tokenSymbol}
+            onLuckyBoxChange={(luckyBox) => setWaitlist((w) => ({ ...w, luckyBox }))}
+          />
         </div>
       ) : (
         <div className="mt-6 flex flex-1 flex-col">

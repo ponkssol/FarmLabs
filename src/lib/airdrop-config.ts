@@ -7,9 +7,16 @@ const DEFAULT_REWARD_MIN = 50;
 const DEFAULT_REWARD_MAX = 500;
 const DEFAULT_TOKEN_DECIMALS = 6;
 
+export function getAirdropTokenSymbol(): string {
+  return process.env.FARMLABS_TOKEN_SYMBOL?.trim() || "FL";
+}
+
+export function getAirdropTokenMintAddress(): string {
+  return process.env.FARMLABS_TOKEN_MINT?.trim() || DEFAULT_TOKEN_MINT;
+}
+
 export function getAirdropTokenMint(): PublicKey {
-  const s = process.env.FARMLABS_TOKEN_MINT?.trim() || DEFAULT_TOKEN_MINT;
-  return new PublicKey(s);
+  return new PublicKey(getAirdropTokenMintAddress());
 }
 
 export function getAirdropTokenDecimals(): number {

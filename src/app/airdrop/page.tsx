@@ -1,5 +1,6 @@
 import { AirdropWaitlistPanel } from "@/components/airdrop-waitlist-panel";
 import { auth } from "@/auth";
+import { getAirdropTokenSymbol } from "@/lib/airdrop-config";
 import { prisma } from "@/lib/prisma";
 import type { Metadata } from "next";
 
@@ -28,6 +29,7 @@ export default async function AirdropPage() {
           hasXAccount={hasXAccount}
           savedWallet={session?.user?.wallet ?? null}
           userId={session?.user?.id ?? null}
+          tokenSymbol={getAirdropTokenSymbol()}
         />
       </div>
     </div>

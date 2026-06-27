@@ -256,5 +256,12 @@ model AirdropWaitlist {
   xHandle   String?
   name      String?
   createdAt DateTime @default(now())
+
+  /// Lucky box reward — READY → OPENED → CLAIMED | FAILED
+  rewardStatus  String    @default("READY")
+  rewardAmount  Float?
+  openedAt      DateTime?
+  claimedAt     DateTime?
+  txSignature   String?
 }
 
