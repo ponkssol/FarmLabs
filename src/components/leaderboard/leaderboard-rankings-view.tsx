@@ -22,9 +22,11 @@ function formatViews(n: number) {
   return n.toLocaleString("en-US");
 }
 
-function ListingsSection({ listings }: { listings: LeaderboardListing[] }) {
+function ListingsSection({ listings, className = "" }: { listings: LeaderboardListing[]; className?: string }) {
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-white/10 bg-zinc-950/60">
+    <section
+      className={`flex flex-col rounded-lg border border-white/10 bg-zinc-950/60 max-md:overflow-visible md:h-full md:min-h-0 md:overflow-hidden ${className}`}
+    >
       <div className="hidden shrink-0 items-center gap-2 border-b border-white/10 px-3 py-2.5 sm:px-3.5 md:flex">
         <Trophy className="h-4 w-4 shrink-0 text-emerald-400" strokeWidth={1.75} aria-hidden />
         <div className="min-w-0">
@@ -36,7 +38,7 @@ function ListingsSection({ listings }: { listings: LeaderboardListing[] }) {
       {listings.length === 0 ? (
         <p className="px-3.5 py-10 text-center text-xs text-zinc-500">No published listings yet.</p>
       ) : (
-        <div className="lb-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="max-md:overflow-visible md:lb-scroll md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-contain md:touch-pan-y">
           <div className="hidden grid-cols-[1.75rem_2.25rem_minmax(0,1fr)_3.5rem] gap-x-2.5 border-b border-white/5 px-3.5 py-2 text-xs font-medium uppercase tracking-widest text-zinc-500 sm:sticky sm:top-0 sm:z-10 sm:grid sm:bg-zinc-950/95 sm:backdrop-blur-sm">
             <span>#</span>
             <span />
@@ -170,9 +172,9 @@ export function LeaderboardRankingsView({
         />
       </div>
 
-      <div className="flex flex-col gap-3 md:flex-row">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start">
         <div
-          className={`min-w-0 flex-1 md:max-h-[min(72vh,680px)] ${tab !== "operators" ? "hidden md:block" : ""}`}
+          className={`flex min-h-0 min-w-0 flex-1 flex-col max-md:max-h-none md:max-h-[min(72vh,680px)] ${tab !== "operators" ? "hidden md:flex" : ""}`}
           role="tabpanel"
         >
           <OperatorsSection
@@ -180,16 +182,16 @@ export function LeaderboardRankingsView({
             previewLimit={operatorsPreviewLimit}
             fullCount={allUsersCount}
             viewAllHref="/leaderboard/operators"
-            className="h-full max-h-[min(calc(100dvh-16rem),640px)] md:max-h-none"
+            className="h-full max-md:max-h-none max-md:overflow-visible md:max-h-[min(calc(100dvh-16rem),640px)]"
             linkToProfile
             compactMobileHeader
           />
         </div>
         <div
-          className={`min-w-0 flex-1 md:max-h-[min(72vh,680px)] ${tab !== "listings" ? "hidden md:block" : ""}`}
+          className={`flex min-h-0 min-w-0 flex-1 flex-col max-md:max-h-none md:max-h-[min(72vh,680px)] ${tab !== "listings" ? "hidden md:flex" : ""}`}
           role="tabpanel"
         >
-          <ListingsSection listings={displayedListings} />
+          <ListingsSection listings={displayedListings} className="md:h-full" />
         </div>
       </div>
     </div>

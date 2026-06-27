@@ -171,8 +171,8 @@ export function OperatorsSection({
   const maxViews = displayed[0]?.totalViews ?? operators[0]?.totalViews ?? 1;
   const showViewAll = isPreview && total > previewLimit;
   const sectionHeight = isPreview
-    ? "h-full min-h-0"
-    : "max-h-[min(calc(100dvh-14rem),680px)]";
+    ? "md:h-full md:min-h-0"
+    : "max-md:max-h-none md:max-h-[min(calc(100dvh-14rem),680px)]";
 
   const subtitle = isPreview
     ? `Showing ${displayed.length} of ${total} users`
@@ -182,7 +182,7 @@ export function OperatorsSection({
 
   return (
     <section
-      className={`flex flex-col overflow-hidden rounded-lg border border-white/10 bg-zinc-950/60 ${sectionHeight} ${className}`}
+      className={`flex flex-col rounded-lg border border-white/10 bg-zinc-950/60 max-md:overflow-visible md:overflow-hidden ${sectionHeight} ${className}`}
     >
       {compactMobileHeader ? (
         <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 py-2 md:hidden">
@@ -231,7 +231,7 @@ export function OperatorsSection({
           {isFiltering ? "No operators match your search." : "No published listings yet."}
         </p>
       ) : (
-        <div className="lb-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="max-md:overflow-visible md:lb-scroll md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-contain md:touch-pan-y">
           <div className="hidden grid-cols-[1.75rem_2.25rem_minmax(0,1fr)_4rem_3.5rem] gap-x-2.5 border-b border-white/5 px-3.5 py-2 text-xs font-medium uppercase tracking-widest text-zinc-500 sm:sticky sm:top-0 sm:z-10 sm:grid sm:bg-zinc-950/95 sm:backdrop-blur-sm">
             <span />
             <span />
