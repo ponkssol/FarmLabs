@@ -67,8 +67,7 @@ export default async function AirdropPage() {
         </p>
       </header>
 
-      <div className="mx-auto max-w-4xl">
-        <AirdropPageContent
+      <AirdropPageContent
           isAuthenticated={Boolean(session?.user)}
           hasXAccount={hasXAccount}
           savedWallet={session?.user?.wallet ?? null}
@@ -78,8 +77,7 @@ export default async function AirdropPage() {
           initialLuckyBox={luckyBox}
           initialWallet={waitlistEntry?.wallet ?? null}
           initialCreatedAt={waitlistEntry?.createdAt.toISOString() ?? null}
-        />
-      </div>
+      />
     </div>
   );
 }

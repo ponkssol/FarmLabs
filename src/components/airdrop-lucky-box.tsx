@@ -1,5 +1,6 @@
 "use client";
 
+import { AirdropPanelCard } from "@/components/airdrop-panel-card";
 import type { LuckyBoxState } from "@/lib/airdrop-luckybox";
 import { Gift, Loader2, Sparkles, Star } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
@@ -239,26 +240,16 @@ export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange, class
   const showReward = (isOpened || isClaimed || rolling || openPhase === "revealed") && displayAmount != null;
 
   return (
-    <div
-      className={`flex flex-col rounded-xl border border-amber-500/20 bg-gradient-to-b from-amber-500/[0.07] to-zinc-950/40 p-5 sm:p-6 ${className}`}
+    <AirdropPanelCard
+      icon={Gift}
+      accent="amber"
+      eyebrow="Lucky box"
+      title="Your waitlist reward"
+      description={`Open the box to reveal your ${tokenSymbol} token reward, then claim it to your connected wallet.`}
+      className={className}
+      bodyClassName="items-center justify-center"
     >
-      <div className="flex items-center gap-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10">
-          <Gift className="h-4 w-4 text-amber-300" strokeWidth={1.75} aria-hidden />
-        </div>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-400/80 sm:text-xs">
-            Lucky box
-          </p>
-          <h3 className="text-sm font-semibold text-white sm:text-base">Your waitlist reward</h3>
-        </div>
-      </div>
-
-      <p className="mt-2 text-xs leading-relaxed text-zinc-500 sm:text-sm">
-        Open the box to reveal your {tokenSymbol} token reward, then claim it to your connected wallet.
-      </p>
-
-      <div className="mt-5 flex flex-col items-center">
+      <div className="flex w-full flex-col items-center">
         {isReady && showBox ? (
           <>
             <LuckyBoxVisual phase={openPhase} />
@@ -266,7 +257,7 @@ export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange, class
               type="button"
               onClick={() => void onOpen()}
               disabled={loading !== null || openPhase !== "closed"}
-              className="mt-5 flex h-10 w-full max-w-xs items-center justify-center gap-2 rounded-lg bg-amber-500 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400 disabled:opacity-60"
+              className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-amber-500 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400 disabled:opacity-60"
             >
               {loading === "open" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
               {openPhase === "shaking" || openPhase === "burst" || openPhase === "rolling"
@@ -284,7 +275,7 @@ export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange, class
 
         {showReward ? (
           <div
-            className={`w-full max-w-xs text-center ${justRevealed ? "lucky-box-reveal-pop" : ""}`}
+            className={`w-full text-center ${justRevealed ? "lucky-box-reveal-pop" : ""}`}
             onAnimationEnd={() => setJustRevealed(false)}
           >
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-400/80">
@@ -331,10 +322,10 @@ export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange, class
       </div>
 
       {message ? (
-        <p className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 text-center text-xs text-amber-100/90 sm:text-sm">
+        <p className="mt-4 w-full rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 text-center text-xs text-amber-100/90 sm:text-sm">
           {message}
         </p>
       ) : null}
-    </div>
+    </AirdropPanelCard>
   );
 }

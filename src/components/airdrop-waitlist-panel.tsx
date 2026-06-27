@@ -1,5 +1,6 @@
 "use client";
 
+import { AirdropPanelCard } from "@/components/airdrop-panel-card";
 import { WalletConnectExtras } from "@/components/solana/wallet-connect-extras";
 import { useWalletConnect } from "@/hooks/use-wallet-connect";
 import type { LuckyBoxState } from "@/lib/airdrop-luckybox";
@@ -189,23 +190,16 @@ export function AirdropWaitlistPanel({
   const canJoin = isAuthenticated && hasXAccount && Boolean(profileWallet) && !joined;
 
   return (
-    <section className="flex h-full flex-col rounded-xl border border-white/10 bg-zinc-950/70 p-5 sm:p-6">
-      <div className="flex items-center gap-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-sky-500/25 bg-sky-500/10">
-          <Users className="h-4 w-4 text-sky-400" strokeWidth={1.75} aria-hidden />
-        </div>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 sm:text-xs">Waitlist</p>
-          <h2 className="text-base font-semibold text-white sm:text-lg">Join early access</h2>
-        </div>
-      </div>
-
-      <p className="mt-3 text-xs leading-relaxed text-zinc-500 sm:text-sm">
-        Reserve your spot for the FarmLabs airdrop. Sign in with X and connect your Solana wallet to join.
-      </p>
-
+    <AirdropPanelCard
+      icon={Users}
+      accent="sky"
+      eyebrow="Waitlist"
+      title="Join early access"
+      description="Reserve your spot for the FarmLabs airdrop. Sign in with X and connect your Solana wallet to join."
+      bodyClassName="justify-between"
+    >
       {joined ? (
-        <div className="mt-5 rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-3 py-4 text-center sm:px-4">
+        <div className="flex flex-1 flex-col justify-center rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-3 py-4 text-center sm:px-4">
           <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10">
             <Check className="h-4 w-4 text-emerald-400" strokeWidth={2} aria-hidden />
           </div>
@@ -222,7 +216,7 @@ export function AirdropWaitlistPanel({
           <p className="mt-3 hidden text-xs text-emerald-300/80 lg:block">Open your lucky box on the right →</p>
         </div>
       ) : (
-        <div className="mt-6">
+        <div className="flex flex-1 flex-col">
           <ul className="space-y-2 text-xs text-zinc-500 sm:text-sm">
             <li className="flex items-center gap-2">
               <span
@@ -293,6 +287,6 @@ export function AirdropWaitlistPanel({
       {!joined && canJoin ? (
         <p className="mt-3 text-center text-[11px] text-zinc-600">Ready — tap Join waitlist to save your spot.</p>
       ) : null}
-    </section>
+    </AirdropPanelCard>
   );
 }
