@@ -66,9 +66,6 @@ export async function SiteHeader() {
         </div>
 
         <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
-          <Link href="/explore" className="hidden h-8 shrink-0 items-center justify-center rounded-md px-2.5 text-xs text-zinc-400 transition hover:bg-white/5 hover:text-white md:hidden min-[430px]:inline-flex">
-            Explore
-          </Link>
           <HeaderWalletConnect
             isAuthenticated={!!session?.user}
             userId={session?.user?.id ?? null}

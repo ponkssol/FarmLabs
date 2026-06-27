@@ -4,6 +4,7 @@ import "./globals.css";
 import { AppProviders } from "@/components/providers";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { SiteMobileBottomNav } from "@/components/site-mobile-bottom-nav";
 
 /** So OG URLs and <link rel="icon"> resolve in production, not as relative to unknown host. */
 function getMetadataBase(): URL {
@@ -51,6 +52,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: "#09090b",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -70,10 +72,11 @@ export default function RootLayout({
       </head>
       <body className="min-h-full bg-black text-sm text-zinc-100 antialiased">
         <AppProviders>
-          <div className="relative flex min-h-screen flex-col bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.07),transparent_35%)]">
+          <div className="relative flex min-h-screen flex-col bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.07),transparent_35%)] pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
             <SiteHeader />
             <main className="flex-1">{children}</main>
             <SiteFooter />
+            <SiteMobileBottomNav />
           </div>
         </AppProviders>
       </body>
