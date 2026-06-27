@@ -17,7 +17,7 @@ export function luckyBoxFromEntry(entry: {
   claimedAt: Date | null;
   txSignature: string | null;
 }): LuckyBoxState {
-  const status = entry.rewardStatus as LuckyBoxStatus;
+  const status = (entry.rewardStatus || "READY") as LuckyBoxStatus;
   return {
     status,
     amount: entry.rewardAmount,

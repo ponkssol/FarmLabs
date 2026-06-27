@@ -238,7 +238,7 @@ export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange }: Pro
   const showReward = (isOpened || isClaimed || rolling || openPhase === "revealed") && displayAmount != null;
 
   return (
-    <div className="mt-5 overflow-hidden rounded-xl border border-amber-500/20 bg-gradient-to-b from-amber-500/[0.07] to-zinc-950/40 p-4 sm:p-5">
+    <div className="mt-0 rounded-xl border border-amber-500/20 bg-gradient-to-b from-amber-500/[0.07] to-zinc-950/40 p-4 sm:p-5">
       <div className="flex items-center gap-2">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10">
           <Gift className="h-4 w-4 text-amber-300" strokeWidth={1.75} aria-hidden />

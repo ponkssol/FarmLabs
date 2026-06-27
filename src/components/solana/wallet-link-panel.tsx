@@ -55,7 +55,9 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
         const j = (await r.json().catch(() => ({}))) as { error?: string };
         throw new Error(j.error || "Failed to remove wallet");
       }
-      await disconnect();
+      if (connected) {
+        await disconnect();
+      }
       await update();
       setMessage("Wallet removed from profile.");
     } catch (e) {
@@ -63,7 +65,19 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
     } finally {
       setSaving(false);
     }
-  }, [disconnect, update]);
+  }, [connected, disconnect, update]);
+
+  const onDisconnect = useCallback(async () => {
+    setMessage(null);
+    try {
+      if (connected) {
+        await disconnect();
+      }
+      setMessage("Wallet disconnected.");
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "Error");
+    }
+  }, [connected, disconnect]);
 
   const onConnect = useCallback(async () => {
     setMessage(null);
@@ -77,6 +91,11 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
   );
 
   const tight = compact || inProfile;
+  const hasSavedWallet = Boolean(session.user.wallet);
+  const actionBtn =
+    "rounded-md border border-white/15 px-2.5 py-1.5 text-xs font-medium transition disabled:opacity-50 sm:text-xs";
+  const actionBtnDanger =
+    "rounded-md border border-red-500/25 px-2.5 py-1.5 text-xs font-medium text-red-300/90 transition hover:border-red-400/40 hover:text-red-200 disabled:opacity-50 sm:text-xs";
 
   return (
     <div
@@ -156,20 +175,38 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
         }
       >
         {!connected ? (
-          <button
-            type="button"
-            onClick={() => void onConnect()}
-            disabled={connecting}
-            className={
-              inProfile
-                ? "w-full rounded-md border border-white/20 bg-white px-2.5 py-1.5 text-center text-sm font-medium text-zinc-950 transition hover:bg-zinc-200 disabled:opacity-50 sm:w-auto"
-                : tight
-                ? "w-full rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-black transition hover:bg-zinc-200 disabled:opacity-50 sm:w-auto"
-                : "rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:bg-zinc-200 disabled:opacity-50"
-            }
-          >
-            {connecting ? (tight ? "…" : "Connecting...") : inProfile && session.user.wallet ? "Connect other wallet" : "Connect wallet"}
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => void onConnect()}
+              disabled={connecting}
+              className={
+                inProfile
+                  ? "w-full rounded-md border border-white/20 bg-white px-2.5 py-1.5 text-center text-sm font-medium text-zinc-950 transition hover:bg-zinc-200 disabled:opacity-50 sm:w-auto"
+                  : tight
+                    ? "w-full rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-black transition hover:bg-zinc-200 disabled:opacity-50 sm:w-auto"
+                    : "rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:bg-zinc-200 disabled:opacity-50"
+              }
+            >
+              {connecting
+                ? tight
+                  ? "…"
+                  : "Connecting..."
+                : hasSavedWallet
+                  ? "Connect wallet"
+                  : "Connect wallet"}
+            </button>
+            {hasSavedWallet ? (
+              <button
+                type="button"
+                onClick={() => void onClear()}
+                disabled={saving}
+                className={inProfile ? `${actionBtnDanger} w-full sm:w-auto` : actionBtnDanger}
+              >
+                {saving ? "…" : "Remove wallet"}
+              </button>
+            ) : null}
+          </>
         ) : (
           <>
             <span
@@ -177,12 +214,16 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
                 inProfile
                   ? "block max-w-full rounded border border-white/8 bg-zinc-900/80 px-2 py-1 font-mono text-xs break-all text-zinc-200 sm:text-xs"
                   : tight
-                  ? "block max-w-full rounded border border-white/10 bg-zinc-900 px-2 py-1 font-mono text-xs break-all text-zinc-400 sm:text-xs"
-                  : "max-w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 font-mono text-xs break-all text-zinc-400"
+                    ? "block max-w-full rounded border border-white/10 bg-zinc-900 px-2 py-1 font-mono text-xs break-all text-zinc-400 sm:text-xs"
+                    : "max-w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 font-mono text-xs break-all text-zinc-400"
               }
               title={publicKey?.toBase58() ?? ""}
             >
-              {inProfile ? (publicKey ? shortSolanaAddress(publicKey.toBase58()) : "—") : (publicKey?.toBase58() ?? "-")}
+              {inProfile
+                ? publicKey
+                  ? shortSolanaAddress(publicKey.toBase58())
+                  : "—"
+                : (publicKey?.toBase58() ?? "-")}
             </span>
             <button
               type="button"
@@ -190,28 +231,32 @@ export function WalletLinkPanel({ compact = false, inProfile = false }: PanelPro
               disabled={saving || !publicKey || sameAsSaved}
               className={
                 inProfile
-                  ? "shrink-0 rounded border border-white/20 px-2 py-1.5 text-xs text-white transition hover:border-white/40 disabled:opacity-50"
+                  ? `${actionBtn} shrink-0 border-white/20 text-white hover:border-white/40`
                   : tight
-                  ? "rounded border border-white/20 px-2 py-1 text-xs text-white transition hover:border-white/40 disabled:opacity-50"
-                  : "rounded-lg border border-white/20 px-3 py-2 text-sm text-white transition hover:border-white/40 disabled:opacity-50"
+                    ? "rounded border border-white/20 px-2 py-1 text-xs text-white transition hover:border-white/40 disabled:opacity-50"
+                    : "rounded-lg border border-white/20 px-3 py-2 text-sm text-white transition hover:border-white/40 disabled:opacity-50"
               }
             >
               {saving ? (tight ? "…" : "Saving...") : sameAsSaved ? (tight ? "Saved" : "Already saved") : "Save to profile"}
             </button>
             <button
               type="button"
-              onClick={() => void onClear()}
+              onClick={() => void onDisconnect()}
               disabled={saving}
-              className={
-                inProfile
-                  ? "self-start text-left text-xs text-zinc-500 sm:text-xs"
-                  : tight
-                  ? "text-left text-xs text-zinc-500 sm:text-xs"
-                  : "text-xs text-zinc-500 transition hover:text-zinc-300"
-              }
+              className={inProfile ? `${actionBtn} w-full sm:w-auto` : actionBtn}
             >
-              {tight ? "Remove" : "Remove wallet"}
+              Disconnect
             </button>
+            {hasSavedWallet ? (
+              <button
+                type="button"
+                onClick={() => void onClear()}
+                disabled={saving}
+                className={inProfile ? `${actionBtnDanger} w-full sm:w-auto` : actionBtnDanger}
+              >
+                {saving ? "…" : "Remove wallet"}
+              </button>
+            ) : null}
           </>
         )}
       </div>

@@ -12,16 +12,51 @@ import {
 } from "./airdrop-config";
 import { getSolanaConnection } from "./escrow-solana";
 
+const POOL_SECRET_ENV_KEYS = [
+  "AIRDROP_DEV_WALLET_SECRET_BASE64",
+  "AIRDROP_POOL_WALLET_SECRET_BASE64",
+] as const;
+
+function readPoolSecretRaw(): Uint8Array | null {
+  for (const key of POOL_SECRET_ENV_KEYS) {
+    const value = process.env[key]?.trim();
+    if (!value) continue;
+
+    if (value.startsWith("[")) {
+      try {
+        const arr = JSON.parse(value) as number[];
+        if (Array.isArray(arr) && arr.length === 64) {
+          return Uint8Array.from(arr);
+        }
+      } catch {
+        /* try base64 below */
+      }
+    }
+
+    const decoded = Buffer.from(value, "base64");
+    if (decoded.length === 64) {
+      return Uint8Array.from(decoded);
+    }
+  }
+
+  return null;
+}
+
 export function airdropDevKeypairFromEnv(): Keypair {
-  const b64 = process.env.AIRDROP_DEV_WALLET_SECRET_BASE64?.trim();
-  if (!b64) {
-    throw new Error("AIRDROP_DEV_WALLET_SECRET_BASE64 is not set.");
+  const secret = readPoolSecretRaw();
+  if (!secret) {
+    const onVercel = Boolean(process.env.VERCEL);
+    throw new Error(
+      onVercel
+        ? "Airdrop pool wallet is not configured on the server. Add AIRDROP_DEV_WALLET_SECRET_BASE64 in Vercel → Settings → Environment Variables, then redeploy."
+        : "AIRDROP_DEV_WALLET_SECRET_BASE64 is not set. Add it to .env and restart `npm run dev`.",
+    );
   }
-  const b = Buffer.from(b64, "base64");
-  if (b.length !== 64) {
-    throw new Error("Invalid AIRDROP_DEV_WALLET_SECRET_BASE64 (expected 64-byte secret key).");
-  }
-  return Keypair.fromSecretKey(Uint8Array.from(b));
+  return Keypair.fromSecretKey(secret);
+}
+
+export function isAirdropPoolConfigured(): boolean {
+  return readPoolSecretRaw() !== null;
 }
 
 export async function sendAirdropTokens(params: {

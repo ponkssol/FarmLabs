@@ -1,6 +1,5 @@
 "use client";
 
-import { AirdropLuckyBox } from "@/components/airdrop-lucky-box";
 import { WalletConnectExtras } from "@/components/solana/wallet-connect-extras";
 import { useWalletConnect } from "@/hooks/use-wallet-connect";
 import type { LuckyBoxState } from "@/lib/airdrop-luckybox";
@@ -24,13 +23,10 @@ type Props = {
   savedWallet: string | null;
   userId: string | null;
   tokenSymbol: string;
-};
-
-type WaitlistState = {
   joined: boolean;
-  createdAt: string | null;
   wallet: string | null;
-  luckyBox: LuckyBoxState;
+  createdAt: string | null;
+  onJoined: (entry: { wallet: string; createdAt: string; luckyBox: LuckyBoxState }) => void;
 };
 
 export function AirdropWaitlistPanel({
@@ -39,28 +35,26 @@ export function AirdropWaitlistPanel({
   savedWallet,
   userId,
   tokenSymbol,
+  joined,
+  wallet,
+  createdAt,
+  onJoined,
 }: Props) {
   const { connected, publicKey, connecting } = useWallet();
   const { connectWallet, hint, phantomOpenUrl, connecting: walletConnecting } = useWalletConnect();
   const [profileWallet, setProfileWallet] = useState<string | null>(savedWallet);
-  const [waitlist, setWaitlist] = useState<WaitlistState>({
-    joined: false,
-    createdAt: null,
-    wallet: null,
-    luckyBox: DEFAULT_LUCKY_BOX,
-  });
-  const [booting, setBooting] = useState(true);
   const [loading, setLoading] = useState(false);
   const [savingWallet, setSavingWallet] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const refresh = useCallback(async () => {
+  useEffect(() => {
+    setProfileWallet(savedWallet);
+  }, [savedWallet]);
+
+  const syncFromApi = useCallback(async () => {
     try {
       const res = await fetch("/api/airdrop/waitlist");
-      if (!res.ok) {
-        setBooting(false);
-        return;
-      }
+      if (!res.ok) return;
       const data = (await res.json()) as {
         joined?: boolean;
         entry?: {
@@ -69,26 +63,22 @@ export function AirdropWaitlistPanel({
           luckyBox?: LuckyBoxState;
         } | null;
       };
-      setWaitlist({
-        joined: Boolean(data.joined),
-        createdAt: data.entry?.createdAt ?? null,
-        wallet: data.entry?.wallet ?? null,
-        luckyBox: data.entry?.luckyBox ?? DEFAULT_LUCKY_BOX,
-      });
+      if (data.joined && data.entry) {
+        onJoined({
+          wallet: data.entry.wallet,
+          createdAt: data.entry.createdAt,
+          luckyBox: data.entry.luckyBox ?? DEFAULT_LUCKY_BOX,
+        });
+      }
     } catch {
       /* ignore */
-    } finally {
-      setBooting(false);
     }
-  }, []);
+  }, [onJoined]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  useEffect(() => {
-    setProfileWallet(savedWallet);
-  }, [savedWallet]);
+    if (joined) return;
+    void syncFromApi();
+  }, [joined, syncFromApi]);
 
   useEffect(() => {
     if (!isAuthenticated || !userId) return;
@@ -176,19 +166,18 @@ export function AirdropWaitlistPanel({
         alreadyJoined?: boolean;
         createdAt?: string;
         wallet?: string;
+        luckyBox?: LuckyBoxState;
       };
       if (!res.ok) {
         setMessage(data.error ?? `Request failed (${res.status}).`);
         return;
       }
-      setWaitlist({
-        joined: true,
-        createdAt: data.createdAt ?? null,
-        wallet: data.wallet ?? profileWallet,
-        luckyBox: DEFAULT_LUCKY_BOX,
+      onJoined({
+        wallet: data.wallet ?? profileWallet ?? "",
+        createdAt: data.createdAt ?? new Date().toISOString(),
+        luckyBox: data.luckyBox ?? DEFAULT_LUCKY_BOX,
       });
       setMessage(data.alreadyJoined ? "You are already on the waitlist." : "You joined the waitlist!");
-      void refresh();
     } catch {
       setMessage("Network error. Try again.");
     } finally {
@@ -197,10 +186,10 @@ export function AirdropWaitlistPanel({
   }
 
   const busy = loading || connecting || walletConnecting || savingWallet;
-  const canJoin = isAuthenticated && hasXAccount && Boolean(profileWallet) && !waitlist.joined;
+  const canJoin = isAuthenticated && hasXAccount && Boolean(profileWallet) && !joined;
 
   return (
-    <section className="flex h-full flex-col rounded-xl border border-white/10 bg-zinc-950/70 p-5 sm:p-6">
+    <section className="rounded-xl border border-white/10 bg-zinc-950/70 p-5 sm:p-6">
       <div className="flex items-center gap-2">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-sky-500/25 bg-sky-500/10">
           <Users className="h-4 w-4 text-sky-400" strokeWidth={1.75} aria-hidden />
@@ -212,34 +201,28 @@ export function AirdropWaitlistPanel({
       </div>
 
       <p className="mt-3 text-xs leading-relaxed text-zinc-500 sm:text-sm">
-        Reserve your spot for the FarmLabs airdrop. After joining, open your lucky box for a {tokenSymbol} token
-        reward.
+        Reserve your spot for the FarmLabs airdrop. After joining, your lucky box appears below for a {tokenSymbol}{" "}
+        token reward.
       </p>
 
-      {booting ? (
-        <div className="mt-8 flex flex-1 items-center justify-center py-8 text-zinc-500">
-          <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
-        </div>
-      ) : waitlist.joined ? (
-        <div className="mt-5 flex flex-1 flex-col">
-          <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-3 py-3 text-center sm:px-4 sm:py-4">
-            <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10">
-              <Check className="h-4 w-4 text-emerald-400" strokeWidth={2} aria-hidden />
-            </div>
-            <p className="mt-2 text-sm font-semibold text-white">You&apos;re on the waitlist</p>
-            {waitlist.wallet ? (
-              <p className="mt-0.5 font-mono text-[11px] text-zinc-500">{shortSolanaAddress(waitlist.wallet)}</p>
-            ) : null}
+      {joined ? (
+        <div className="mt-5 rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-3 py-4 text-center sm:px-4">
+          <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10">
+            <Check className="h-4 w-4 text-emerald-400" strokeWidth={2} aria-hidden />
           </div>
-
-          <AirdropLuckyBox
-            luckyBox={waitlist.luckyBox}
-            tokenSymbol={tokenSymbol}
-            onLuckyBoxChange={(luckyBox) => setWaitlist((w) => ({ ...w, luckyBox }))}
-          />
+          <p className="mt-2 text-sm font-semibold text-white">You&apos;re on the waitlist</p>
+          {wallet ? (
+            <p className="mt-0.5 font-mono text-[11px] text-zinc-500">{shortSolanaAddress(wallet)}</p>
+          ) : null}
+          {createdAt ? (
+            <p className="mt-1 text-[11px] text-zinc-600">
+              Joined {new Date(createdAt).toLocaleDateString(undefined, { dateStyle: "medium" })}
+            </p>
+          ) : null}
+          <p className="mt-3 text-xs text-emerald-300/80">Scroll down to open your lucky box ↓</p>
         </div>
       ) : (
-        <div className="mt-6 flex flex-1 flex-col">
+        <div className="mt-6">
           <ul className="space-y-2 text-xs text-zinc-500 sm:text-sm">
             <li className="flex items-center gap-2">
               <span
@@ -298,7 +281,7 @@ export function AirdropWaitlistPanel({
       {message ? (
         <p
           className={`mt-4 rounded-lg border px-3 py-2.5 text-center text-xs sm:text-sm ${
-            waitlist.joined && !message.includes("already")
+            joined && !message.includes("already")
               ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-200/90"
               : "border-amber-500/20 bg-amber-500/5 text-amber-200/90"
           }`}
@@ -307,7 +290,7 @@ export function AirdropWaitlistPanel({
         </p>
       ) : null}
 
-      {!waitlist.joined && canJoin ? (
+      {!joined && canJoin ? (
         <p className="mt-3 text-center text-[11px] text-zinc-600">Ready — tap Join waitlist to save your spot.</p>
       ) : null}
     </section>
