@@ -81,7 +81,12 @@ export function AirdropPageContent({
       />
 
       {joined ? (
-        <AirdropLuckyBox luckyBox={luckyBox} tokenSymbol={tokenSymbol} onLuckyBoxChange={setLuckyBox} />
+        <AirdropLuckyBox
+          luckyBox={luckyBox}
+          tokenSymbol={tokenSymbol}
+          savedWallet={savedWallet}
+          onLuckyBoxChange={setLuckyBox}
+        />
       ) : (
         <div className="hidden lg:block">
           <LuckyBoxLocked tokenSymbol={tokenSymbol} />

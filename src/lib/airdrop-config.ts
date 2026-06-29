@@ -3,6 +3,9 @@ import { PublicKey } from "@solana/web3.js";
 /** Default FarmLabs token mint (pump.fun CA). */
 const DEFAULT_TOKEN_MINT = "5j5fXGDsngwLNLWq3a4GP4PmmZbuNjxTb1daC3j5pump";
 
+/** Default airdrop sender / pool wallet (public key only). */
+const DEFAULT_POOL_WALLET = "Fs8mr2mNq9PiQsQqSWXpC3xzZUR6zaGzWhwSXn419mqG";
+
 const DEFAULT_REWARD_MIN = 50;
 const DEFAULT_REWARD_MAX = 500;
 const DEFAULT_TOKEN_DECIMALS = 6;
@@ -17,6 +20,19 @@ export function getAirdropTokenMintAddress(): string {
 
 export function getAirdropTokenMint(): PublicKey {
   return new PublicKey(getAirdropTokenMintAddress());
+}
+
+export function getAirdropPoolWalletAddress(): string {
+  return process.env.AIRDROP_POOL_WALLET_ADDRESS?.trim() || DEFAULT_POOL_WALLET;
+}
+
+/** Minimum SOL the recipient should hold to pay claim fees + token account rent. */
+export function getAirdropClaimMinSolLamports(): number {
+  const v = process.env.AIRDROP_CLAIM_MIN_SOL?.trim();
+  if (!v) return 3_000_000;
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return 3_000_000;
+  return Math.ceil(n * 1_000_000_000);
 }
 
 export function getAirdropTokenDecimals(): number {

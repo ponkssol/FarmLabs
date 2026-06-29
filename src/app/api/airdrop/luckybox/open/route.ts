@@ -4,6 +4,10 @@ import { getWaitlistWithLuckyBox, luckyBoxFromEntry, requireWaitlistEntry } from
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+function openError(message: string, reason: string, status: number) {
+  return NextResponse.json({ error: message, reason }, { status });
+}
+
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -21,12 +25,16 @@ export async function GET() {
 export async function POST() {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Sign in first." }, { status: 401 });
+    return openError("Sign in first.", "You must be signed in with your X account to open the lucky box.", 401);
   }
 
   const entry = await requireWaitlistEntry(session.user.id);
   if (!entry) {
-    return NextResponse.json({ error: "Join the waitlist first to open your lucky box." }, { status: 403 });
+    return openError(
+      "Join the waitlist first.",
+      "Only waitlist members can open a lucky box reward.",
+      403,
+    );
   }
 
   if (entry.rewardStatus === "CLAIMED") {
@@ -44,7 +52,11 @@ export async function POST() {
   }
 
   if (entry.rewardStatus !== "READY" && entry.rewardStatus !== "FAILED") {
-    return NextResponse.json({ error: "Lucky box cannot be opened right now." }, { status: 409 });
+    return openError(
+      "Lucky box cannot be opened right now.",
+      "Your lucky box is already open or has been claimed.",
+      409,
+    );
   }
 
   const amount = rollAirdropAmount();

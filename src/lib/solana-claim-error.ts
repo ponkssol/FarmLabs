@@ -66,7 +66,7 @@ export function formatSolanaClaimError(
     return {
       message: INSUFFICIENT_SOL_CLAIM_MESSAGE,
       reason:
-        "Solana needs a small SOL balance in your wallet (about 0.003 SOL) to cover network fees and to create your token account before rewards can be sent.",
+        "You pay the network fee when claiming. Keep about 0.003 SOL in your wallet to cover transaction fees and token account rent.",
     };
   }
 

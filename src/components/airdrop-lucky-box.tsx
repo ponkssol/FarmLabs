@@ -1,13 +1,19 @@
 "use client";
 
+import { AirdropAlertBanner } from "@/components/airdrop-alert-banner";
 import { AirdropPanelCard } from "@/components/airdrop-panel-card";
+import { useWalletConnect } from "@/hooks/use-wallet-connect";
 import type { LuckyBoxState } from "@/lib/airdrop-luckybox";
+import { formatSolanaClaimError } from "@/lib/solana-claim-error";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { Transaction } from "@solana/web3.js";
 import { Gift, Loader2, Sparkles, Star } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 
 type Props = {
   luckyBox: LuckyBoxState;
   tokenSymbol: string;
+  savedWallet: string | null;
   onLuckyBoxChange: (next: LuckyBoxState) => void;
   className?: string;
 };
@@ -119,7 +125,16 @@ function LuckyBoxVisual({ phase }: { phase: OpenPhase }) {
   );
 }
 
-export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange, className = "" }: Props) {
+export function AirdropLuckyBox({
+  luckyBox,
+  tokenSymbol,
+  savedWallet,
+  onLuckyBoxChange,
+  className = "",
+}: Props) {
+  const { connection } = useConnection();
+  const { connected, publicKey, sendTransaction, connecting } = useWallet();
+  const { connectWallet } = useWalletConnect();
   const [box, setBox] = useState(luckyBox);
   const [loading, setLoading] = useState<"open" | "claim" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -193,11 +208,12 @@ export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange, class
         fetch("/api/airdrop/luckybox/open", { method: "POST" }),
         delay(900),
       ]);
-      const data = (await res.json()) as { error?: string; luckyBox?: LuckyBoxState };
+      const data = (await res.json()) as { error?: string; reason?: string; luckyBox?: LuckyBoxState };
 
       if (!res.ok || !data.luckyBox) {
         setOpenPhase("closed");
         setMessage(data.error ?? "Could not open lucky box.");
+        setErrorReason(data.reason ?? "Something went wrong while opening your lucky box. Please try again.");
         return;
       }
 
@@ -211,6 +227,7 @@ export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange, class
     } catch {
       setOpenPhase("closed");
       setMessage("Network error. Try again.");
+      setErrorReason("Could not reach the server. Check your connection and try again.");
     } finally {
       setLoading(null);
     }
@@ -219,15 +236,85 @@ export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange, class
   async function onClaim() {
     setMessage(null);
     setErrorReason(null);
+
+    if (!savedWallet) {
+      setMessage("Connect and save your Solana wallet before claiming.");
+      setErrorReason("Use Connect in the header, then try again.");
+      return;
+    }
+
+    if (!connected || !publicKey || !sendTransaction) {
+      setMessage("Connect your wallet to claim.");
+      setErrorReason("You sign the claim transaction and pay the network fee from your wallet.");
+      await connectWallet();
+      return;
+    }
+
+    if (publicKey.toBase58() !== savedWallet) {
+      setMessage("Wrong wallet connected.");
+      setErrorReason(`Switch to ${savedWallet.slice(0, 4)}…${savedWallet.slice(-4)} — the wallet saved on your profile.`);
+      return;
+    }
+
     setLoading("claim");
     try {
-      const res = await fetch("/api/airdrop/luckybox/claim", { method: "POST" });
-      const data = (await res.json()) as { error?: string; reason?: string; luckyBox?: LuckyBoxState };
-      if (!res.ok || !data.luckyBox) {
+      const prepareRes = await fetch("/api/airdrop/luckybox/claim/prepare", { method: "POST" });
+      const prepare = (await prepareRes.json()) as {
+        error?: string;
+        reason?: string;
+        transaction?: string;
+        blockhash?: string;
+        lastValidBlockHeight?: number;
+      };
+
+      if (!prepareRes.ok || !prepare.transaction || !prepare.blockhash || prepare.lastValidBlockHeight == null) {
+        setMessage(prepare.error ?? "Claim failed.");
+        setErrorReason(prepare.reason ?? null);
+        return;
+      }
+
+      const tx = Transaction.from(Buffer.from(prepare.transaction, "base64"));
+      let signature: string;
+      try {
+        signature = await sendTransaction(tx, connection, {
+          skipPreflight: false,
+          preflightCommitment: "confirmed",
+          maxRetries: 3,
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "";
+        if (/User rejected|cancel|denied/i.test(msg)) {
+          setMessage("Transaction cancelled.");
+          setErrorReason("You declined the wallet signature request.");
+          return;
+        }
+        const formatted = formatSolanaClaimError(e);
+        setMessage(formatted.message);
+        setErrorReason(formatted.reason);
+        return;
+      }
+
+      await connection.confirmTransaction(
+        {
+          signature,
+          blockhash: prepare.blockhash,
+          lastValidBlockHeight: prepare.lastValidBlockHeight,
+        },
+        "confirmed",
+      );
+
+      const confirmRes = await fetch("/api/airdrop/luckybox/claim/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ signature }),
+      });
+      const data = (await confirmRes.json()) as { error?: string; reason?: string; luckyBox?: LuckyBoxState };
+      if (!confirmRes.ok || !data.luckyBox) {
         setMessage(data.error ?? "Claim failed.");
         setErrorReason(data.reason ?? null);
         return;
       }
+
       syncBox(data.luckyBox);
       setMessage(data.luckyBox.status === "CLAIMED" ? "Tokens sent to your wallet!" : null);
       setErrorReason(null);
@@ -244,6 +331,7 @@ export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange, class
   const isClaimed = box.status === "CLAIMED";
   const showBox = isReady || openPhase !== "revealed" || rolling;
   const showReward = (isOpened || isClaimed || rolling || openPhase === "revealed") && displayAmount != null;
+  const isSuccessMessage = Boolean(message && message.toLowerCase().includes("sent to your wallet"));
 
   return (
     <AirdropPanelCard
@@ -251,7 +339,7 @@ export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange, class
       accent="amber"
       eyebrow="Lucky box"
       title="Your waitlist reward"
-      description={`Open the box to reveal your ${tokenSymbol} token reward, then claim it to your connected wallet.`}
+      description={`Open the box to reveal your ${tokenSymbol} token reward, then claim it to your connected wallet. You pay the network fee when claiming.`}
       className={className}
       bodyClassName="items-center justify-center"
     >
@@ -300,7 +388,7 @@ export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange, class
               <button
                 type="button"
                 onClick={() => void onClaim()}
-                disabled={loading !== null}
+                disabled={loading !== null || connecting}
                 className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-60"
               >
                 {loading === "claim" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
@@ -328,12 +416,11 @@ export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange, class
       </div>
 
       {message ? (
-        <div className="mt-4 w-full rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 text-center text-xs text-amber-100/90 sm:text-sm">
-          <p>{message}</p>
-          {errorReason ? (
-            <p className="mt-1.5 text-[11px] leading-relaxed text-amber-200/65 sm:text-xs">{errorReason}</p>
-          ) : null}
-        </div>
+        <AirdropAlertBanner
+          message={message}
+          reason={errorReason}
+          variant={isSuccessMessage ? "success" : "warning"}
+        />
       ) : null}
     </AirdropPanelCard>
   );

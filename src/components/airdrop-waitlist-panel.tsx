@@ -1,5 +1,6 @@
 "use client";
 
+import { AirdropAlertBanner } from "@/components/airdrop-alert-banner";
 import { AirdropPanelCard } from "@/components/airdrop-panel-card";
 import { WalletConnectExtras } from "@/components/solana/wallet-connect-extras";
 import { useWalletConnect } from "@/hooks/use-wallet-connect";
@@ -47,6 +48,7 @@ export function AirdropWaitlistPanel({
   const [loading, setLoading] = useState(false);
   const [savingWallet, setSavingWallet] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [errorReason, setErrorReason] = useState<string | null>(null);
 
   useEffect(() => {
     setProfileWallet(savedWallet);
@@ -134,26 +136,31 @@ export function AirdropWaitlistPanel({
 
   async function onJoinWaitlist() {
     setMessage(null);
+    setErrorReason(null);
 
     if (!isAuthenticated) {
       setMessage("Sign in with X first, then connect your wallet to join the waitlist.");
+      setErrorReason("An X account and Solana wallet are required to join the waitlist.");
       return;
     }
 
     if (!hasXAccount) {
-      setMessage("Waitlist requires an X (Twitter) account. Sign out and sign in with X to continue.");
+      setMessage("Waitlist requires an X (Twitter) account.");
+      setErrorReason("Sign out and sign in with X to continue.");
       return;
     }
 
     if (!profileWallet) {
       if (!connected) {
-        setMessage("Connect your Solana wallet first, then tap Join waitlist again.");
+        setMessage("Connect your Solana wallet first.");
+        setErrorReason("Tap Join waitlist again after your wallet is connected.");
         await connectWallet();
         return;
       }
       const saved = await saveWalletIfNeeded();
       if (!saved) {
-        setMessage("Could not save your wallet. Connect again from the header, then retry.");
+        setMessage("Could not save your wallet.");
+        setErrorReason("Connect again from the header, then retry.");
         return;
       }
     }
@@ -171,6 +178,7 @@ export function AirdropWaitlistPanel({
       };
       if (!res.ok) {
         setMessage(data.error ?? `Request failed (${res.status}).`);
+        setErrorReason("Please check your wallet connection and try again.");
         return;
       }
       onJoined({
@@ -179,8 +187,10 @@ export function AirdropWaitlistPanel({
         luckyBox: data.luckyBox ?? DEFAULT_LUCKY_BOX,
       });
       setMessage(data.alreadyJoined ? "You are already on the waitlist." : "You joined the waitlist!");
+      setErrorReason(null);
     } catch {
       setMessage("Network error. Try again.");
+      setErrorReason("Could not reach the server. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -188,6 +198,9 @@ export function AirdropWaitlistPanel({
 
   const busy = loading || connecting || walletConnecting || savingWallet;
   const canJoin = isAuthenticated && hasXAccount && Boolean(profileWallet) && !joined;
+  const isSuccessMessage = Boolean(
+    message && (message.includes("joined the waitlist") || message.includes("already on the waitlist")),
+  );
 
   return (
     <AirdropPanelCard
@@ -273,15 +286,11 @@ export function AirdropWaitlistPanel({
       )}
 
       {message ? (
-        <p
-          className={`mt-4 rounded-lg border px-3 py-2.5 text-center text-xs sm:text-sm ${
-            joined && !message.includes("already")
-              ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-200/90"
-              : "border-amber-500/20 bg-amber-500/5 text-amber-200/90"
-          }`}
-        >
-          {message}
-        </p>
+        <AirdropAlertBanner
+          message={message}
+          reason={errorReason}
+          variant={isSuccessMessage ? "success" : "warning"}
+        />
       ) : null}
 
       {!joined && canJoin ? (

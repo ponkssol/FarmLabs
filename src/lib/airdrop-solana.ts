@@ -2,6 +2,7 @@ import { Keypair, PublicKey, Transaction, type Connection } from "@solana/web3.j
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   createTransferInstruction,
+  getAccount,
   getAssociatedTokenAddressSync,
   getMint,
   TOKEN_2022_PROGRAM_ID,
@@ -9,11 +10,13 @@ import {
 } from "@solana/spl-token";
 import bs58 from "bs58";
 import {
+  getAirdropClaimMinSolLamports,
+  getAirdropPoolWalletAddress,
   getAirdropTokenDecimals,
   getAirdropTokenMint,
   tokenAmountToRaw,
 } from "./airdrop-config";
-import { AirdropClaimError, formatSolanaClaimError } from "./solana-claim-error";
+import { AirdropClaimError, formatSolanaClaimError, INSUFFICIENT_SOL_CLAIM_MESSAGE } from "./solana-claim-error";
 import { getSolanaConnection } from "./escrow-solana";
 
 const POOL_SECRET_ENV_KEYS = [
@@ -118,7 +121,7 @@ function poolSecretError(): Error {
   }
 
   return new Error(
-      `${env.key} is set but invalid. Export keypair JSON from Phantom, then run: node scripts/airdrop-pool-key-to-env.mjs keypair.json — paste the output into Vercel (no quotes). If you use base64 with + characters, Vercel may turn + into spaces; re-paste or use the script output.`,
+    `${env.key} is set but invalid. Export keypair JSON from Phantom, then run: node scripts/airdrop-pool-key-to-env.mjs keypair.json — paste the output into Vercel (no quotes). If you use base64 with + characters, Vercel may turn + into spaces; re-paste or use the script output.`,
   );
 }
 
@@ -158,6 +161,156 @@ async function resolveAirdropDecimals(
   }
 }
 
+export type AirdropPoolTokenBalance = {
+  wallet: string;
+  mint: string;
+  amount: number;
+  decimals: number;
+};
+
+export async function getAirdropPoolTokenBalance(): Promise<AirdropPoolTokenBalance> {
+  const connection = getSolanaConnection();
+  const mint = getAirdropTokenMint();
+  const wallet = getAirdropPoolWalletAddress();
+  const poolPubkey = new PublicKey(wallet);
+  const tokenProgram = await resolveMintTokenProgram(connection, mint);
+  const decimals = await resolveAirdropDecimals(connection, mint, tokenProgram);
+  const poolAta = getAssociatedTokenAddressSync(mint, poolPubkey, false, tokenProgram);
+
+  try {
+    const account = await getAccount(connection, poolAta, undefined, tokenProgram);
+    const amount = Number(account.amount) / 10 ** decimals;
+    return { wallet, mint: mint.toBase58(), amount, decimals };
+  } catch {
+    return { wallet, mint: mint.toBase58(), amount: 0, decimals };
+  }
+}
+
+export class InsufficientRecipientSolError extends AirdropClaimError {
+  constructor() {
+    super({
+      message: INSUFFICIENT_SOL_CLAIM_MESSAGE,
+      reason:
+        "You pay the network fee when claiming. Keep about 0.003 SOL in your wallet to cover transaction fees and token account rent.",
+    });
+  }
+}
+
+export async function assertRecipientCanPayClaimFees(recipient: PublicKey): Promise<void> {
+  const connection = getSolanaConnection();
+  const balance = await connection.getBalance(recipient, "confirmed");
+  if (balance < getAirdropClaimMinSolLamports()) {
+    throw new InsufficientRecipientSolError();
+  }
+}
+
+export type PreparedAirdropClaim = {
+  transaction: string;
+  blockhash: string;
+  lastValidBlockHeight: number;
+};
+
+/** Builds a partially signed claim tx: sender transfers tokens; recipient pays all fees. */
+export async function buildAirdropClaimTransaction(params: {
+  recipient: PublicKey;
+  amount: number;
+}): Promise<PreparedAirdropClaim> {
+  await assertRecipientCanPayClaimFees(params.recipient);
+
+  const connection = getSolanaConnection();
+  const dev = airdropDevKeypairFromEnv();
+  const mint = getAirdropTokenMint();
+  const tokenProgram = await resolveMintTokenProgram(connection, mint);
+  const decimals = await resolveAirdropDecimals(connection, mint, tokenProgram);
+  const raw = tokenAmountToRaw(params.amount, decimals);
+  if (raw <= BigInt(0)) {
+    throw new Error("Airdrop amount must be greater than zero.");
+  }
+
+  const devAta = getAssociatedTokenAddressSync(mint, dev.publicKey, false, tokenProgram);
+  const recipientAta = getAssociatedTokenAddressSync(
+    mint,
+    params.recipient,
+    false,
+    tokenProgram,
+  );
+
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
+
+  const tx = new Transaction().add(
+    createAssociatedTokenAccountIdempotentInstruction(
+      params.recipient,
+      recipientAta,
+      params.recipient,
+      mint,
+      tokenProgram,
+    ),
+    createTransferInstruction(
+      devAta,
+      recipientAta,
+      dev.publicKey,
+      raw,
+      [],
+      tokenProgram,
+    ),
+  );
+  tx.feePayer = params.recipient;
+  tx.recentBlockhash = blockhash;
+  tx.partialSign(dev);
+
+  return {
+    transaction: Buffer.from(tx.serialize({ requireAllSignatures: false })).toString("base64"),
+    blockhash,
+    lastValidBlockHeight,
+  };
+}
+
+export async function verifyAirdropClaimTransaction(params: {
+  signature: string;
+  recipient: PublicKey;
+  amount: number;
+}): Promise<boolean> {
+  const connection = getSolanaConnection();
+  const mint = getAirdropTokenMint();
+  const tokenProgram = await resolveMintTokenProgram(connection, mint);
+  const decimals = await resolveAirdropDecimals(connection, mint, tokenProgram);
+  const expectedRaw = tokenAmountToRaw(params.amount, decimals);
+  const recipientAta = getAssociatedTokenAddressSync(
+    mint,
+    params.recipient,
+    false,
+    tokenProgram,
+  );
+
+  const tx = await connection.getTransaction(params.signature, {
+    commitment: "confirmed",
+    maxSupportedTransactionVersion: 0,
+  });
+  if (!tx?.meta || tx.meta.err) {
+    return false;
+  }
+
+  const accountKeys = tx.transaction.message.getAccountKeys();
+  const recipientAtaStr = recipientAta.toBase58();
+  let ataIndex = -1;
+  for (let i = 0; i < accountKeys.length; i += 1) {
+    const key = accountKeys.get(i);
+    if (key?.toBase58() === recipientAtaStr) {
+      ataIndex = i;
+      break;
+    }
+  }
+  if (ataIndex < 0) {
+    return false;
+  }
+
+  const pre = BigInt(tx.meta.preTokenBalances?.find((b) => b.accountIndex === ataIndex)?.uiTokenAmount.amount ?? "0");
+  const post = BigInt(tx.meta.postTokenBalances?.find((b) => b.accountIndex === ataIndex)?.uiTokenAmount.amount ?? "0");
+  const gain = post - pre;
+  return gain >= expectedRaw;
+}
+
+/** @deprecated Prefer buildAirdropClaimTransaction for lucky box (recipient pays fees). */
 export async function sendAirdropTokens(params: {
   recipient: PublicKey;
   amount: number;

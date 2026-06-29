@@ -1,6 +1,8 @@
 import { AirdropPageContent } from "@/components/airdrop-page-content";
+import { AirdropPoolBalance } from "@/components/airdrop-pool-balance";
 import { auth } from "@/auth";
 import { getAirdropTokenSymbol } from "@/lib/airdrop-config";
+import { getAirdropPoolTokenBalance } from "@/lib/airdrop-solana";
 import { luckyBoxFromEntry } from "@/lib/airdrop-luckybox";
 import { prisma } from "@/lib/prisma";
 import type { Metadata } from "next";
@@ -57,14 +59,26 @@ export default async function AirdropPage() {
         txSignature: null,
       };
 
+  const tokenSymbol = getAirdropTokenSymbol();
+
+  let poolBalance: Awaited<ReturnType<typeof getAirdropPoolTokenBalance>> | null = null;
+  try {
+    poolBalance = await getAirdropPoolTokenBalance();
+  } catch (e) {
+    console.error("[airdrop/page] pool balance", e);
+  }
+
   return (
     <div className="app-main-container py-6 sm:py-8">
-      <header className="mb-4 sm:mb-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 sm:text-xs">Airdrop</p>
-        <h1 className="mt-1 text-xl font-semibold tracking-tight text-white sm:text-2xl">Waitlist &amp; rewards</h1>
-        <p className="ui-form-hint mt-2 max-w-xl">
-          Join with X and your wallet, then open your lucky box for {getAirdropTokenSymbol()} tokens.
-        </p>
+      <header className="mb-4 flex flex-col gap-4 sm:mb-5 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 sm:text-xs">Airdrop</p>
+          <h1 className="mt-1 text-xl font-semibold tracking-tight text-white sm:text-2xl">Waitlist &amp; rewards</h1>
+          <p className="ui-form-hint mt-2 max-w-xl">
+            Join with X and your wallet, then open your lucky box for {tokenSymbol} tokens.
+          </p>
+        </div>
+        <AirdropPoolBalance tokenSymbol={tokenSymbol} initial={poolBalance} />
       </header>
 
       <AirdropPageContent
@@ -72,7 +86,7 @@ export default async function AirdropPage() {
           hasXAccount={hasXAccount}
           savedWallet={session?.user?.wallet ?? null}
           userId={session?.user?.id ?? null}
-          tokenSymbol={getAirdropTokenSymbol()}
+          tokenSymbol={tokenSymbol}
           initialJoined={Boolean(waitlistEntry)}
           initialLuckyBox={luckyBox}
           initialWallet={waitlistEntry?.wallet ?? null}
