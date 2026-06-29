@@ -357,7 +357,7 @@ export function AirdropLuckyBox({
               type="button"
               onClick={() => void onOpen()}
               disabled={loading !== null || openPhase !== "closed"}
-              className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-amber-500 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400 disabled:opacity-60"
+              className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-amber-500 text-xs font-semibold text-zinc-950 transition hover:bg-amber-400 disabled:opacity-60"
             >
               {loading === "open" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
               {openPhase === "shaking" || openPhase === "burst" || openPhase === "rolling"
@@ -382,20 +382,20 @@ export function AirdropLuckyBox({
               {isClaimed ? "You claimed" : rolling ? "Rolling…" : "You won"}
             </p>
             <p
-              className={`mt-2 bg-gradient-to-b from-white to-amber-100 bg-clip-text text-4xl font-bold tabular-nums tracking-tight text-transparent sm:text-5xl ${
+              className={`mt-1.5 bg-gradient-to-b from-white to-amber-100 bg-clip-text text-3xl font-bold tabular-nums tracking-tight text-transparent sm:text-4xl ${
                 rolling ? "lucky-box-number-roll" : ""
               }`}
             >
               {formatAmount(displayAmount)}
             </p>
-            <p className="mt-1 text-sm font-medium text-amber-300">{tokenSymbol}</p>
+            <p className="mt-0.5 text-xs font-medium text-amber-300">{tokenSymbol}</p>
 
             {isOpened && !rolling && openPhase === "revealed" ? (
               <button
                 type="button"
                 onClick={() => void onClaim()}
                 disabled={loading !== null || connecting}
-                className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-60"
+                className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 text-xs font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-60"
               >
                 {loading === "claim" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
                 Claim {formatAmount(displayAmount)} {tokenSymbol}

@@ -67,7 +67,7 @@ export function AirdropPageContent({
   );
 
   return (
-    <div className="grid gap-3.5 lg:grid-cols-2 lg:items-stretch lg:gap-4">
+    <div className="grid gap-3 lg:grid-cols-2 lg:items-stretch lg:gap-3.5">
       <AirdropWaitlistPanel
         isAuthenticated={isAuthenticated}
         hasXAccount={hasXAccount}
