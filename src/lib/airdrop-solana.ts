@@ -19,6 +19,8 @@ import {
 import { AirdropClaimError, formatSolanaClaimError, INSUFFICIENT_SOL_CLAIM_MESSAGE } from "./solana-claim-error";
 import { getSolanaConnection } from "./escrow-solana";
 
+export { AirdropClaimError } from "./solana-claim-error";
+
 const POOL_SECRET_ENV_KEYS = [
   "AIRDROP_DEV_WALLET_SECRET_BASE64",
   "AIRDROP_POOL_WALLET_SECRET_BASE64",
@@ -309,6 +311,7 @@ export async function verifyAirdropClaimTransaction(params: {
   const gain = post - pre;
   return gain >= expectedRaw;
 }
+
 
 /** @deprecated Prefer buildAirdropClaimTransaction for lucky box (recipient pays fees). */
 export async function sendAirdropTokens(params: {

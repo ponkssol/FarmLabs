@@ -1,7 +1,7 @@
-import { AirdropClaimError, InsufficientRecipientSolError, verifyAirdropClaimTransaction } from "@/lib/airdrop-solana";
+import { InsufficientRecipientSolError, verifyAirdropClaimTransaction } from "@/lib/airdrop-solana";
 import { luckyBoxFromEntry } from "@/lib/airdrop-luckybox";
 import { resolveLuckyBoxClaimContext } from "@/lib/airdrop-luckybox-claim";
-import { formatSolanaClaimError } from "@/lib/solana-claim-error";
+import { AirdropClaimError, formatSolanaClaimError } from "@/lib/solana-claim-error";
 import { prisma } from "@/lib/prisma";
 import { PublicKey } from "@solana/web3.js";
 import { NextResponse } from "next/server";
