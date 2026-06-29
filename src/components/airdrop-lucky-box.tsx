@@ -123,6 +123,7 @@ export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange, class
   const [box, setBox] = useState(luckyBox);
   const [loading, setLoading] = useState<"open" | "claim" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [errorReason, setErrorReason] = useState<string | null>(null);
   const [openPhase, setOpenPhase] = useState<OpenPhase>(
     luckyBox.status === "READY" || luckyBox.status === "FAILED" ? "closed" : "revealed",
   );
@@ -183,6 +184,7 @@ export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange, class
   async function onOpen() {
     if (loading !== null || openPhase !== "closed") return;
     setMessage(null);
+    setErrorReason(null);
     setLoading("open");
     setOpenPhase("shaking");
 
@@ -216,18 +218,22 @@ export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange, class
 
   async function onClaim() {
     setMessage(null);
+    setErrorReason(null);
     setLoading("claim");
     try {
       const res = await fetch("/api/airdrop/luckybox/claim", { method: "POST" });
-      const data = (await res.json()) as { error?: string; luckyBox?: LuckyBoxState };
+      const data = (await res.json()) as { error?: string; reason?: string; luckyBox?: LuckyBoxState };
       if (!res.ok || !data.luckyBox) {
         setMessage(data.error ?? "Claim failed.");
+        setErrorReason(data.reason ?? null);
         return;
       }
       syncBox(data.luckyBox);
       setMessage(data.luckyBox.status === "CLAIMED" ? "Tokens sent to your wallet!" : null);
+      setErrorReason(null);
     } catch {
       setMessage("Network error. Try again.");
+      setErrorReason("Could not reach the server. Check your connection and try again.");
     } finally {
       setLoading(null);
     }
@@ -322,9 +328,12 @@ export function AirdropLuckyBox({ luckyBox, tokenSymbol, onLuckyBoxChange, class
       </div>
 
       {message ? (
-        <p className="mt-4 w-full rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 text-center text-xs text-amber-100/90 sm:text-sm">
-          {message}
-        </p>
+        <div className="mt-4 w-full rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 text-center text-xs text-amber-100/90 sm:text-sm">
+          <p>{message}</p>
+          {errorReason ? (
+            <p className="mt-1.5 text-[11px] leading-relaxed text-amber-200/65 sm:text-xs">{errorReason}</p>
+          ) : null}
+        </div>
       ) : null}
     </AirdropPanelCard>
   );

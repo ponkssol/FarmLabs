@@ -13,7 +13,7 @@ import {
   getAirdropTokenMint,
   tokenAmountToRaw,
 } from "./airdrop-config";
-import { formatSolanaClaimError } from "./solana-claim-error";
+import { AirdropClaimError, formatSolanaClaimError } from "./solana-claim-error";
 import { getSolanaConnection } from "./escrow-solana";
 
 const POOL_SECRET_ENV_KEYS = [
@@ -209,14 +209,16 @@ export async function sendAirdropTokens(params: {
       maxRetries: 3,
     });
   } catch (e) {
-    throw new Error(formatSolanaClaimError(e));
+    throw new AirdropClaimError(formatSolanaClaimError(e));
   }
   const conf = await connection.confirmTransaction(
     { signature, blockhash, lastValidBlockHeight },
     "confirmed",
   );
   if (conf.value.err) {
-    throw new Error(`Airdrop transfer failed: ${JSON.stringify(conf.value.err)}`);
+    throw new AirdropClaimError(
+      formatSolanaClaimError(new Error(`Airdrop transfer failed: ${JSON.stringify(conf.value.err)}`)),
+    );
   }
   return { signature };
 }
