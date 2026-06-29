@@ -13,6 +13,7 @@ import {
   getAirdropTokenMint,
   tokenAmountToRaw,
 } from "./airdrop-config";
+import { formatSolanaClaimError } from "./solana-claim-error";
 import { getSolanaConnection } from "./escrow-solana";
 
 const POOL_SECRET_ENV_KEYS = [
@@ -201,10 +202,15 @@ export async function sendAirdropTokens(params: {
   tx.feePayer = dev.publicKey;
   tx.recentBlockhash = blockhash;
 
-  const signature = await connection.sendTransaction(tx, [dev], {
-    skipPreflight: false,
-    maxRetries: 3,
-  });
+  let signature: string;
+  try {
+    signature = await connection.sendTransaction(tx, [dev], {
+      skipPreflight: false,
+      maxRetries: 3,
+    });
+  } catch (e) {
+    throw new Error(formatSolanaClaimError(e));
+  }
   const conf = await connection.confirmTransaction(
     { signature, blockhash, lastValidBlockHeight },
     "confirmed",

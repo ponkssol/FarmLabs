@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { sendAirdropTokens } from "@/lib/airdrop-solana";
+import { formatSolanaClaimError } from "@/lib/solana-claim-error";
 import { luckyBoxFromEntry, requireWaitlistEntry } from "@/lib/airdrop-luckybox";
 import { prisma } from "@/lib/prisma";
 import { PublicKey } from "@solana/web3.js";
@@ -64,7 +65,6 @@ export async function POST() {
     });
   } catch (e) {
     console.error("[airdrop/luckybox/claim]", e);
-    const msg = e instanceof Error ? e.message : "Claim failed.";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: formatSolanaClaimError(e) }, { status: 500 });
   }
 }
