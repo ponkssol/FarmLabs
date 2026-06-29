@@ -26,6 +26,17 @@ export function getAirdropPoolWalletAddress(): string {
   return process.env.AIRDROP_POOL_WALLET_ADDRESS?.trim() || DEFAULT_POOL_WALLET;
 }
 
+/** Target pool size shown on the airdrop progress bar (1M tokens). */
+const DEFAULT_POOL_TARGET = 1_000_000;
+
+export function getAirdropPoolTargetAmount(): number {
+  const v = process.env.AIRDROP_POOL_TARGET?.trim();
+  if (!v) return DEFAULT_POOL_TARGET;
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return DEFAULT_POOL_TARGET;
+  return Math.floor(n);
+}
+
 /** Minimum SOL the recipient should hold to pay claim fees + token account rent. */
 export function getAirdropClaimMinSolLamports(): number {
   const v = process.env.AIRDROP_CLAIM_MIN_SOL?.trim();
