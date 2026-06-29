@@ -1,8 +1,11 @@
 "use client";
 
+import { AIRDROP_POOL_REFRESH_EVENT, type AirdropPoolRefreshDetail } from "@/lib/airdrop-pool-refresh";
 import { shortSolanaAddress } from "@/lib/wallet-display";
 import { Coins, Loader2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+const POOL_POLL_MS = 20_000;
 
 export type AirdropPoolBalanceData = {
   wallet: string;
@@ -31,26 +34,44 @@ export function AirdropPoolBalance({ tokenSymbol, target = 1_000_000, initial = 
   const [data, setData] = useState<AirdropPoolBalanceData | null>(initial);
   const [loading, setLoading] = useState(initial == null);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      try {
-        const res = await fetch("/api/airdrop/pool-balance");
-        if (!res.ok || cancelled) return;
-        const json = (await res.json()) as AirdropPoolBalanceData;
-        if (!cancelled) setData(json);
-      } catch {
-        /* keep initial / last value */
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+  const fetchBalance = useCallback(async () => {
+    try {
+      const res = await fetch("/api/airdrop/pool-balance", { cache: "no-store" });
+      if (!res.ok) return;
+      const json = (await res.json()) as AirdropPoolBalanceData;
+      setData(json);
+    } catch {
+      /* keep initial / last value */
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void fetchBalance();
+  }, [fetchBalance]);
+
+  useEffect(() => {
+    function onRefresh(event: Event) {
+      const detail = (event as CustomEvent<AirdropPoolRefreshDetail>).detail;
+      if (detail?.amountDeducted != null && detail.amountDeducted > 0) {
+        setData((prev) =>
+          prev ? { ...prev, amount: Math.max(0, prev.amount - detail.amountDeducted!) } : prev,
+        );
+      }
+      void fetchBalance();
+    }
+
+    window.addEventListener(AIRDROP_POOL_REFRESH_EVENT, onRefresh);
+    return () => window.removeEventListener(AIRDROP_POOL_REFRESH_EVENT, onRefresh);
+  }, [fetchBalance]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      if (document.visibilityState === "visible") void fetchBalance();
+    }, POOL_POLL_MS);
+    return () => window.clearInterval(id);
+  }, [fetchBalance]);
 
   const current = data?.amount ?? 0;
   const percent = useMemo(() => Math.min(100, (current / target) * 100), [current, target]);

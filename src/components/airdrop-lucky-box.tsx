@@ -4,6 +4,7 @@ import { AirdropAlertBanner } from "@/components/airdrop-alert-banner";
 import { AirdropPanelCard } from "@/components/airdrop-panel-card";
 import { useWalletConnect } from "@/hooks/use-wallet-connect";
 import type { LuckyBoxState } from "@/lib/airdrop-luckybox";
+import { notifyAirdropPoolRefresh } from "@/lib/airdrop-pool-refresh";
 import { formatSolanaClaimError } from "@/lib/solana-claim-error";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { Transaction } from "@solana/web3.js";
@@ -317,6 +318,11 @@ export function AirdropLuckyBox({
 
       syncBox(data.luckyBox);
       setMessage(data.luckyBox.status === "CLAIMED" ? "Tokens sent to your wallet!" : null);
+      if (data.luckyBox.status === "CLAIMED") {
+        notifyAirdropPoolRefresh({
+          amountDeducted: data.luckyBox.amount ?? displayAmount ?? undefined,
+        });
+      }
       setErrorReason(null);
     } catch {
       setMessage("Network error. Try again.");
