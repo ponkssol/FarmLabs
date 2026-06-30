@@ -70,17 +70,17 @@ export default async function AirdropPage() {
   }
 
   return (
-    <div className="app-main-container py-6 sm:py-8">
-      <header className="mb-4 sm:mb-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 sm:text-xs">Airdrop</p>
-        <div className="mt-1 flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-5">
-          <div className="min-w-0 shrink-0 lg:max-w-[340px] xl:max-w-[380px]">
-            <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">Waitlist &amp; rewards</h1>
-            <p className="ui-form-hint mt-2">
+    <div className="app-main-container py-5 sm:py-6">
+      <header className="mb-3.5 sm:mb-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Airdrop</p>
+        <div className="mt-1 flex flex-col gap-2.5 lg:flex-row lg:items-center lg:gap-4">
+          <div className="min-w-0 shrink-0 lg:max-w-[300px] xl:max-w-[340px]">
+            <h1 className="text-lg font-semibold tracking-tight text-white sm:text-xl">Waitlist &amp; rewards</h1>
+            <p className="mt-1 text-[11px] leading-relaxed text-zinc-500 sm:text-xs">
               Join with X and your wallet, then open your lucky box for {tokenSymbol} tokens.
             </p>
           </div>
-          <div className="min-w-0 flex-1 lg:pt-0.5">
+          <div className="min-w-0 flex-1">
             <AirdropPoolBalance tokenSymbol={tokenSymbol} target={poolTarget} initial={poolBalance} />
           </div>
         </div>

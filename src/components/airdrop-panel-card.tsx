@@ -51,30 +51,30 @@ export function AirdropPanelCard({
 
   return (
     <section
-      className={`flex h-full min-h-[360px] flex-col overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-zinc-900/70 to-zinc-950/80 ${
+      className={`flex h-full min-h-[300px] flex-col overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-zinc-900/70 to-zinc-950/80 ${
         muted ? "opacity-90" : ""
       } ${className}`}
     >
-      <div className="shrink-0 border-b border-white/10 px-4 py-3 sm:px-5 sm:py-3.5">
-        <div className="flex items-start gap-3">
+      <div className="shrink-0 border-b border-white/10 px-3.5 py-2.5 sm:px-4 sm:py-3">
+        <div className="flex items-start gap-2.5">
           <div
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${a.iconWrap}`}
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${a.iconWrap}`}
           >
-            <Icon className={`h-4 w-4 ${a.icon}`} strokeWidth={1.75} aria-hidden />
+            <Icon className={`h-3.5 w-3.5 ${a.icon}`} strokeWidth={1.75} aria-hidden />
           </div>
           <div className="min-w-0">
-            <p className={`text-[11px] font-semibold uppercase tracking-[0.16em] sm:text-xs ${a.eyebrow}`}>
+            <p className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${a.eyebrow}`}>
               {eyebrow}
             </p>
-            <h2 className="ui-form-section-title mt-0.5 text-sm sm:text-base">{title}</h2>
+            <h2 className="mt-0.5 text-sm font-semibold text-white">{title}</h2>
             {description ? (
-              <p className="ui-form-hint mt-1.5 max-w-none text-xs sm:text-sm">{description}</p>
+              <p className="mt-1 max-w-none text-[11px] leading-relaxed text-zinc-500 sm:text-xs">{description}</p>
             ) : null}
           </div>
         </div>
       </div>
 
-      <div className={`flex flex-1 flex-col px-4 py-4 sm:px-5 sm:py-5 ${bodyClassName}`}>{children}</div>
+      <div className={`flex flex-1 flex-col px-3.5 py-3.5 sm:px-4 sm:py-4 ${bodyClassName}`}>{children}</div>
     </section>
   );
 }

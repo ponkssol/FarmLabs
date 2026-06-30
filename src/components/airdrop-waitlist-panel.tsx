@@ -230,7 +230,7 @@ export function AirdropWaitlistPanel({
         </div>
       ) : (
         <div className="flex flex-1 flex-col">
-          <ul className="space-y-2 text-xs text-zinc-500 sm:text-sm">
+          <ul className="space-y-1.5 text-[11px] text-zinc-500 sm:text-xs">
             <li className="flex items-center gap-2">
               <span
                 className={`h-1.5 w-1.5 shrink-0 rounded-full ${isAuthenticated && hasXAccount ? "bg-emerald-400" : "bg-zinc-600"}`}
@@ -254,7 +254,7 @@ export function AirdropWaitlistPanel({
             type="button"
             onClick={() => void onJoinWaitlist()}
             disabled={busy}
-            className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-sky-600 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:opacity-60"
+            className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-sky-600 text-xs font-semibold text-white transition hover:bg-sky-500 disabled:opacity-60"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
             Join waitlist
