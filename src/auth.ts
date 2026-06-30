@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
 import Twitter from "next-auth/providers/twitter";
 import { isXHandleInAllowlist } from "@/lib/auth-x-allowlist";
+import { isXBannedOrSuspendedResponse } from "@/lib/auth-error-copy";
 import { prisma } from "@/lib/prisma";
 import { findOrCreateUserForTelegramWidget } from "@/lib/telegram-signin-user";
 
@@ -86,7 +87,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             "https://api.x.com/2/users/me?user.fields=username",
             { headers: { Authorization: `Bearer ${acc.access_token}` } },
           );
-          if (res.ok) {
+          if (!res.ok) {
+            const body = await res.text();
+            if (isXBannedOrSuspendedResponse(res.status, body)) {
+              console.warn("[auth][x] account appears suspended or banned:", res.status);
+              return "/auth/error?error=XBanned";
+            }
+          } else {
             const j = (await res.json()) as { data?: { username?: string } };
             handle = j.data?.username?.trim() ?? undefined;
           }
@@ -99,7 +106,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           console.info("[auth][x] handle resolved:", handle);
           if (!isXHandleInAllowlist(handle)) {
             console.warn("[auth][x] handle rejected by allowlist:", handle);
-            return false;
+            return "/auth/error?error=AccessDenied";
           }
           console.info("[auth][x] handle allowed by allowlist:", handle);
           await prisma.user.update({
@@ -110,7 +117,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           console.warn("[auth][x] no handle resolved from X profile/token");
           if (!isXHandleInAllowlist(null)) {
             console.warn("[auth][x] login rejected because allowlist requires a handle");
-            return false;
+            return "/auth/error?error=AccessDenied";
           }
         }
       } catch (e) {
